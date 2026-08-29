@@ -10,11 +10,16 @@ generation all run locally.
 ```
 "What datasets were used for Arabic offensive language detection?"
 
-  → classified as a `dataset` question
-  → matched to the "Data Description and Pre-processing" heading in 3 papers
-  → searched only within those sections
-  → reranked, then summarised per paper by a local Llama model
+  → routed as a question that has to be answered from several papers at once
+  → shortlisted to the papers whose cards mention Arabic
+  → searched inside each one's data sections, not across the whole corpus
+  → reranked, then written as one answer whose every claim carries a [n]
+    citation back to the passage it came from
 ```
+
+Four tabs sit on top of that: one synthesised answer across the library, a chat
+scoped to a single paper, a drop-in upload that never touches the library, and a
+browsable list of what has been ingested.
 
 ---
 
@@ -63,32 +68,58 @@ whole design here is built around exploiting it.
    │   Weaviate  (Docker container)   │   HNSW, cosine, self-provided vectors
    └──────┬───────────────────────────┘   exact-match filters on section fields
           │
+          ├──► one summary per section, embedded ──► second retrieval channel
+          └──► one structured card per paper ──────► corpus-level questions
+          │
           ▼  ── query path ──────────────────────────────────────────────
-   ┌──────────────┐   classify query → match to stored headings → filter
-   │ Hierarchical │   → vector search within section → global fallback
-   │   retrieval  │
-   └──────┬───────┘
-          ▼
-   ┌──────────────┐   cross-encoder/ms-marco-MiniLM-L-6-v2
-   │   Reranker   │
-   └──────┬───────┘
-          ▼
-   ┌──────────────┐   per-paper grounded summary
-   │    Ollama    │   (quick search, or map-reduce "deep scan")
-   └──────┬───────┘
+   ┌──────────────────────────────────┐   corpus    → answer from the cards
+   │        Question router           │   enumerate → fan out over papers
+   └───┬──────────────┬───────────┬───┘   focused   → ordinary retrieval
+       │              │           │
+       │              │           ▼
+       │              │    ┌──────────────┐  classify query → match to stored
+       │              │    │ Hierarchical │  headings → filter → search within
+       │              │    │  retrieval   │  section → global fallback
+       │              │    └──────┬───────┘
+       │              │           │   three channels, unioned:
+       │              │           │   chunk vectors · section summaries · BM25
+       │              │           ▼
+       │              │    ┌──────────────┐  cross-encoder/ms-marco-MiniLM-L-6-v2
+       │              │    │   Reranker   │
+       │              │    └──────┬───────┘
+       ▼              ▼           ▼
+   ┌──────────────────────────────────┐   one answer, every claim carrying
+   │   Ollama   (qwen3:4b-instruct)   │   marker, validated against the
+   └──────┬───────────────────────────┘   passages actually retrieved
           ▼
    FastAPI + web UI, with PyMuPDF rendering the source page
 ```
 
-### Two retrieval modes
+### Three ways a question gets answered
 
-**Quick search** — classify the query, filter to the matching sections, vector search,
-rerank, summarise. Fast; good for pointed questions.
+Not every question wants the same machinery, and answering all of them the same way
+is what makes a RAG demo feel thin. A router classifies each question first, and the
+three paths differ in what they read, not just in how long they take.
 
-**Deep scan** — identify the target section, match it to every paper's real heading,
-then map-reduce *every* chunk in that section: summarise each chunk, then reduce to one
-answer per paper. Slower but exhaustive; good for "compare the methodology across all
-papers"-style questions.
+**Corpus** — *"which papers use transformers?"*, *"what languages are covered?"*.
+Questions about the shape of the library rather than the contents of any one paper.
+Retrieval is the wrong tool here: the answer is a property of all 17 papers at once,
+and the top 5 chunks can only ever see a few of them. These are answered from the
+structured card built for each paper at ingest, so every paper is considered.
+
+**Enumerate** — *"what datasets were used across these papers?"*. The answer is a
+list assembled from many papers, each contributing a piece. The question fans out:
+shortlist the papers worth reading, search each one separately, extract just the
+relevant finding from each, then reduce the findings into a single cited answer.
+Searching once across the corpus would return five chunks from the two papers that
+phrase things most similarly, and silently miss the rest.
+
+**Focused** — *"what accuracy did IndoBERTweet reach?"*. One fact, in one place.
+Ordinary retrieval: classify the query to a section type, filter, search, rerank,
+answer.
+
+The per-paper tab bypasses the router entirely — the paper is already chosen, so
+there is nothing to route.
 
 ### Retrieval safety rails
 
@@ -201,9 +232,11 @@ applies this policy in one place.
 
 ### Measuring retrieval and generation quality
 
-`tests/golden_qa.json` holds 43 questions over the 11 sample papers, with 111 fact
-groups that a correct answer must contain. Every fact was read from the source PDF,
-not from the search index, so the set also detects content lost during ingestion.
+`tests/golden_qa.json` holds 85 graded questions with 210 fact groups that a correct
+answer must contain: 65 single-paper questions covering all 17 papers (157 groups),
+15 corpus-wide synthesis questions (53 groups), and 5 negative controls. Every fact
+was read from the source PDF, not from the search index, so the set also detects
+content lost during ingestion.
 
 A RAG system can fail in three separate places and one end-to-end number hides which
 one broke, so the scorer reports them apart:
@@ -240,6 +273,10 @@ times each:
 | section summaries only | 71% (sd 1.7) | 86% (sd 1.7) |
 | BM25 only | 74% (sd 2.2) | 84% (sd 0.5) |
 | **both** | **75% (sd 0.8)** | **89% (sd 0.5)** |
+
+These were measured before the fan-out fixes further down, so the absolute
+numbers are lower than the headline table below; the comparison between rows is
+the point, and all four rows were run against the same build.
 
 Neither channel justifies itself alone — summaries alone measured slightly worse
 than baseline, BM25 alone was no better and much noisier. Together they are best
@@ -280,12 +317,15 @@ Current scores, and what the set caught on its first run:
 | Synthesis — expected papers actually cited | 58% | **94%** |
 | Negative controls — correctly declined | — | **100%** |
 
-The synthesis figures were 89% and 71% against an earlier six-question set. That set
-was too easy: one of its questions expected a single paper, which makes it needle
-retrieval rather than synthesis, and another scored a fact group of `["annotat"]`,
-which almost any fluent answer matches. Rewritten to fifteen questions that each
-genuinely span two or more papers, the same system scores 64% and 58%. The lower
-number is the more honest one.
+Both synthesis rows are scored against the fifteen-question set described above.
+An earlier six-question set flattered the same pipeline into the high eighties,
+and was discarded rather than reported: one of its questions expected a single
+paper, which is needle retrieval wearing a synthesis costume, and another scored
+a fact group of `["annotat"]`, which almost any fluent answer matches. Against
+the harder set that pipeline scored the 64% and 58% in the "before" column. The
+89% and 94% are the same harder set after the three bugs below were fixed — so
+the two columns are comparable to each other, but neither is comparable to
+anything measured on the old set.
 
 The "before" column is not a weaker model; it is the same pipeline with three silent
 bugs that only graded ground truth could surface — heading matching pooled across
@@ -399,7 +439,7 @@ curl http://localhost:8081/v1/.well-known/ready
 ```bash
 mkdir -p papers && cp /path/to/*.pdf papers/
 
-python -m research_rag.cli ingest papers/
+python -m research_rag.cli ingest papers/     # also builds cards + section index
 python -m research_rag.cli list
 python -m research_rag.cli sections --paper mypaper.pdf
 python -m research_rag.cli search "What datasets were used?"
@@ -411,8 +451,17 @@ python -m research_rag.cli search "What datasets were used?"
 python app.py                 # opens http://localhost:7860
 ```
 
-Upload PDFs, chat over them, filter to a single paper, toggle deep scan and reranking,
-and click any cited passage to see it highlighted on the original PDF page.
+Four tabs:
+
+| Tab | What it does |
+| --- | --- |
+| **Ask** | One synthesised answer across the whole library, every claim carrying a `[n]` citation you can click |
+| **Paper** | A conversation scoped to one selected paper, with follow-ups resolved against the history |
+| **Scratch** | Drop in a PDF, ask about it, throw it away — stored separately and never visible to the other tabs |
+| **Library** | What is ingested, with per-paper delete |
+
+Clicking any citation opens the source panel and renders that passage on its original
+PDF page.
 
 ---
 
@@ -451,8 +500,9 @@ research_rag/
   section_classifier.py  3-stage heading classification + query → section matching
   embedder.py            sentence-transformers wrapper
   vector_store.py        Weaviate client: schema, writes, filtered vector search
-  search.py              quick-search pipeline with the section safety rails
-  map_reduce.py          deep-scan pipeline
+  search.py              retrieval pipeline with the section safety rails
+  synthesize.py          one cited answer, citation validation, follow-up rewriting
+  map_reduce.py          exhaustive per-section scan, used by the per-paper tab
   reranker.py            cross-encoder reranking
   enumerate_.py          fan-out over papers for "which X across these papers"
   paper_cards.py         one structured card per paper, for corpus-level questions
@@ -466,6 +516,7 @@ scripts/
   migrate_chroma_to_weaviate.py    one-time import from a legacy ChromaDB index
   eval_models.py                   score models on the routing tasks
   eval_rag.py                      score coverage / retrieval / generation / synthesis
+  eval_chat.py                     score the multi-turn and ad-hoc upload tabs
   fetch_arxiv.py                   pull open-access papers by pinned arXiv id
   build_paper_cards.py             backfill paper cards without re-parsing PDFs
 tests/
@@ -474,7 +525,7 @@ tests/
   test_synthesis.py                citation and diversification tests (no LLM needed)
   test_ui.py                       browser tests: citations, source panel, tabs
   golden_conversations.json        26 multi-turn turns for the conversational tabs
-  golden_qa.json                   71 graded questions over 17 papers
+  golden_qa.json                   85 graded questions, 210 fact groups, 17 papers
 docker-compose.yml       Weaviate service
 ```
 
@@ -487,7 +538,7 @@ docker-compose.yml       Weaviate service
 | `POST` | `/api/papers` | Upload and ingest PDFs |
 | `DELETE` | `/api/papers/{filename}` | Remove a paper and its chunks |
 | `POST` | `/api/ask` | One cited answer — corpus-wide, one paper, or a scratch upload |
-| `POST` | `/api/chat` | Per-paper breakdown (quick search or deep scan) |
+| `POST` | `/api/chat` | Per-paper breakdown across the library |
 | `GET`/`POST`/`DELETE` | `/api/scratch` | Ad-hoc uploads, isolated from the library |
 | `POST` | `/api/render-chunk` | Render a chunk on its source PDF page |
 

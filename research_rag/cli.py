@@ -18,6 +18,8 @@ from .vector_store import VectorStore, WeaviateUnavailableError
 
 def cmd_ingest(args, embedder, store):
     from .paper_cards import PaperCardStore
+    from .section_index import build_entries, index_entries, open_section_index
+
     with PaperCardStore() as cards:
         if os.path.isdir(args.path):
             ingest_folder(args.path, embedder, store,
@@ -25,6 +27,17 @@ def cmd_ingest(args, embedder, store):
         else:
             ingest_pdf(args.path, embedder, store,
                        skip_existing=not args.force, card_store=cards)
+
+    # Refresh the section-summary index. It is derived from the chunks that were
+    # just written, and without this step a fresh install has an empty second
+    # retrieval channel and no sign that anything is missing. Rebuilding all of
+    # it takes about a second, so there is no reason to do it incrementally.
+    with open_section_index() as index:
+        entries = build_entries(store)
+        for paper in {e["source_file"] for e in entries}:
+            index.delete_source(paper)
+        n = index_entries(index, entries, embedder)
+    print(f"  -> Section index: {n} summar(ies)")
 
 
 def cmd_search(args, embedder, store):
