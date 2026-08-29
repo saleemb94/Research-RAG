@@ -82,6 +82,7 @@ class VectorStore:
 
     def _ensure_collection(self):
         if self._client.collections.exists(self._collection_name):
+            self._add_missing_properties()
             return
         self._client.collections.create(
             name=self._collection_name,
@@ -122,8 +123,37 @@ class VectorStore:
                     tokenization=Tokenization.FIELD,
                 ),
                 Property(name="page_numbers", data_type=DataType.TEXT),
+                Property(
+                    name="section_summary",
+                    data_type=DataType.TEXT,
+                    # Routing context only - never filtered or keyword-searched,
+                    # so it costs nothing to index.
+                    index_filterable=False,
+                    index_searchable=False,
+                ),
             ],
         )
+
+    def _add_missing_properties(self):
+        """
+        Bring an existing collection up to the current schema.
+
+        Weaviate can add a property to a live collection, so a store created by
+        an earlier version keeps working and simply gains the new field (empty
+        on old objects) instead of needing a wipe and a full re-ingest.
+        """
+        col = self._client.collections.get(self._collection_name)
+        existing = {p.name for p in col.config.get().properties}
+        for prop in (
+            Property(
+                name="section_summary",
+                data_type=DataType.TEXT,
+                index_filterable=False,
+                index_searchable=False,
+            ),
+        ):
+            if prop.name not in existing:
+                col.config.add_property(prop)
 
     # -- Write -------------------------------------------------------------
 
@@ -207,6 +237,28 @@ class VectorStore:
             if sub:
                 sections[sn].add(sub)
         return {sn: sorted(sections[sn]) for sn in order}
+
+    def get_section_descriptions(
+        self, source_filter: str | None = None
+    ) -> dict[str, str]:
+        """
+        Return the one-line description written for each section at ingest time:
+            { section_name: "what this section actually contains" }
+
+        Sections indexed before summaries existed simply have no entry, so
+        callers degrade to heading names rather than breaking.
+        """
+        metas = self._scan(
+            self._build_filters(source_filter=source_filter),
+            ["section_name", "section_summary"],
+        )
+        out: dict[str, str] = {}
+        for meta in metas:
+            name = (meta.get("section_name") or "").strip()
+            summary = (meta.get("section_summary") or "").strip()
+            if name and summary and name not in out:
+                out[name] = summary
+        return out
 
     def get_unique_section_names(
         self, source_filter: str | None = None
@@ -353,6 +405,7 @@ class VectorStore:
             "section_name",
             "subsection_name",
             "page_numbers",
+            "section_summary",
         ):
             if out.get(key) is None:
                 out[key] = ""

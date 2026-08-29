@@ -8,6 +8,7 @@ from docling.document_converter import DocumentConverter
 from docling.chunking import HierarchicalChunker
 
 from .embedder import Embedder
+from .llm import generate as _llm
 from .section_classifier import (
     classify_heading,
     classify_headings_batch,
@@ -474,6 +475,83 @@ def _build_section_type_map(
 
 
 # ---------------------------------------------------------------------------
+# Per-section summaries
+# ---------------------------------------------------------------------------
+
+# How much of a section is shown to the summariser. Sections run long; the
+# opening chunks carry what the section is about, which is all routing needs.
+_SUMMARY_CONTEXT_CHARS = 3000
+
+_SECTION_SUMMARY_PROMPT = """\
+Below are excerpts from the section "{section}" of a research paper.{subs}
+
+Write ONE sentence, at most 40 words, stating what this section actually
+contains. Name the concrete things it reports - datasets and their sizes,
+methods, instruments, participants, metrics, findings - because this sentence
+is used to decide whether the section can answer a question.
+
+Do not editorialise, do not begin with "This section", and do not invent
+anything that is not in the excerpts.
+
+Excerpts:
+{text}
+
+One sentence:"""
+
+
+def _summarise_sections(
+    chunks_data: list[dict], model: str
+) -> dict[str, str]:
+    """
+    Write a one-line description of what each section actually contains.
+
+    A heading alone is a poor routing signal: "METHODOLOGY" does not reveal that
+    the section also states the corpus size, which is where most papers put it.
+    The summary makes that visible, so section selection is based on evidence
+    rather than on guessing from a title.
+
+    Summaries are routing metadata only - they never reach the answer, so a
+    hallucinated one can cost precision but can never corrupt a cited result.
+    """
+    by_section: dict[str, list[dict]] = {}
+    for item in chunks_data:
+        props = item["properties"]
+        by_section.setdefault(props["section_name"], []).append(props)
+
+    summaries: dict[str, str] = {}
+    for section, props in by_section.items():
+        props.sort(key=lambda p: p["chunk_index"])
+        text = "\n".join(p["text"] for p in props)[:_SUMMARY_CONTEXT_CHARS]
+        if not text.strip():
+            continue
+
+        seen: set[str] = set()
+        subs = [
+            p["subsection_name"] for p in props
+            if p["subsection_name"] and not (
+                p["subsection_name"] in seen or seen.add(p["subsection_name"])
+            )
+        ]
+        sub_line = (
+            f"\nIts subsections are: {', '.join(subs[:8])}." if subs else ""
+        )
+
+        try:
+            summary = _llm(
+                _SECTION_SUMMARY_PROMPT.format(
+                    section=section, subs=sub_line, text=text
+                ),
+                model,
+            )
+        except Exception as exc:      # never let summarisation break an ingest
+            print(f"    ! summary failed for {section!r}: {exc}")
+            continue
+        summaries[section] = " ".join(summary.split())[:400]
+
+    return summaries
+
+
+# ---------------------------------------------------------------------------
 # Main ingestion
 # ---------------------------------------------------------------------------
 
@@ -579,9 +657,18 @@ def ingest_pdf(
                 "subsection_name": subsection_name,
                 "section_type": section_type,
                 "page_numbers": _extract_page_numbers(chunk.meta.export_json_dict()),
+                "section_summary": "",
             },
             "vector": vector,
         })
+
+    # One-line description of every section, used later to route a question to
+    # the right section instead of guessing from the heading alone.
+    section_summaries = _summarise_sections(chunks_data, model)
+    for item in chunks_data:
+        props = item["properties"]
+        props["section_summary"] = section_summaries.get(props["section_name"], "")
+    print(f"  -> Summarised {len(section_summaries)} section(s)")
 
     store.insert_chunks(chunks_data)
 

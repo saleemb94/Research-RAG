@@ -101,7 +101,7 @@ def run_coverage(items, verbose):
 
 # ── retrieval + generation, through the real API ───────────────────────────
 
-def run_pipeline(items, verbose, do_retrieval, do_generation):
+def run_pipeline(items, verbose, do_retrieval, do_generation, deep=False):
     from fastapi.testclient import TestClient
     import app as appmod
 
@@ -130,11 +130,14 @@ def run_pipeline(items, verbose, do_retrieval, do_generation):
 
             if do_generation:
                 t0 = time.perf_counter()
-                r = client.post("/api/chat", json={
-                    "query": it["question"], "deep_scan": False,
-                    "use_reranker": True, "top_k": 5,
+                body = {
+                    "query": it["question"],
+                    "deep_scan": deep,
                     "source_filter": it["paper"],
-                }).json()
+                }
+                if not deep:                      # deep scan ignores both
+                    body |= {"use_reranker": True, "top_k": 5}
+                r = client.post("/api/chat", json=body).json()
                 row["g_seconds"] = time.perf_counter() - t0
                 summary, sections = "", []
                 if r.get("ok"):
@@ -152,7 +155,7 @@ def run_pipeline(items, verbose, do_retrieval, do_generation):
     return results
 
 
-def report(results, verbose, do_retrieval, do_generation):
+def report(results, verbose, do_retrieval, do_generation, deep=False):
     out = {}
     if do_retrieval:
         n = len(results)
@@ -178,7 +181,10 @@ def report(results, verbose, do_retrieval, do_generation):
         tot_n = sum(r["g_n"] for r in results)
         full = sum(1 for r in results if r["g_ok"] == r["g_n"])
         zero = sum(1 for r in results if r["g_ok"] == 0)
-        print(f"\n{'=' * 74}\nGENERATION - answer quality with the correct paper in scope\n{'=' * 74}")
+        mode = "deep scan" if deep else "quick search"
+        secs = sum(r.get("g_seconds", 0.0) for r in results)
+        print(f"\n{'=' * 74}\nGENERATION ({mode}) - answer quality with the correct paper in scope\n{'=' * 74}")
+        print(f"  wall clock             : {secs:.0f}s total, {secs / len(results):.1f}s per question")
         print(f"  facts stated in answer : {tot_ok}/{tot_n} ({tot_ok / tot_n:.0%})")
         print(f"  fully correct answers  : {full}/{len(results)} ({full / len(results):.0%})")
         print(f"  answers with no facts  : {zero}/{len(results)}")
@@ -205,6 +211,9 @@ def main():
     ap.add_argument("--generation", action="store_true")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--deep", action="store_true",
+                    help="Answer with deep scan (map-reduce) instead of quick search")
+    ap.add_argument("-o", "--out", default="eval_results.json")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     if a.all:
@@ -220,9 +229,9 @@ def main():
     if a.coverage:
         run_coverage(items, a.verbose)
     if a.retrieval or a.generation:
-        results = run_pipeline(items, a.verbose, a.retrieval, a.generation)
-        report(results, a.verbose, a.retrieval, a.generation)
-        (ROOT / "eval_results.json").write_text(
+        results = run_pipeline(items, a.verbose, a.retrieval, a.generation, deep=a.deep)
+        report(results, a.verbose, a.retrieval, a.generation, deep=a.deep)
+        (ROOT / a.out).write_text(
             json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8"
         )
         print("\nPer-question detail written to eval_results.json")

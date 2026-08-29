@@ -19,6 +19,7 @@ from research_rag.section_classifier import (  # noqa: E402
     SECTION_TYPES,
     _normalize,
     classify_heading,
+    section_type_matches,
 )
 
 # ── Headings that must classify the same way in every discipline ───────────
@@ -240,6 +241,47 @@ def test_every_label_is_reachable_from_keywords():
     produced = {classify_heading(h) for _, h, _ in CROSS_DISCIPLINE}
     unreachable = set(SECTION_TYPES) - produced - {"abstract", "general"}
     assert not unreachable, f"labels never produced by the test corpus: {unreachable}"
+
+
+def test_section_type_compatibility():
+    """
+    The retrieval cross-validation is a veto on clearly wrong sections, not a
+    demand for an exact label match: papers routinely describe their corpus
+    inside the methods section, and a Discussion restates the results.
+    """
+    should_match = [
+        ("methodology", "dataset", "corpus is usually described inside Methods"),
+        ("dataset", "methodology", "and the relation is symmetric"),
+        ("conclusion", "results", "Discussion restates the numbers"),
+        ("results", "conclusion", "symmetric"),
+        ("theory", "methodology", "a formal model sits next to its implementation"),
+        ("abstract", "results", "an abstract states the headline result"),
+        ("abstract", "dataset", "and names the dataset"),
+        ("general", "dataset", "unclassified is not evidence of a contradiction"),
+        ("dataset", "dataset", "identity"),
+        ("results", "general", "a general query vetoes nothing"),
+    ]
+    should_not = [
+        ("related_work", "introduction", "background is not prior work"),
+        ("introduction", "related_work", "and prior work is not background"),
+        ("results", "dataset", "a results table is not the dataset description"),
+        ("conclusion", "methodology", "conclusions do not describe the procedure"),
+        ("related_work", "results", "other people's work is not this paper's result"),
+    ]
+    failures = []
+    for stored, target, why in should_match:
+        if not section_type_matches(stored, target):
+            failures.append(f"  {stored!r} should answer {target!r}: {why}")
+    for stored, target, why in should_not:
+        if section_type_matches(stored, target):
+            failures.append(f"  {stored!r} must NOT answer {target!r}: {why}")
+    assert not failures, "\n" + "\n".join(failures)
+
+
+def test_background_and_related_work_never_compatible():
+    """The one distinction the whole retrieval design is built to preserve."""
+    assert not section_type_matches("related_work", "introduction")
+    assert not section_type_matches("introduction", "related_work")
 
 
 def main() -> int:

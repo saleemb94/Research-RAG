@@ -4,9 +4,18 @@ from typing import TYPE_CHECKING
 
 from .llm import generate as _llm
 
-from .config import OLLAMA_MODEL, RERANK_FETCH_MULTIPLIER, TOP_K
+from .config import (
+    OLLAMA_MODEL,
+    RERANK_FETCH_MULTIPLIER,
+    TOP_K,
+    USE_SECTION_SUMMARIES,
+)
 from .embedder import Embedder
-from .section_classifier import classify_query, match_headings_to_target
+from .section_classifier import (
+    classify_query,
+    match_headings_to_target,
+    prefer_exact_types,
+)
 from .vector_store import SearchHit, VectorStore
 
 if TYPE_CHECKING:
@@ -114,7 +123,11 @@ def search_and_summarize(
                 natural = orig_section_type.replace("_", " ")
                 section_summary = store.get_section_summary(source_filter)
                 matched = match_headings_to_target(
-                    natural, stored_names, model, section_summary
+                    natural, stored_names, model, section_summary,
+                    descriptions=(
+                        store.get_section_descriptions(source_filter)
+                        if USE_SECTION_SUMMARIES else None
+                    ),
                 )
                 if matched:
                     # Cross-validate: keep only sections whose dominant
@@ -123,10 +136,9 @@ def search_and_summarize(
                     # section gets the benefit of the doubt, but NOT a free
                     # pass disguised as the expected type.
                     type_map = store.get_section_type_map(source_filter)
-                    validated = [
-                        m for m in matched
-                        if type_map.get(m, "general") in (orig_section_type, "general")
-                    ]
+                    validated = prefer_exact_types(
+                        matched, type_map.get, orig_section_type
+                    )
                     if validated:
                         target_sections = validated
                         use_section_names = True
@@ -167,11 +179,11 @@ def search_and_summarize(
         #    paper, so every fallback hit contradicts the target by definition
         #    and this check would empty the result set.
         if section_filtered and orig_section_type:
-            hits = [
-                h for h in hits
-                if h.properties.get("section_type", "general")
-                in (orig_section_type, "general")
-            ]
+            hits = prefer_exact_types(
+                hits,
+                lambda h: h.properties.get("section_type"),
+                orig_section_type,
+            )
 
     if not hits:
         return {

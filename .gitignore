@@ -11,6 +11,8 @@ weaviate_data/
 
 # Eval output (regenerate with: python scripts/eval_rag.py --all)
 eval_results.json
+eval_quick.json
+eval_deep.json
 
 # ── Secrets / local config ─────────────────────────────────────────────────
 .env

@@ -47,6 +47,75 @@ SECTION_TYPES = [
 # model would resolve to "theory".
 _MIN_PREFIX_MATCH = 4
 
+# Section types that routinely carry each other's content.
+#
+# Retrieval cross-validates an LLM's heading choice against the section's
+# ingest-time type and drops the match when they disagree. Applied strictly that
+# veto discards correct answers, because papers do not partition content the way
+# the label set does: most describe their corpus *inside* the methods section
+# (APA style literally files "Participants" under Method), and a Discussion
+# routinely restates the numbers from Results.
+#
+# Deliberately excluded: introduction <-> related_work. Background explaining
+# concepts and a survey of other people's work are genuinely different sections,
+# that confusion is the most common one in practice, and the prompts and the
+# retrieval design both go out of their way to keep them apart.
+_COMPATIBLE_SECTION_TYPES: dict[str, frozenset[str]] = {
+    "dataset": frozenset({"methodology"}),
+    "methodology": frozenset({"dataset", "theory"}),
+    "theory": frozenset({"methodology", "introduction"}),
+    "introduction": frozenset({"theory"}),
+    "results": frozenset({"conclusion"}),
+    "conclusion": frozenset({"results"}),
+}
+
+# An abstract states the paper's headline dataset, method and results at once, so
+# it can legitimately answer a query aimed at any of them. "general" means the
+# classifier never made a call, which is not evidence of a contradiction.
+_WILDCARD_SECTION_TYPES = frozenset({"general", "abstract"})
+
+
+def section_type_matches(
+    stored_type: str | None, target_type: str | None, strict: bool = False
+) -> bool:
+    """
+    True when a chunk stored under `stored_type` may answer a `target_type` query.
+
+    `strict=True` accepts only an exact label (plus the wildcards); `strict=False`
+    additionally accepts the adjacent types above.
+
+    Callers should try strict first and widen only when it yields nothing - see
+    prefer_exact_types(). Widening unconditionally is actively harmful: a paper
+    with a real "Autism screening data for toddlers" section then also matches
+    its "Proposed methodology" section on a dataset query, and the genuine
+    dataset section gets crowded out of the top k.
+    """
+    if not target_type or target_type == "general":
+        return True
+    stored = stored_type or "general"
+    if stored == target_type or stored in _WILDCARD_SECTION_TYPES:
+        return True
+    if strict:
+        return False
+    return stored in _COMPATIBLE_SECTION_TYPES.get(target_type, frozenset())
+
+
+def prefer_exact_types(items, type_of, target_type):
+    """
+    Keep the items whose section_type matches `target_type` exactly, and only
+    widen to adjacent types when that leaves nothing.
+
+    Precision where the paper labels the section the way the query asks for it,
+    recall where it does not - most papers describe their corpus inside the
+    methods section and have no `dataset` section at all.
+    """
+    if not target_type or target_type == "general":
+        return list(items)
+    exact = [i for i in items if section_type_matches(type_of(i), target_type, strict=True)]
+    if exact:
+        return exact
+    return [i for i in items if section_type_matches(type_of(i), target_type)]
+
 # Aliases: normalise common LLM variations -> canonical type.
 # Grouped by discipline where a term is field-specific.
 _ALIASES: dict[str, str] = {
@@ -674,6 +743,9 @@ Top-level sections (numbered for selection) with their subsections shown for con
 {numbered_headings}
 
 Rules:
+- Where a section shows a "contains:" line, trust it over the heading: it
+  says what the section actually holds, and papers routinely put content
+  under a heading that does not advertise it.
 - Choose only TOP-LEVEL section numbers (e.g. "3" or "3, 5").
   Selecting a top-level section automatically includes all its listed subsections —
   do NOT try to select individual subsections.
@@ -707,6 +779,7 @@ def match_headings_to_target(
     headings: list[str],
     model: str,
     section_summary: dict[str, list[str]] | None = None,
+    descriptions: dict[str, str] | None = None,
 ) -> list[str]:
     """
     LLM picks which top-level sections of the paper match the target.
@@ -715,6 +788,12 @@ def match_headings_to_target(
     VectorStore.get_section_summary().  When supplied, each section is shown with its
     subsections so the LLM understands the hierarchy and avoids confusing a subsection
     heading with a top-level section of the same name.
+
+    `descriptions` — optional {section_name: "what the section contains"} written at
+    ingest time by _summarise_sections().  A heading alone is a weak signal: nothing
+    about "METHODOLOGY" reveals that it also states the corpus size, which is where
+    most papers put it.  The description makes that visible, so the choice rests on
+    what a section holds rather than on what it is called.
     """
     if not headings:
         return []
@@ -722,12 +801,15 @@ def match_headings_to_target(
     lines: list[str] = []
     for i, h in enumerate(headings):
         lines.append(f"{i + 1}. {h}")
+        desc = (descriptions or {}).get(h, "").strip()
+        if desc:
+            lines.append(f"   contains: {desc}")
         if section_summary:
             subs = section_summary.get(h, [])
-            for s in subs[:6]:
-                lines.append(f"   - {s}")
-            if len(subs) > 6:
-                lines.append(f"   - … ({len(subs) - 6} more subsections)")
+            if subs:
+                shown = ", ".join(subs[:6])
+                more = f", … (+{len(subs) - 6} more)" if len(subs) > 6 else ""
+                lines.append(f"   subsections: {shown}{more}")
 
     numbered = "\n".join(lines)
     prompt = _MATCH_HEADINGS_PROMPT.format(

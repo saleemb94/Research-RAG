@@ -60,6 +60,11 @@ MAX_FETCH = _env_int("MAX_FETCH", 100_000)
 # below MAX_FETCH, so scans are paginated.
 FETCH_PAGE_SIZE = _env_int("FETCH_PAGE_SIZE", 1_000)
 
+# Write a one-line description of every section at ingest, and show it to the
+# router. Costs a few seconds per paper and nothing at query time. Turn off to
+# route on heading names alone (useful for measuring what it is worth).
+USE_SECTION_SUMMARIES = _env_bool("USE_SECTION_SUMMARIES", True)
+
 # ── Retrieval ──────────────────────────────────────────────────────────────
 TOP_K = _env_int("TOP_K", 5)
 RERANKER_MODEL = os.getenv("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")

@@ -10,10 +10,12 @@ from __future__ import annotations
 
 from .llm import generate as _llm
 
+from .config import USE_SECTION_SUMMARIES
 from .section_classifier import (
     classify_heading,
     identify_target_section,
     match_headings_to_target,
+    prefer_exact_types,
 )
 from .vector_store import SearchHit, VectorStore
 
@@ -119,7 +121,11 @@ def deep_scan_papers(
 
     section_summary = store.get_section_summary(source_filter)
     matched_names = match_headings_to_target(
-        target_section, stored_section_names, model, section_summary
+        target_section, stored_section_names, model, section_summary,
+        descriptions=(
+            store.get_section_descriptions(source_filter)
+            if USE_SECTION_SUMMARIES else None
+        ),
     )
     print(f"  [Step 2] LLM matched → {matched_names}")
 
@@ -129,10 +135,9 @@ def deep_scan_papers(
         expected_type = classify_heading(target_section)   # e.g. "methodology"
         if expected_type and expected_type != "general":
             type_map = store.get_section_type_map(source_filter)
-            matched_names = [
-                m for m in matched_names
-                if type_map.get(m, "general") in (expected_type, "general")
-            ]
+            matched_names = prefer_exact_types(
+                matched_names, type_map.get, expected_type
+            )
             print(f"  [Step 2] After cross-validation → {matched_names}")
 
     if not matched_names:
