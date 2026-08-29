@@ -143,6 +143,51 @@ them to the LLM stages that *can* read the content:
 That last one used to be classified as a *result*, which is simply wrong for a clinical
 paper — it describes who was enrolled.
 
+### Choosing a model
+
+The summarisation step is forgiving — most instruct models write something reasonable
+from retrieved text. The *routing* steps are not: they decide which sections get
+searched at all, so an error there silently changes the answer without looking like a
+failure. `scripts/eval_models.py` scores exactly those three call sites against ground
+truth spanning nine disciplines:
+
+```bash
+python scripts/eval_models.py                      # every installed model
+python scripts/eval_models.py qwen3:8b --think     # measure reasoning mode
+python scripts/eval_models.py -v qwen2.5:7b        # show every wrong answer
+```
+
+Measured on an RTX 5060 Laptop (8 GB), 50 graded items:
+
+| Model | Headings | Query | Target | Overall | Time |
+| --- | --- | --- | --- | --- | --- |
+| **qwen3:4b-instruct** (default) | 96% | 100% | 100% | **98%** | **5.5 s** |
+| qwen3:8b (reasoning off) | 92% | 100% | 100% | 96% | 9.0 s |
+| qwen2.5:7b | 88% | 95% | 100% | 92% | 10.9 s |
+| qwen3:8b (reasoning on) | 92% | 90% | 100% | 92% | 133.5 s |
+| llama3.2:3b | 33% | 90% | 83% | 62% | 10.1 s |
+
+Three things that surprised me and are worth knowing:
+
+- **Bigger was not better.** `qwen3:4b-instruct` beat `qwen3:8b` on accuracy *and* was
+  faster. These tasks reward instruction-following on a fixed label set, not knowledge.
+- **Reasoning actively hurt.** With thinking enabled, `qwen3:8b` took 15x longer and
+  scored *lower* (92% vs 96%) — it deliberates its way out of correct one-word answers,
+  spending ~715 tokens where 2 would do. Reasoning is disabled by default for this
+  reason; set `OLLAMA_THINK=true` to override.
+- **Heading classification is where models separate.** Every model handles query
+  routing well; only the good ones classify unfamiliar headings such as
+  "Baseline Characteristics" or "Historiography" correctly. That step runs at ingest
+  and every later retrieval inherits its mistakes.
+
+Note that the 2507 "Instruct" (non-thinking) refresh only exists for 4B, 30B-A3B and
+235B — there is no `qwen3:8b-instruct`. At 8B you get the hybrid model, so disable
+reasoning explicitly. Ollama returns reasoning in a separate `thinking` field, so it
+never corrupts parsed output; the cost is latency, not correctness.
+
+All Ollama traffic goes through [`research_rag/llm.py`](research_rag/llm.py), which
+applies this policy in one place.
+
 ### Running the tests
 
 Classification is covered by tests that need neither Ollama nor Weaviate, so they run
@@ -169,7 +214,7 @@ ambiguous headings must defer rather than guess.
 - **[Ollama](https://ollama.com)** — runs the local LLM
 
 ```bash
-ollama pull llama3.2          # ~2 GB; any instruct model works
+ollama pull qwen3:4b-instruct   # ~2.5 GB; see "Choosing a model" below
 ```
 
 ### Install
@@ -236,7 +281,8 @@ cp .env.example .env
 | --- | --- | --- |
 | `WEAVIATE_HOST` / `WEAVIATE_PORT` / `WEAVIATE_GRPC_PORT` | `localhost` / `8081` / `50052` | Where the database lives |
 | `WEAVIATE_COLLECTION` | `ResearchChunk` | Collection name |
-| `OLLAMA_MODEL` | `llama3.2:latest` | Generation + classification model |
+| `OLLAMA_MODEL` | `qwen3:4b-instruct` | Generation + classification model |
+| `OLLAMA_THINK` | `false` | Let hybrid models reason first (slower, less accurate here) |
 | `EMBEDDING_MODEL` | `BAAI/bge-small-en-v1.5` | 384-dim sentence embeddings |
 | `RERANKER_MODEL` | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Cross-encoder reranker |
 | `TOP_K` | `5` | Chunks passed to the LLM |
@@ -260,12 +306,14 @@ research_rag/
   search.py              quick-search pipeline with the section safety rails
   map_reduce.py          deep-scan pipeline
   reranker.py            cross-encoder reranking
+  llm.py                 single entry point for Ollama calls
   pdf_viewer.py          renders a chunk back onto its PDF page
   cli.py                 ingest / search / list / sections / delete
 app.py                   FastAPI server + JSON API
 static/index.html        single-page web UI
 scripts/
   migrate_chroma_to_weaviate.py    one-time import from a legacy ChromaDB index
+  eval_models.py                   score models on the routing tasks
 tests/
   test_section_classifier.py       cross-discipline classification tests (no LLM needed)
 docker-compose.yml       Weaviate service

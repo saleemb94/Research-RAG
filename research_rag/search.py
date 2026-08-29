@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import ollama
+from .llm import generate as _llm
 
 from .config import OLLAMA_MODEL, RERANK_FETCH_MULTIPLIER, TOP_K
 from .embedder import Embedder
@@ -179,7 +179,7 @@ def search_and_summarize(
             for obj in objects
         ]
         prompt = _build_prompt(query, source, context_blocks)
-        summary = ollama.generate(model=model, prompt=prompt).response.strip()
+        summary = _llm(prompt, model)
 
         results.append({
             "source": source,

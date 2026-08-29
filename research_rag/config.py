@@ -16,6 +16,13 @@ except ImportError:  # pragma: no cover
     pass
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
 def _env_int(name: str, default: int) -> int:
     raw = os.getenv(name)
     if raw is None or not raw.strip():
@@ -31,8 +38,14 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
 EMBEDDING_DIM = _env_int("EMBEDDING_DIM", 384)
 
 # ── LLM (Ollama) ───────────────────────────────────────────────────────────
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:latest")
+# qwen3:4b-instruct is the 2507 non-thinking release. It scored highest on the
+# routing benchmark (scripts/eval_models.py) while also being the fastest and
+# smallest of the models tested - see the model notes in the README.
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:4b-instruct")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+# Hybrid models (qwen3:8b, qwen3:14b, ...) reason before answering. That is slower
+# and measurably worse at short classification answers, so it is off by default.
+OLLAMA_THINK = _env_bool("OLLAMA_THINK", False)
 
 # ── Vector store (Weaviate, run via docker compose) ────────────────────────
 WEAVIATE_HOST = os.getenv("WEAVIATE_HOST", "localhost")

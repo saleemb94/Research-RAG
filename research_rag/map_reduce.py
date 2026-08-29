@@ -8,7 +8,7 @@ REDUCE  _reduce()                   — one LLM call per paper → final answer
 """
 from __future__ import annotations
 
-import ollama
+from .llm import generate as _llm
 
 from .section_classifier import (
     classify_heading,
@@ -52,7 +52,7 @@ def _map_one(query: str, source: str, chunk: SearchHit, model: str) -> str:
         heading=heading, pages=pages,
         text=chunk.properties["text"],
     )
-    return ollama.generate(model=model, prompt=prompt).response.strip()
+    return _llm(prompt, model)
 
 
 def _reduce(query: str, source: str, summaries: list[str], model: str) -> str:
@@ -63,7 +63,7 @@ def _reduce(query: str, source: str, summaries: list[str], model: str) -> str:
         f"Passage {i + 1}:\n{s}" for i, s in enumerate(relevant)
     )
     prompt = _REDUCE_PROMPT.format(query=query, source=source, summaries=body)
-    return ollama.generate(model=model, prompt=prompt).response.strip()
+    return _llm(prompt, model)
 
 
 def deep_scan_papers(
