@@ -42,6 +42,7 @@ from .config import (
     WEAVIATE_PORT,
 )
 from .llm import generate as _llm
+from .llm import model_for
 from .vector_store import WeaviateUnavailableError
 
 CARD_COLLECTION = "ResearchPaperCard"
@@ -313,6 +314,7 @@ def answer_from_cards(
         return "", []
     rendered = "\n".join(c.render(i + 1) for i, c in enumerate(cards))
     answer = _llm(
-        _ANSWER_PROMPT.format(query=query, cards=rendered, n=len(cards)), model
+        _ANSWER_PROMPT.format(query=query, cards=rendered, n=len(cards)),
+        model_for("answer", model),
     )
     return answer, cards

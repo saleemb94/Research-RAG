@@ -29,6 +29,7 @@ from .config import (
 )
 from .embedder import Embedder
 from .llm import generate as _llm
+from .llm import model_for
 from .enumerate_ import classify_question, gather, reduce_findings
 from .paper_cards import answer_from_cards
 from .section_index import chunks_for_sections, sections_for_query
@@ -378,7 +379,10 @@ def synthesize_answer(
     if section_filter is None:
         section_filter = bool(source_filter)
 
-    target_sections = classify_query(standalone, model) if section_filter else ["general"]
+    target_sections = (
+        classify_query(standalone, model_for("routing", model))
+        if section_filter else ["general"]
+    )
     orig_section_type = (
         target_sections[0]
         if len(target_sections) == 1 and target_sections[0] != "general"
@@ -460,7 +464,7 @@ def synthesize_answer(
     sources = _build_sources(hits)
     raw = _llm(
         _ANSWER_PROMPT.format(query=standalone, sources=_render_sources(sources)),
-        model,
+        model_for("answer", model),
     )
     answer, cited, dropped = validate_citations(raw, len(sources))
 

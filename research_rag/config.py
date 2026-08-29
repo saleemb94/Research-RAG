@@ -47,6 +47,19 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 # and measurably worse at short classification answers, so it is off by default.
 OLLAMA_THINK = _env_bool("OLLAMA_THINK", False)
 
+# Per-step model overrides. The steps want different things and measured in
+# opposite directions: routing is a short classification where the 4B beat the
+# 14B (98% vs 96%), while the per-paper extraction and the final answer are
+# long-context reading where the 14B recovered facts the 4B dropped. Unset means
+# "use OLLAMA_MODEL", so the default is a single model everywhere.
+#
+#   OLLAMA_MODEL_ROUTING  question classification and section matching
+#   OLLAMA_MODEL_EXTRACT  the per-paper extraction inside the fan-out
+#   OLLAMA_MODEL_ANSWER   the final synthesis, reduce and card-answer calls
+OLLAMA_MODEL_ROUTING = os.getenv("OLLAMA_MODEL_ROUTING") or None
+OLLAMA_MODEL_EXTRACT = os.getenv("OLLAMA_MODEL_EXTRACT") or None
+OLLAMA_MODEL_ANSWER = os.getenv("OLLAMA_MODEL_ANSWER") or None
+
 # ── Vector store (Weaviate, run via docker compose) ────────────────────────
 WEAVIATE_HOST = os.getenv("WEAVIATE_HOST", "localhost")
 WEAVIATE_PORT = _env_int("WEAVIATE_PORT", 8081)

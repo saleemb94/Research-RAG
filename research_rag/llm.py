@@ -18,11 +18,34 @@ from __future__ import annotations
 
 import ollama
 
-from .config import OLLAMA_MODEL, OLLAMA_THINK
+from .config import (
+    OLLAMA_MODEL,
+    OLLAMA_MODEL_ANSWER,
+    OLLAMA_MODEL_EXTRACT,
+    OLLAMA_MODEL_ROUTING,
+    OLLAMA_THINK,
+)
 
 # Flipped to False the first time a server or client rejects the parameter, so
 # older Ollama installations keep working instead of failing every call.
 _think_supported = True
+
+_ROLE_OVERRIDES = {
+    "routing": OLLAMA_MODEL_ROUTING,
+    "extract": OLLAMA_MODEL_EXTRACT,
+    "answer": OLLAMA_MODEL_ANSWER,
+}
+
+
+def model_for(role: str, requested: str) -> str:
+    """
+    Which model a given step should use.
+
+    An explicit per-step override wins; otherwise the caller's choice stands, so
+    passing a model directly - as the benchmark scripts do - keeps working and a
+    single-model setup behaves exactly as before.
+    """
+    return _ROLE_OVERRIDES.get(role) or requested
 
 
 def generate(

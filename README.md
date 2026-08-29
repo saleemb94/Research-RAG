@@ -489,6 +489,13 @@ safe to re-run. Once verified, `chroma_data/` can be deleted.
 
 ## Notes & limitations
 
+- **A bigger model did not help, measured twice.** `qwen3:14b` scores 96% on the
+  routing tasks against `qwen3:4b-instruct`'s 98%, and pointing only the answer
+  step at it gives 87% of synthesis facts against the 4B's 89% - inside one
+  standard deviation, at three times the latency. Per-step overrides exist
+  (`OLLAMA_MODEL_ROUTING`, `_EXTRACT`, `_ANSWER`) so this is testable rather than
+  assumed, but the default is one model everywhere.
+
 - **Corpus-level questions are judged from the paper cards, and a card's stated
   field can override its own contents.** Asked which papers use causal inference,
   both the 4B and the 14B answer "only the econometrics paper", even though the

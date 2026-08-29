@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from .config import HYBRID_ALPHA, OLLAMA_MODEL, USE_HYBRID_CHANNEL
 from .embedder import Embedder
 from .llm import generate as _llm
+from .llm import model_for
 from .paper_cards import PaperCard
 from .vector_store import SearchHit, VectorStore
 
@@ -183,7 +184,8 @@ def classify_question(query: str, model: str = OLLAMA_MODEL) -> str:
     retrieval.
     """
     try:
-        verdict = _llm(_DETECT_PROMPT.format(query=query), model, max_tokens=8)
+        verdict = _llm(_DETECT_PROMPT.format(query=query),
+                       model_for("routing", model), max_tokens=8)
     except (OSError, RuntimeError, ValueError):
         return "focused"    # a transport hiccup must not change the answer shape
     v = verdict.strip().lower()[:40]
@@ -237,8 +239,8 @@ def select_by_card(
         for i, c in enumerate(cards)
     )
     try:
-        raw = _llm(_SELECT_PROMPT.format(query=query, cards=rendered), model,
-                   max_tokens=60)
+        raw = _llm(_SELECT_PROMPT.format(query=query, cards=rendered),
+                   model_for("routing", model), max_tokens=60)
     except (OSError, RuntimeError, ValueError):
         # Only transport and model failures degrade to "no card opinion"; a
         # programming error must surface rather than look like an empty result.
@@ -315,7 +317,7 @@ def gather(
         try:
             items = _llm(
                 _EXTRACT_PROMPT.format(paper=paper, query=query, excerpts=excerpts),
-                model,
+                model_for("extract", model),
                 max_tokens=EXTRACT_MAX_TOKENS,
             )
         except Exception:
@@ -349,7 +351,7 @@ def reduce_findings(query: str, findings: list[PaperFinding], model: str) -> str
         _REDUCE_PROMPT.format(
             query=query, findings=rendered, n_sources=len(findings)
         ),
-        model,
+        model_for("answer", model),
     )
     # The reducer sometimes echoes the extraction step's sentinel and replies with
     # a bare "NONE". It is the correct verdict, but a user reading it sees a
