@@ -121,7 +121,12 @@ _ABSTAIN = (
 
 
 def abstained(answer: str) -> bool:
-    return any(m in (answer or "").lower() for m in _ABSTAIN)
+    a = (answer or "").strip().lower()
+    # A bare sentinel is an abstention too, and scoring it as a fabrication sent
+    # me looking for a hallucination that was not there.
+    if a in ("none", "n/a", "nothing", ""):
+        return True
+    return any(m in a for m in _ABSTAIN)
 
 
 # ── negative controls: does it invent an answer that is not there? ─────────

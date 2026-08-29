@@ -25,7 +25,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from .config import OLLAMA_MODEL
+from .config import HYBRID_ALPHA, OLLAMA_MODEL, USE_HYBRID_CHANNEL
 from .embedder import Embedder
 from .llm import generate as _llm
 from .paper_cards import PaperCard
@@ -36,7 +36,16 @@ from .vector_store import SearchHit, VectorStore
 MAX_PAPERS = 10
 
 # Chunks shown per paper when asking it the question.
-CHUNKS_PER_PAPER = 4
+#
+# Eight rather than four because the reranker, not retrieval, was the binding
+# constraint. Traced on two facts the pipeline kept missing: the paper was in the
+# shortlist, the chunk naming "Mechanical Turk" and "AraVec" was in the candidate
+# pool, and the cross-encoder then dropped both out of the top four. It is a
+# small general-purpose model scoring passage-answers-query, and a passage that
+# merely *names* the thing asked about scores below one that discusses the topic
+# at length. Cutting at eight keeps them; dropping the reranker entirely does
+# not, so it earns its place - it was simply cutting too deep.
+CHUNKS_PER_PAPER = 8
 
 # Candidates pulled before the shortlist is taken. Wide on purpose: this is the
 # only stage that decides which papers get a hearing at all.
@@ -263,14 +272,38 @@ def gather(
 
     findings: list[PaperFinding] = []
     for paper in papers:
-        hits = store.search(
+        # Both channels inside the paper too, not just at corpus level. This was
+        # the gap: enumeration questions are precisely the ones asking after rare
+        # proper nouns, and the per-paper retrieval was pure vector. Measured on
+        # "how many annotators", vector spent all four slots on Related Work
+        # while hybrid went to Dataset Collection, where the answer is.
+        pool = store.search(
             query_vector,
             limit=chunks_per_paper * (3 if reranker else 1),
             source_filter=paper,
         )
-        if reranker and hits:
-            hits = reranker.rerank(query, hits, top_n=chunks_per_paper)
-        hits = hits[:chunks_per_paper]
+        if USE_HYBRID_CHANNEL:
+            seen = {
+                (h.properties.get("source_file"), h.properties.get("chunk_index"))
+                for h in pool
+            }
+            try:
+                for h in store.hybrid_search(
+                    query, query_vector,
+                    limit=chunks_per_paper * (3 if reranker else 1),
+                    alpha=HYBRID_ALPHA, source_filter=paper,
+                ):
+                    key = (h.properties.get("source_file"),
+                           h.properties.get("chunk_index"))
+                    if key not in seen:
+                        seen.add(key)
+                        pool.append(h)
+            except (OSError, RuntimeError, ValueError):
+                pass        # an extra channel is an improvement, never a dependency
+
+        if reranker and pool:
+            pool = reranker.rerank(query, pool, top_n=chunks_per_paper)
+        hits = pool[:chunks_per_paper]
         if not hits:
             continue
 
@@ -302,15 +335,24 @@ def gather(
     return findings
 
 
+NOTHING_FOUND = "Nothing in the indexed papers addresses this question."
+
+
 def reduce_findings(query: str, findings: list[PaperFinding], model: str) -> str:
     if not findings:
-        return "Nothing in the indexed papers addresses this question."
+        return NOTHING_FOUND
     rendered = "\n\n".join(
         f"[{f.number}] {f.paper}\n{f.items[:700]}" for f in findings
     )
-    return _llm(
+    answer = _llm(
         _REDUCE_PROMPT.format(
             query=query, findings=rendered, n_sources=len(findings)
         ),
         model,
     )
+    # The reducer sometimes echoes the extraction step's sentinel and replies with
+    # a bare "NONE". It is the correct verdict, but a user reading it sees a
+    # stray token rather than an answer, so it is turned back into a sentence.
+    if not answer.strip() or _NONE.match(answer.strip()):
+        return NOTHING_FOUND
+    return answer
