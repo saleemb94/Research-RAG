@@ -212,12 +212,19 @@ one broke, so the scorer reports them apart:
 python scripts/eval_rag.py --coverage      # is the fact in the index at all? (no LLM)
 python scripts/eval_rag.py --retrieval     # asked blind, does the right paper come back?
 python scripts/eval_rag.py --generation    # given the right paper, is the fact stated?
+python scripts/eval_rag.py --synthesis   # corpus-wide cited answers
 python scripts/eval_rag.py --all -v
 ```
 
 `--coverage` is the one to run after changing anything in ingestion: it is instant,
 needs no LLM, and a drop there means content was dropped or mangled before retrieval
 ever got a chance.
+
+The corpus is 17 papers — 11 supplied plus 6 fetched from arXiv with
+`scripts/fetch_arxiv.py` (ids pinned in `papers/arxiv_manifest.json`). The arXiv set
+deliberately spans cs.CL, q-bio.PE, stat.AP and econ.EM, so the discipline-agnostic
+classifier is exercised on real epidemiology, clinical-trial and econometrics papers
+rather than assumed to work.
 
 Current scores, and what the set caught on its first run:
 
@@ -227,8 +234,10 @@ Current scores, and what the set caught on its first run:
 | Retrieval — right paper returned | 72% | **81%** |
 | Retrieval — right paper ranked first | 56% | **70%** |
 | Routing — right section targeted | 46% | **78%** |
-| Generation — fact stated in the answer | 59% | **71%** |
-| Generation — fully correct answers | 49% | **63%** |
+| Generation — fact stated in the answer | 59% | **79%** |
+| Generation — fully correct answers | 49% | **71%** |
+| Synthesis — facts stated in one cited answer | 61% | **89%** |
+| Synthesis — expected papers actually cited | 50% | **71%** |
 
 The "before" column is not a weaker model; it is the same pipeline with three silent
 bugs that only graded ground truth could surface — heading matching pooled across
@@ -362,11 +371,13 @@ static/index.html        single-page web UI
 scripts/
   migrate_chroma_to_weaviate.py    one-time import from a legacy ChromaDB index
   eval_models.py                   score models on the routing tasks
-  eval_rag.py                      score coverage / retrieval / generation
+  eval_rag.py                      score coverage / retrieval / generation / synthesis
+  fetch_arxiv.py                   pull open-access papers by pinned arXiv id
 tests/
   test_section_classifier.py       cross-discipline classification tests (no LLM needed)
   test_retrieval_filters.py        section-filter regression tests (no LLM needed)
-  golden_qa.json                   43 graded questions over the 11 sample papers
+  test_synthesis.py                citation and diversification tests (no LLM needed)
+  golden_qa.json                   71 graded questions over 17 papers
 docker-compose.yml       Weaviate service
 ```
 
@@ -378,7 +389,9 @@ docker-compose.yml       Weaviate service
 | `GET` | `/api/papers` | List ingested papers |
 | `POST` | `/api/papers` | Upload and ingest PDFs |
 | `DELETE` | `/api/papers/{filename}` | Remove a paper and its chunks |
-| `POST` | `/api/chat` | Ask a question (quick search or deep scan) |
+| `POST` | `/api/ask` | One cited answer — corpus-wide, one paper, or a scratch upload |
+| `POST` | `/api/chat` | Per-paper breakdown (quick search or deep scan) |
+| `GET`/`POST`/`DELETE` | `/api/scratch` | Ad-hoc uploads, isolated from the library |
 | `POST` | `/api/render-chunk` | Render a chunk on its source PDF page |
 
 ---

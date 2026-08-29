@@ -1,0 +1,104 @@
+[
+  {
+    "id": "syn-languages",
+    "seconds": 3.432653500000015,
+    "g_ok": 4,
+    "g_n": 4,
+    "papers_hit": 3,
+    "papers_want": 4,
+    "cited_papers": [
+      "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+      "arxiv_2304.00913.pdf",
+      "arxiv_2408.03849.pdf"
+    ],
+    "dropped": [],
+    "missed": [],
+    "answer": "Besides English, the languages studied for hate speech detection in the provided sources include Hindi, Arabic, French, German, Spanish, Danish, Dutch, Italian, Indonesian, Vietnamese, Hebrew, and Amharic [3][2][5][6]. The sources also mention research on low-resource languages such as Urdu and Sindhi, though these studies are limited and primarily focus on binary classification or fine-grained detection in specific contexts [1][4][7]. While some works explore multilingual aspects combining multiple languages, no research has been found on multilingual hate speech detection for low-resource languages like Sindhi and Urdu [7]. A notable study specifically addresses Amharic hate speech detection with a dataset of 5,000 social media posts and a model achieving a 94.8 F1-score [6]. Additionally, research on Malay, Norwegian, and Arabic is referenced, though details on hate speech detection in these languages are sparse [7]. Thus, the languages studied include both resource-rich and low-resource languages, with a clear gap in fine-grained detection and multilingual approaches for low-resource languages such as Urdu, Sindhi, and Amharic [1][4][7][6]."
+  },
+  {
+    "id": "syn-preprocessing",
+    "seconds": 2.774844999999914,
+    "g_ok": 4,
+    "g_n": 4,
+    "papers_hit": 2,
+    "papers_want": 2,
+    "cited_papers": [
+      "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+      "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf"
+    ],
+    "dropped": [],
+    "missed": [],
+    "answer": "Commonly applied preprocessing steps to social media text before hate speech classification include removing noise such as URLs, hashtags, and user mentions; handling digits by removing numbering; cleansing punctuation and special characters; converting text to lowercase for consistency; tokenizing the text into smaller components or tokens; and eliminating common stop words [2][3]. In addition, stemming and lemmatization are performed to simplify words to their base or dictionary forms, enhancing text clarity and facilitating more accurate analysis [3][4]. These steps collectively transform noisy, unstructured social media text into a cleaner, more structured format suitable for machine learning models [2][4]. While some studies emphasize data cleaning and tokenization as primary steps [4], others include lemmatization as a refinement step to extract the essential form of words [3]. However, there is no consensus on whether stemming or lemmatization is universally applied, as the sources differ in their specific implementation [3][4]."
+  },
+  {
+    "id": "syn-transformers",
+    "seconds": 3.0764636999992945,
+    "g_ok": 2,
+    "g_n": 4,
+    "papers_hit": 1,
+    "papers_want": 3,
+    "cited_papers": [
+      "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+      "arxiv_2304.00913.pdf",
+      "arxiv_2408.03849.pdf"
+    ],
+    "dropped": [],
+    "missed": [
+      "arabert",
+      "indobertweet"
+    ],
+    "answer": "Transformer models used for hate speech and offensive language detection include Bidirectional Encoder Representations from Transformers (BERT) [1][3], its variants such as RoBERTa [3][6], multilingual BERT [6], XLM [6], and XLM-RoBERTa [6]. These models have been applied in multilingual and cross-lingual hate speech detection tasks, leveraging their ability to handle language shift in zero-shot settings [6]. Additionally, studies have explored the use of FAST-RNN transformers like mBERT and ELECTRA for hate speech detection in specific languages such as Norwegian [2]. While some works focus on traditional machine learning models, recent research emphasizes the use of transformer-based architectures due to their performance and efficiency, especially with limited labeled data [1][3][6]. However, deep learning techniques such as SBi-LSTM are noted as effective in specific contexts like Amharic hate speech detection, though this is not a transformer model [4]. Thus, the primary transformer models identified in the literature for hate speech detection are BERT, RoBERTa, multilingual BERT, XLM, and XLM-RoBERTa [1][3][6]."
+  },
+  {
+    "id": "syn-annotation",
+    "seconds": 3.9536544999973557,
+    "g_ok": 2,
+    "g_n": 2,
+    "papers_hit": 1,
+    "papers_want": 2,
+    "cited_papers": [
+      "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
+      "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+      "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+      "arxiv_1909.04251.pdf",
+      "arxiv_2304.00913.pdf"
+    ],
+    "dropped": [
+      37,
+      38,
+      39
+    ],
+    "missed": [],
+    "answer": "The hate speech datasets were annotated through the use of pre-existing publicly available datasets, with labels derived from prior research, such as the GAO hatefulness [5], TRAC aggression [6], offensive, racism and sexism [8], MLMA [1], attack [7], CONAN, and MMHS150k datasets, which provided annotated examples for different types of hate speech detection [5]. In the case of the MLMA dataset, hate speech was sub-categorized into specific aspects including religion, gender/sexual, origin/nationality, and disability, with instance counts of 19, 273, 616, and 214 respectively [1]. For the LAHM dataset, annotations were created at both high-level and low-level domains across multiple domains such as Abuse, Racism, Sexism, Religious Hate, and Extremism, indicating a fine-grained annotation approach [3]. In contrast, the Indonesian Twitter dataset used a binary classification scheme, relabeling non-hate speech as 0 and hate speech as 1, though it was noted that the dataset was not initially ready for modeling and required preprocessing [8]. However, no explicit inter-annotator agreement metrics are reported in any of the sources, and thus, the level of agreement among annotators is not available [1][4][5][8]."
+  },
+  {
+    "id": "syn-causal",
+    "seconds": 2.6611492000010912,
+    "g_ok": 2,
+    "g_n": 2,
+    "papers_hit": 2,
+    "papers_want": 2,
+    "cited_papers": [
+      "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+      "arxiv_1906.09304.pdf",
+      "arxiv_2409.20199.pdf"
+    ],
+    "dropped": [],
+    "missed": [],
+    "answer": "The causal inference methods discussed in this collection include difference-in-differences, synthetic difference-in-differences, latent factor models, and the use of longitudinal G-formula for identifying causal estimands under assumptions of sequential randomization and no unmeasured time-varying confounding [1][4]. Additionally, methods that account for measured covariates and handle missing data through estimators that adjust for informative missingness are highlighted in the context of randomized trials [2]. However, machine learning techniques such as Support Vector Machines, Naive Bayes, Logistic Regression, and AdaBoost are used for classification tasks and not for causal inference [5]. No mention is made of other causal inference methods such as instrumental variables, regression discontinuity, or propensity score matching. Thus, the collection specifically discusses difference-in-differences, synthetic difference-in-differences, latent factor models, and the longitudinal G-formula as causal inference methods [1][4]."
+  },
+  {
+    "id": "syn-epidemic",
+    "seconds": 1.9459868999983883,
+    "g_ok": 2,
+    "g_n": 2,
+    "papers_hit": 1,
+    "papers_want": 1,
+    "cited_papers": [
+      "arxiv_2004.07833.pdf"
+    ],
+    "dropped": [],
+    "missed": [],
+    "answer": "The mathematical modelling of epidemics appearing in this collection is the SIR epidemic model, which describes the time-evolution of susceptible and infected populations through a set of differential equations [2]. An accurate closed-form solution to this model is obtained using asymptotic approximants by analytically continuing a divergent power series to match the long-time asymptotic behavior of the epidemic dynamics [1]. This solution is demonstrated in application to the COVID-19 pandemic, highlighting its practical utility [1]. The model is mathematically expressed as a system involving the time-dependent variables S(t) and I(t) [2]. No other mathematical models of epidemics are presented in the sources [1][2]."
+  }
+]

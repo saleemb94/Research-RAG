@@ -56,9 +56,10 @@ def score_facts(groups: list[list[str]], text: str) -> tuple[int, list[int]]:
     return sum(hits), hits
 
 
-def load_items(limit: int | None) -> list[dict]:
+def load_items(limit: int | None, mode: str = "single") -> list[dict]:
+    """`mode` is "single" (a fact inside one paper) or "synthesis" (corpus-wide)."""
     data = json.loads(GOLDEN.read_text(encoding="utf-8"))
-    items = data["items"]
+    items = [i for i in data["items"] if (i.get("mode") or "single") == mode]
     return items[:limit] if limit else items
 
 
@@ -97,6 +98,68 @@ def run_coverage(items, verbose):
         for qid, gone in missing:
             print(f"    {qid}: {gone}")
     return {"coverage": total_ok / total_n if total_n else 0.0}
+
+
+# ── synthesis: one cited answer over the whole corpus ──────────────────────
+
+def run_synthesis(items, verbose):
+    """
+    Score the corpus-wide tab: does one answer state the facts, and does it
+    actually draw on the papers that hold them?
+
+    Paper coverage is scored separately from facts because they fail apart. An
+    answer can name four datasets while citing one paper, which reads as
+    authoritative and silently under-reports the corpus.
+    """
+    from fastapi.testclient import TestClient
+    import app as appmod
+
+    rows = []
+    with TestClient(appmod.app) as client:
+        for i, it in enumerate(items, 1):
+            print(f"  [{i}/{len(items)}] {it['id']}", flush=True)
+            t0 = time.perf_counter()
+            r = client.post("/api/ask", json={"query": it["question"]}).json()
+            secs = time.perf_counter() - t0
+
+            answer = r.get("answer", "") if r.get("ok") else ""
+            ok, flags = score_facts(it["key_facts"], answer)
+            cited_nums = set(r.get("cited") or [])
+            cited_papers = {
+                s["source"] for s in (r.get("sources") or [])
+                if s["number"] in cited_nums
+            }
+            want = set(it.get("expected_papers") or [])
+            rows.append({
+                "id": it["id"], "seconds": secs,
+                "g_ok": ok, "g_n": len(it["key_facts"]),
+                "papers_hit": len(want & cited_papers), "papers_want": len(want),
+                "cited_papers": sorted(cited_papers),
+                "dropped": r.get("dropped_citations") or [],
+                "missed": [it["key_facts"][j][0] for j, f in enumerate(flags) if not f],
+                "answer": answer,
+            })
+
+    f_ok = sum(r["g_ok"] for r in rows); f_n = sum(r["g_n"] for r in rows)
+    p_ok = sum(r["papers_hit"] for r in rows); p_n = sum(r["papers_want"] for r in rows)
+    bad = sum(len(r["dropped"]) for r in rows)
+    secs = sum(r["seconds"] for r in rows)
+    bar = "=" * 74
+    print(f"\n{bar}\nSYNTHESIS - one cited answer across the whole corpus\n{bar}")
+    print(f"  facts stated in answer  : {f_ok}/{f_n} ({f_ok / f_n:.0%})")
+    print(f"  expected papers cited   : {p_ok}/{p_n} ({p_ok / p_n:.0%})")
+    print(f"  invalid citations emitted: {bad}")
+    print(f"  wall clock              : {secs:.0f}s total, {secs / len(rows):.1f}s per question")
+    for r in rows:
+        mark = "ok " if r["g_ok"] == r["g_n"] and r["papers_hit"] == r["papers_want"] else "   "
+        print(f"  {mark} {r['id']:20s} facts {r['g_ok']}/{r['g_n']}  "
+              f"papers {r['papers_hit']}/{r['papers_want']}  missed={r['missed']}")
+        if verbose:
+            print(f"        cited: {[c[:34] for c in r['cited_papers']]}")
+            print(f"        {r['answer'][:220]!r}")
+    (ROOT / "eval_synthesis.json").write_text(
+        json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8")
+    return rows
 
 
 # ── retrieval + generation, through the real API ───────────────────────────
@@ -209,6 +272,8 @@ def main():
     ap.add_argument("--coverage", action="store_true")
     ap.add_argument("--retrieval", action="store_true")
     ap.add_argument("--generation", action="store_true")
+    ap.add_argument("--synthesis", action="store_true",
+                    help="Score the corpus-wide cited-answer questions")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--deep", action="store_true",
@@ -217,17 +282,22 @@ def main():
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     if a.all:
-        a.coverage = a.retrieval = a.generation = True
-    if not (a.coverage or a.retrieval or a.generation):
-        ap.error("choose at least one of --coverage / --retrieval / --generation / --all")
+        a.coverage = a.retrieval = a.generation = a.synthesis = True
+    if not (a.coverage or a.retrieval or a.generation or a.synthesis):
+        ap.error("choose at least one of --coverage / --retrieval / "
+                 "--generation / --synthesis / --all")
 
-    items = load_items(a.limit)
-    print(f"Golden set: {len(items)} question(s) over "
-          f"{len({i['paper'] for i in items})} paper(s), "
-          f"{sum(len(i['key_facts']) for i in items)} fact group(s)")
+    items = load_items(a.limit, "single")
+    syn_items = load_items(a.limit, "synthesis")
+    print(f"Golden set: {len(items)} single-paper question(s) over "
+          f"{len({i['paper'] for i in items})} paper(s) "
+          f"+ {len(syn_items)} synthesis question(s); "
+          f"{sum(len(i['key_facts']) for i in items + syn_items)} fact group(s)")
 
     if a.coverage:
         run_coverage(items, a.verbose)
+    if a.synthesis and syn_items:
+        run_synthesis(syn_items, a.verbose)
     if a.retrieval or a.generation:
         results = run_pipeline(items, a.verbose, a.retrieval, a.generation, deep=a.deep)
         report(results, a.verbose, a.retrieval, a.generation, deep=a.deep)

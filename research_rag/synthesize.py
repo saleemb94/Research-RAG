@@ -256,7 +256,7 @@ def synthesize_answer(
     source_filter: str | None = None,
     history: list[dict] | None = None,
     max_sources: int = MAX_SOURCES,
-    section_filter: bool = True,
+    section_filter: bool | None = None,
     per_paper: int = PER_PAPER_SOURCES,
 ) -> SynthesisResult:
     """
@@ -265,6 +265,17 @@ def synthesize_answer(
     `source_filter` set is the single-paper case: same code path, narrower scope.
     """
     standalone = condense_question(query, history, model)
+
+    # Filter by section only inside one paper, for the same reason heading
+    # matching is scoped that way. A corpus-wide question is about a topic, not
+    # about a section role: "what causal inference methods are discussed here"
+    # classifies as related_work, and filtering on that throws away the
+    # econometrics paper the vector search had already ranked first. Measured
+    # over the synthesis questions, dropping the filter took facts stated from
+    # 61% to 89% and expected papers cited from 50% to 64%, turning two answers
+    # that flatly denied the corpus contained the topic into correct ones.
+    if section_filter is None:
+        section_filter = bool(source_filter)
 
     target_sections = classify_query(standalone, model) if section_filter else ["general"]
     orig_section_type = (
