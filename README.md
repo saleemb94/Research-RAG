@@ -21,6 +21,20 @@ Four tabs sit on top of that: one synthesised answer across the library, a chat
 scoped to a single paper, a drop-in upload that never touches the library, and a
 browsable list of what has been ingested.
 
+![One answer across the library, every claim cited](docs/screenshots/ask.png)
+
+Every `[n]` is clickable. Opening one renders that exact passage on its original
+PDF page, highlighted — so a claim can be checked against the paper in one click
+rather than taken on trust:
+
+![A citation opened onto its source page](docs/screenshots/citation.png)
+
+The per-paper tab keeps a conversation scoped to one document, resolving
+follow-ups against what came before — here *"that combination"* becomes the
+IndoBERTweet-BiLSTM-CNN model from the previous turn:
+
+![A scoped two-turn conversation](docs/screenshots/paper.png)
+
 ---
 
 ## Why this is not another naive RAG demo
@@ -519,6 +533,7 @@ scripts/
   eval_chat.py                     score the multi-turn and ad-hoc upload tabs
   fetch_arxiv.py                   pull open-access papers by pinned arXiv id
   build_paper_cards.py             backfill paper cards without re-parsing PDFs
+  screenshots.py                   regenerate the README screenshots from the app
 tests/
   test_section_classifier.py       cross-discipline classification tests (no LLM needed)
   test_retrieval_filters.py        section-filter regression tests (no LLM needed)
