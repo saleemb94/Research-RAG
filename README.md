@@ -258,8 +258,8 @@ Current scores, and what the set caught on its first run:
 | Routing — right section targeted | 46% | **78%** |
 | Generation — fact stated in the answer | 59% | **79%** |
 | Generation — fully correct answers | 49% | **71%** |
-| Synthesis — facts stated in one cited answer | — | **64%** |
-| Synthesis — expected papers actually cited | — | **58%** |
+| Synthesis — facts stated in one cited answer | 64% | **74%** |
+| Synthesis — expected papers actually cited | 58% | **83–88%** |
 | Negative controls — correctly declined | — | **100%** |
 
 The synthesis figures were 89% and 71% against an earlier six-question set. That set
@@ -393,6 +393,7 @@ research_rag/
   search.py              quick-search pipeline with the section safety rails
   map_reduce.py          deep-scan pipeline
   reranker.py            cross-encoder reranking
+  enumerate_.py          fan-out over papers for "which X across these papers"
   llm.py                 single entry point for Ollama calls
   pdf_viewer.py          renders a chunk back onto its PDF page
   cli.py                 ingest / search / list / sections / delete

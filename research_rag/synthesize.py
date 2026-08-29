@@ -22,6 +22,7 @@ from dataclasses import dataclass, field
 from .config import OLLAMA_MODEL, RERANK_FETCH_MULTIPLIER, TOP_K
 from .embedder import Embedder
 from .llm import generate as _llm
+from .enumerate_ import gather, is_enumeration, reduce_findings
 from .search import _hierarchical_search
 from .section_classifier import classify_query, prefer_exact_types
 from .vector_store import SearchHit, VectorStore
@@ -258,6 +259,7 @@ def synthesize_answer(
     max_sources: int = MAX_SOURCES,
     section_filter: bool | None = None,
     per_paper: int = PER_PAPER_SOURCES,
+    allow_enumeration: bool = True,
 ) -> SynthesisResult:
     """
     Retrieve across the corpus (or within one paper) and write a single cited answer.
@@ -265,6 +267,36 @@ def synthesize_answer(
     `source_filter` set is the single-paper case: same code path, narrower scope.
     """
     standalone = condense_question(query, history, model)
+
+    # "Which X appear across these papers" is an aggregation, not a retrieval:
+    # the members of the answer sit one per paper, so any top-k over chunks has
+    # a recall ceiling below the true answer. Fan out instead. Only for
+    # corpus-wide questions - inside one paper there is nothing to aggregate.
+    if allow_enumeration and not source_filter and is_enumeration(standalone, model):
+        findings = gather(standalone, embedder, store, model=model, reranker=reranker)
+        if findings:
+            raw = reduce_findings(standalone, findings, model)
+            answer, cited, dropped = validate_citations(raw, len(findings))
+            sources = [
+                Source(
+                    number=f.number,
+                    source_file=f.paper,
+                    section_name=f.hits[0].properties.get("section_name", ""),
+                    page_numbers=f.hits[0].properties.get("page_numbers", ""),
+                    source_path=f.hits[0].properties.get("source_path", ""),
+                    text=f.hits[0].properties.get("text", ""),
+                    distance=f.hits[0].distance,
+                )
+                for f in findings
+            ]
+            return SynthesisResult(
+                query=standalone, answer=answer, sources=sources,
+                cited_numbers=cited, dropped_citations=dropped,
+                target_sections=["enumeration"],
+                papers=[f.paper for f in findings],
+            )
+        # No paper had anything to contribute: fall through to ordinary
+        # retrieval rather than reporting an empty aggregation.
 
     # Filter by section only inside one paper, for the same reason heading
     # matching is scoped that way. A corpus-wide question is about a topic, not

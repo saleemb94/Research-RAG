@@ -25,12 +25,26 @@ from .config import OLLAMA_MODEL, OLLAMA_THINK
 _think_supported = True
 
 
-def generate(prompt: str, model: str = OLLAMA_MODEL, think: bool | None = None) -> str:
-    """Run a prompt and return the response text, without any reasoning trace."""
+def generate(
+    prompt: str,
+    model: str = OLLAMA_MODEL,
+    think: bool | None = None,
+    max_tokens: int | None = None,
+) -> str:
+    """
+    Run a prompt and return the response text, without any reasoning trace.
+
+    `max_tokens` caps generation. It matters more than it looks: for extraction
+    steps the answer is a handful of names, but given a long prompt the model
+    will happily write paragraphs about them, and generation - not input length -
+    is what the wall clock is made of.
+    """
     global _think_supported
 
     want = OLLAMA_THINK if think is None else think
-    kwargs = {"think": want} if _think_supported else {}
+    kwargs: dict = {"think": want} if _think_supported else {}
+    if max_tokens:
+        kwargs["options"] = {"num_predict": max_tokens}
 
     try:
         response = ollama.generate(model=model, prompt=prompt, **kwargs)
@@ -39,6 +53,7 @@ def generate(prompt: str, model: str = OLLAMA_MODEL, think: bool | None = None) 
             raise
         # Client too old to accept `think`, or a server that rejects it.
         _think_supported = False
-        response = ollama.generate(model=model, prompt=prompt)
+        retry: dict = {"options": {"num_predict": max_tokens}} if max_tokens else {}
+        response = ollama.generate(model=model, prompt=prompt, **retry)
 
     return (response.response or "").strip()
