@@ -17,10 +17,14 @@ from .vector_store import VectorStore, WeaviateUnavailableError
 
 
 def cmd_ingest(args, embedder, store):
-    if os.path.isdir(args.path):
-        ingest_folder(args.path, embedder, store, skip_existing=not args.force)
-    else:
-        ingest_pdf(args.path, embedder, store, skip_existing=not args.force)
+    from .paper_cards import PaperCardStore
+    with PaperCardStore() as cards:
+        if os.path.isdir(args.path):
+            ingest_folder(args.path, embedder, store,
+                          skip_existing=not args.force, card_store=cards)
+        else:
+            ingest_pdf(args.path, embedder, store,
+                       skip_existing=not args.force, card_store=cards)
 
 
 def cmd_search(args, embedder, store):

@@ -394,6 +394,7 @@ research_rag/
   map_reduce.py          deep-scan pipeline
   reranker.py            cross-encoder reranking
   enumerate_.py          fan-out over papers for "which X across these papers"
+  paper_cards.py         one structured card per paper, for corpus-level questions
   llm.py                 single entry point for Ollama calls
   pdf_viewer.py          renders a chunk back onto its PDF page
   cli.py                 ingest / search / list / sections / delete
@@ -404,6 +405,7 @@ scripts/
   eval_models.py                   score models on the routing tasks
   eval_rag.py                      score coverage / retrieval / generation / synthesis
   fetch_arxiv.py                   pull open-access papers by pinned arXiv id
+  build_paper_cards.py             backfill paper cards without re-parsing PDFs
 tests/
   test_section_classifier.py       cross-discipline classification tests (no LLM needed)
   test_retrieval_filters.py        section-filter regression tests (no LLM needed)

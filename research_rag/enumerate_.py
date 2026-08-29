@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from .config import OLLAMA_MODEL
 from .embedder import Embedder
 from .llm import generate as _llm
+from .paper_cards import PaperCard
 from .vector_store import SearchHit, VectorStore
 
 # Papers asked individually. Enough to cover a corpus-wide question without the
@@ -51,14 +52,21 @@ _DETECT_PROMPT = """\
 Decide whether answering this question requires gathering items from MANY papers
 and combining them, or whether one focused passage would answer it.
 
-Answer ENUMERATE if the question asks which/what things appear across a
-collection - languages, datasets, models, platforms, techniques, scores - so a
-complete answer is a list assembled from several papers.
+Answer CORPUS if the question is about the collection itself: which papers are
+or are not about something, what fields the library covers, how the papers
+relate. Answering needs to know what each paper IS, and no single passage in any
+paper states that.
+
+Answer ENUMERATE if the question gathers items from many papers into a list -
+languages, datasets, models, platforms, techniques, scores.
 
 Answer FOCUSED if a single passage would answer it, including questions about
 one specific study, one number, or one definition.
 
 Examples:
+  "Which studies here are not about text classification?" -> CORPUS
+  "What fields do these papers cover?" -> CORPUS
+  "Which of these are the theoretical papers?" -> CORPUS
   "Which datasets have been used for Arabic offensive language detection?" -> ENUMERATE
   "What preprocessing steps are commonly applied to tweets?" -> ENUMERATE
   "Which transformer models have been fine-tuned across these papers?" -> ENUMERATE
@@ -68,7 +76,7 @@ Examples:
 
 Question: {query}
 
-Reply with one word, ENUMERATE or FOCUSED:"""
+Reply with one word, CORPUS or ENUMERATE or FOCUSED:"""
 
 _EXTRACT_PROMPT = """\
 Below are excerpts from ONE research paper, "{paper}".
@@ -113,6 +121,24 @@ Findings:
 
 Answer:"""
 
+_SELECT_PROMPT = """\
+Below is a one-line card for every paper in a library.
+
+Question: {query}
+
+Which papers could contribute something to this question? Judge from what each
+card says the paper is about: a paper on a different subject contributes nothing,
+and a paper is worth including even when the card does not list the exact item,
+as long as its subject fits.
+
+Reply with the numbers only, comma-separated, for example: 2, 5, 9
+Reply "none" if no paper fits.
+
+Cards:
+{cards}
+
+Numbers:"""
+
 _NONE = re.compile(r"^\s*(none|n/?a|nothing|no\b)", re.I)
 
 # Papers cite their own references as [50], [124]. Those markers ride along in the
@@ -135,13 +161,29 @@ class PaperFinding:
     hits: list[SearchHit]
 
 
-def is_enumeration(query: str, model: str = OLLAMA_MODEL) -> bool:
-    """One cheap call to decide whether the expensive path is warranted."""
+def classify_question(query: str, model: str = OLLAMA_MODEL) -> str:
+    """
+    One cheap call routing a question to the machinery that can answer it.
+
+    Returns "corpus", "enumerate" or "focused". The three need genuinely
+    different mechanisms, which is why this is a routing decision rather than a
+    tuning knob: a question about the collection has no supporting passage
+    anywhere and can only come from the paper cards; an enumeration needs a
+    fan-out because its members sit one per paper; everything else is ordinary
+    retrieval.
+    """
     try:
-        verdict = _llm(_DETECT_PROMPT.format(query=query), model)
-    except Exception:
-        return False        # never let the detector break a normal question
-    return "enumerate" in verdict.strip().lower()[:40]
+        verdict = _llm(_DETECT_PROMPT.format(query=query), model, max_tokens=8)
+    except (OSError, RuntimeError, ValueError):
+        return "focused"    # a transport hiccup must not change the answer shape
+    v = verdict.strip().lower()[:40]
+    if "corpus" in v:
+        return "corpus"
+    return "enumerate" if "enumerate" in v else "focused"
+
+
+def is_enumeration(query: str, model: str = OLLAMA_MODEL) -> bool:
+    return classify_question(query, model) == "enumerate"
 
 
 def shortlist_papers(
@@ -166,6 +208,41 @@ def shortlist_papers(
     return order
 
 
+def select_by_card(
+    query: str, cards: list[PaperCard], model: str = OLLAMA_MODEL
+) -> list[str]:
+    """
+    Ask the card table which papers are worth interrogating.
+
+    Chunk similarity picks papers whose *wording* matches the question, which is
+    the wrong test when the question is about subject matter. "Which studies are
+    not about text classification" retrieves text-classification papers, because
+    no passage anywhere states what a paper is not. A card says what each paper
+    is, so the shortlist can be drawn on subject rather than on phrasing.
+    """
+    if not cards:
+        return []
+    rendered = "\n".join(
+        f"[{i + 1}] {c.source_file} - {c.discipline or 'unknown field'}: {c.summary}"
+        for i, c in enumerate(cards)
+    )
+    try:
+        raw = _llm(_SELECT_PROMPT.format(query=query, cards=rendered), model,
+                   max_tokens=60)
+    except (OSError, RuntimeError, ValueError):
+        # Only transport and model failures degrade to "no card opinion"; a
+        # programming error must surface rather than look like an empty result.
+        return []
+    if _NONE.match(raw.strip()):
+        return []
+    picked = []
+    for n in re.findall(r"\d+", raw):
+        i = int(n) - 1
+        if 0 <= i < len(cards) and cards[i].source_file not in picked:
+            picked.append(cards[i].source_file)
+    return picked
+
+
 def gather(
     query: str,
     embedder: Embedder,
@@ -174,9 +251,14 @@ def gather(
     reranker=None,
     max_papers: int = MAX_PAPERS,
     chunks_per_paper: int = CHUNKS_PER_PAPER,
+    cards: list[PaperCard] | None = None,
 ) -> list[PaperFinding]:
     """Ask each shortlisted paper the question; keep the ones that answer."""
     query_vector = embedder.embed_one(query)
+    # Measured: unioning a card-chosen shortlist in front of the vector one made
+    # things worse (facts 74% -> 64%), because card picks displaced vector picks
+    # under the cap while adding nothing the extraction step could use. The cards
+    # earn their place elsewhere - see the fallback in synthesize_answer.
     papers = shortlist_papers(query_vector, store, max_papers)
 
     findings: list[PaperFinding] = []

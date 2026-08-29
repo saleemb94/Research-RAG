@@ -20,6 +20,7 @@ from research_rag.config import (
     APP_HOST, APP_PORT, OLLAMA_MODEL, TOP_K, WEAVIATE_SCRATCH_COLLECTION,
 )
 from research_rag.config import PAPERS_DIR as PAPERS_DIR_SETTING
+from research_rag.paper_cards import PaperCardStore, build_card
 from research_rag.pdf_viewer import render_chunk as _render_chunk
 from research_rag.synthesize import MAX_SOURCES
 from research_rag.vector_store import WeaviateUnavailableError
@@ -43,6 +44,9 @@ except WeaviateUnavailableError as exc:
 # Ad-hoc uploads go to their own collection, so nothing dropped in to ask a
 # single question can surface in a corpus-wide answer, and cleanup is a delete.
 scratch_store = VectorStore(collection=WEAVIATE_SCRATCH_COLLECTION)
+# One structured card per paper. Small enough to hold in memory and to put
+# in a single prompt, so corpus-level questions do not need retrieval.
+card_store = PaperCardStore()
 print("All services ready.\n")
 
 
@@ -53,6 +57,7 @@ async def lifespan(_app: FastAPI):
     # so shutdown is clean rather than leaving warnings on exit.
     store.close()
     scratch_store.close()
+    card_store.close()
 
 
 app = FastAPI(title="Research RAG", lifespan=lifespan)
@@ -78,7 +83,7 @@ def upload_papers(files: List[UploadFile] = File(...)):
         with open(dest, "wb") as fh:
             fh.write(f.file.read())
         try:
-            n = ingest_pdf(str(dest), embedder, store)
+            n = ingest_pdf(str(dest), embedder, store, card_store=card_store)
             results.append({
                 "name": name,
                 "status": "ok",
@@ -92,6 +97,7 @@ def upload_papers(files: List[UploadFile] = File(...)):
 @app.delete("/api/papers/{filename:path}")
 def remove_paper(filename: str):
     store.delete_source(filename)
+    card_store.delete(filename)
     path = PAPERS_DIR / filename
     if path.exists():
         path.unlink()
@@ -206,6 +212,7 @@ def ask(req: AskRequest):
             source_filter=req.source_filter or None,
             history=[t.model_dump() for t in req.history],
             max_sources=req.max_sources,
+            cards=None if req.scratch else card_store.all_cards(),
         )
         return {"ok": True, **result.as_dict()}
     except Exception as e:

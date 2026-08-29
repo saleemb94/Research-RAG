@@ -562,6 +562,7 @@ def ingest_pdf(
     skip_existing: bool = True,
     model: str = OLLAMA_MODEL,
     fast: bool = False,
+    card_store=None,
 ) -> int:
     """
     Convert, chunk, classify, embed and store one PDF.
@@ -695,6 +696,16 @@ def ingest_pdf(
 
     store.insert_chunks(chunks_data)
 
+    # A structured card for the paper as a whole. Chunks answer questions whose
+    # answer sits in a passage; the card answers questions about the paper, which
+    # no passage states. Skipped on the fast path along with the other LLM work.
+    if card_store is not None and not fast:
+        from .paper_cards import build_card
+        lead = [c["properties"]["text"] for c in chunks_data[:14]]
+        card = build_card(pdf_path.name, lead, model)
+        card_store.upsert(card, embedder.embed_one(card.embedding_text() or pdf_path.name))
+        print(f"  -> Card: {card.discipline or 'unclassified'}")
+
     dist = Counter(c["properties"]["section_name"] for c in chunks_data)
     print(f"  ✓ Stored {len(chunks_data)} chunks  (skipped {skipped} from boilerplate sections)")
     print(f"    Section distribution: {dict(sorted(dist.items()))}")
@@ -707,6 +718,7 @@ def ingest_folder(
     store: VectorStore,
     skip_existing: bool = True,
     model: str = OLLAMA_MODEL,
+    card_store=None,
 ) -> int:
     folder = Path(folder_path)
     pdfs = sorted(folder.glob("*.pdf"))
@@ -716,6 +728,7 @@ def ingest_folder(
     print(f"Found {len(pdfs)} PDF(s) in {folder}\n")
     total = 0
     for pdf in pdfs:
-        total += ingest_pdf(str(pdf), embedder, store, skip_existing, model)
+        total += ingest_pdf(str(pdf), embedder, store, skip_existing, model,
+                            card_store=card_store)
     print(f"\n✓ Done: {total} total chunks from {len(pdfs)} PDF(s)")
     return total

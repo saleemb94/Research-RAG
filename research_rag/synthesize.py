@@ -22,7 +22,8 @@ from dataclasses import dataclass, field
 from .config import OLLAMA_MODEL, RERANK_FETCH_MULTIPLIER, TOP_K
 from .embedder import Embedder
 from .llm import generate as _llm
-from .enumerate_ import gather, is_enumeration, reduce_findings
+from .enumerate_ import classify_question, gather, reduce_findings
+from .paper_cards import answer_from_cards
 from .search import _hierarchical_search
 from .section_classifier import classify_query, prefer_exact_types
 from .vector_store import SearchHit, VectorStore
@@ -260,6 +261,7 @@ def synthesize_answer(
     section_filter: bool | None = None,
     per_paper: int = PER_PAPER_SOURCES,
     allow_enumeration: bool = True,
+    cards: list | None = None,
 ) -> SynthesisResult:
     """
     Retrieve across the corpus (or within one paper) and write a single cited answer.
@@ -272,8 +274,40 @@ def synthesize_answer(
     # the members of the answer sit one per paper, so any top-k over chunks has
     # a recall ceiling below the true answer. Fan out instead. Only for
     # corpus-wide questions - inside one paper there is nothing to aggregate.
-    if allow_enumeration and not source_filter and is_enumeration(standalone, model):
-        findings = gather(standalone, embedder, store, model=model, reranker=reranker)
+    kind = (
+        classify_question(standalone, model)
+        if allow_enumeration and not source_filter
+        else "focused"
+    )
+
+    # A question about the collection - "which of these are not about text
+    # classification" - has no supporting passage anywhere, because no paper
+    # states what it is not. Retrieval and fan-out both fail on it by
+    # construction: every paper answers NONE, or answers a different question.
+    # The cards are the only place that knowledge exists.
+    if kind == "corpus" and cards:
+        raw, used = answer_from_cards(standalone, cards, model)
+        if raw:
+            answer, cited, dropped = validate_citations(raw, len(used))
+            sources = [
+                Source(number=i + 1, source_file=c.source_file,
+                       section_name="paper card", page_numbers="",
+                       source_path="", text=c.render(i + 1))
+                for i, c in enumerate(used)
+            ]
+            return SynthesisResult(
+                query=standalone, answer=answer,
+                sources=[s for s in sources if s.number in cited] or sources[:8],
+                cited_numbers=cited, dropped_citations=dropped,
+                target_sections=["paper-cards"],
+                papers=[used[n - 1].source_file for n in cited if 1 <= n <= len(used)],
+            )
+
+    if kind == "enumerate":
+        findings = gather(
+            standalone, embedder, store,
+            model=model, reranker=reranker, cards=cards,
+        )
         if findings:
             raw = reduce_findings(standalone, findings, model)
             answer, cited, dropped = validate_citations(raw, len(findings))
@@ -295,8 +329,34 @@ def synthesize_answer(
                 target_sections=["enumeration"],
                 papers=[f.paper for f in findings],
             )
-        # No paper had anything to contribute: fall through to ordinary
-        # retrieval rather than reporting an empty aggregation.
+        # Few or no papers could contribute. That is the signature of a question
+        # *about* the collection rather than about its contents - "which studies
+        # here are not about text classification" has no supporting passage
+        # anywhere, because no paper states what it is not, so every paper
+        # answers NONE. The card table is the only thing that can answer it, and
+        # measured alone it took that question from 0/3 facts to 3/3.
+        if cards and len(findings) < 2:
+            raw, used = answer_from_cards(standalone, cards, model)
+            if raw:
+                answer, cited, dropped = validate_citations(raw, len(used))
+                sources = [
+                    Source(
+                        number=i + 1, source_file=c.source_file,
+                        section_name="paper card", page_numbers="",
+                        source_path="", text=c.render(i + 1),
+                    )
+                    for i, c in enumerate(used)
+                ]
+                return SynthesisResult(
+                    query=standalone, answer=answer,
+                    sources=[s for s in sources if s.number in cited] or sources[:8],
+                    cited_numbers=cited, dropped_citations=dropped,
+                    target_sections=["paper-cards"],
+                    papers=[used[n - 1].source_file for n in cited
+                            if 1 <= n <= len(used)],
+                )
+        # Otherwise fall through to ordinary retrieval rather than reporting an
+        # empty aggregation.
 
     # Filter by section only inside one paper, for the same reason heading
     # matching is scoped that way. A corpus-wide question is about a topic, not
