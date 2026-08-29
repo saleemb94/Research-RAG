@@ -108,16 +108,17 @@ def _looks_like_paper_title(section_name: str) -> bool:
     return True
 
 
+# Section name given to front matter that Docling filed under the paper title.
+FRONT_MATTER_SECTION = "Abstract"
+
+
 def _is_skippable(section_name: str) -> bool:
+    """True for boilerplate that carries no research content."""
     if not section_name:
         return True
     # Normalise: lowercase, strip trailing punctuation
     normalised = section_name.strip().lower().rstrip(":.")
-    if normalised in _SKIP_SECTION_NAMES:
-        return True
-    if _looks_like_paper_title(section_name):
-        return True
-    return False
+    return normalised in _SKIP_SECTION_NAMES
 
 
 # ---------------------------------------------------------------------------
@@ -537,6 +538,19 @@ def ingest_pdf(
             skipped += 1
             continue
 
+        # Docling files everything before the first real heading - abstract,
+        # authors, index terms - under the paper title. That used to be treated
+        # as boilerplate and dropped, which silently discarded the abstract of
+        # every paper with a title longer than the heuristic's threshold. The
+        # abstract is the densest section in a paper, so relabel this front
+        # matter instead of discarding it.
+        if _looks_like_paper_title(section_name):
+            section_name = FRONT_MATTER_SECTION
+            headings = [FRONT_MATTER_SECTION] + headings[1:]
+            front_matter = True
+        else:
+            front_matter = False
+
         heading_str = " > ".join(headings) if headings else ""
 
         # ── section_type: top-level section wins; subsections can only refine
@@ -544,12 +558,15 @@ def ingest_pdf(
         # Example: "3 Methodology → 3.1 Related Techniques" stays "methodology"
         # because the parent is already specific.  But "General → 3.1 Related Work"
         # correctly becomes "related_work" because the parent is "general".
-        section_type = "general"
-        for h in headings:                          # coarse → fine (top → subsection)
-            t = section_type_map.get(h.strip(), "general")
-            if t != "general":
-                section_type = t
-                break                               # first non-general heading wins
+        if front_matter:
+            section_type = "abstract"
+        else:
+            section_type = "general"
+            for h in headings:                      # coarse → fine (top → subsection)
+                t = section_type_map.get(h.strip(), "general")
+                if t != "general":
+                    section_type = t
+                    break                           # first non-general heading wins
 
         chunks_data.append({
             "properties": {

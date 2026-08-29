@@ -100,6 +100,15 @@ def search_and_summarize(
 
         if len(target_sections) == 1 and target_sections[0] != "general":
             orig_section_type = target_sections[0]   # e.g. "methodology"
+
+        # Matching the target onto real stored headings only makes sense inside a
+        # single paper. Across the corpus the heading lists are pooled, so the LLM
+        # picks names that exist in only one or two papers ("DATA PREPROCESSING
+        # AND ANNOTATION") and filtering on them makes every other paper
+        # unreachable. The cross-paper equivalent of a heading is section_type,
+        # which is assigned per chunk at ingest precisely so that it generalises,
+        # so an unscoped query stays on the section_type path.
+        if orig_section_type and source_filter:
             stored_names = store.get_unique_section_names(source_filter)
             if stored_names:
                 natural = orig_section_type.replace("_", " ")
@@ -137,7 +146,14 @@ def search_and_summarize(
         # 1. When filtering by section_name, enforce the allowed set in Python
         #    as well - guarantees no stray section bleeds in regardless of what
         #    the database returned.
-        if use_section_names and target_sections:
+        #
+        #    Gated on `section_filtered`, NOT on `use_section_names`: when the
+        #    requested sections turn out to be empty, _hierarchical_search falls
+        #    back to a global search and reports section_filtered=False. Applying
+        #    the allow-list to those fallback hits would delete every one of them
+        #    and return an empty answer while the store had perfectly good chunks
+        #    in hand - which is exactly what used to happen.
+        if section_filtered and use_section_names and target_sections:
             allowed = set(target_sections)
             hits = [h for h in hits
                     if h.properties.get("section_name") in allowed]
@@ -145,7 +161,12 @@ def search_and_summarize(
         # 2. Drop chunks whose ingest-time section_type clearly contradicts the
         #    query's target type.  "general" chunks are kept (unclassified, not
         #    wrong).  Only runs when we have a single unambiguous target type.
-        if orig_section_type:
+        #
+        #    Also gated on `section_filtered`, for the same reason as above: on
+        #    the fallback path the requested section does not exist in this
+        #    paper, so every fallback hit contradicts the target by definition
+        #    and this check would empty the result set.
+        if section_filtered and orig_section_type:
             hits = [
                 h for h in hits
                 if h.properties.get("section_type", "general")

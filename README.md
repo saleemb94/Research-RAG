@@ -104,7 +104,18 @@ alone is not trustworthy enough to silently drop content:
    regardless of what the database returned.
 
 If a section turns out to be empty, retrieval falls back to a global search rather
-than returning nothing.
+than returning nothing — and the filters in step 3 are **switched off on that
+fallback path**. That detail is not incidental: applying an allow-list for a section
+the paper does not have deletes every fallback hit and returns an empty answer while
+the store is holding perfectly good chunks. It shipped that way until the golden
+question set caught it, and `tests/test_retrieval_filters.py` now pins it.
+
+**Scope decides how sections are matched.** Inside one paper, the target is matched
+onto that paper's real headings, so "methodology" finds a section actually called
+"Our Approach". Across the corpus that would be wrong: heading lists get pooled, the
+model picks names that exist in only one or two papers, and filtering on them makes
+every other paper unreachable. So a corpus-wide query filters on `section_type`
+instead, which is assigned per chunk at ingest precisely so that it generalises.
 
 ### Working across disciplines
 
@@ -207,6 +218,23 @@ python scripts/eval_rag.py --all -v
 `--coverage` is the one to run after changing anything in ingestion: it is instant,
 needs no LLM, and a drop there means content was dropped or mangled before retrieval
 ever got a chance.
+
+Current scores, and what the set caught on its first run:
+
+| | before | after |
+| --- | --- | --- |
+| Coverage — fact is in the index | 99% | **100%** |
+| Retrieval — right paper returned | 72% | **81%** |
+| Retrieval — right paper ranked first | 56% | **70%** |
+| Routing — right section targeted | 46% | **78%** |
+| Generation — fact stated in the answer | 59% | **71%** |
+| Generation — fully correct answers | 49% | **63%** |
+
+The "before" column is not a weaker model; it is the same pipeline with three silent
+bugs that only graded ground truth could surface — heading matching pooled across
+papers, post-retrieval filters cancelling the global fallback, and abstracts dropped
+as boilerplate. Each produced a fluent, plausible answer while discarding correct
+content, which is exactly the failure mode eyeballing output cannot catch.
 
 ### Running the tests
 
@@ -337,6 +365,7 @@ scripts/
   eval_rag.py                      score coverage / retrieval / generation
 tests/
   test_section_classifier.py       cross-discipline classification tests (no LLM needed)
+  test_retrieval_filters.py        section-filter regression tests (no LLM needed)
   golden_qa.json                   43 graded questions over the 11 sample papers
 docker-compose.yml       Weaviate service
 ```
