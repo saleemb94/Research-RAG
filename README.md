@@ -331,7 +331,20 @@ in milliseconds:
 ```bash
 python tests/test_section_classifier.py     # standalone
 pytest tests/                               # or with pytest installed
+python tests/test_ui.py                     # browser checks, needs Playwright
+python tests/test_ui.py --headed            # watch it drive the browser
 ```
+
+The browser tests start the real app on a spare port and drive the shipped page:
+a citation must render as a clickable chip, clicking it must open the source
+panel and actually paint the PDF page, tabs must show exactly one view, model
+output must never become markup, and the console must stay clean. That last set
+is unreachable from an HTTP client, and the answer renderer has been rewritten
+twice.
+
+They were checked against deliberate breakage rather than trusted for passing:
+renaming the chip class makes "citations render as chips" fail on its own, and
+disabling the tab handler fails all four tab checks.
 
 They assert correct labels for headings drawn from computing, medicine, psychology,
 chemistry, physics, mathematics, economics, law and history, and pin the two
@@ -459,6 +472,8 @@ tests/
   test_section_classifier.py       cross-discipline classification tests (no LLM needed)
   test_retrieval_filters.py        section-filter regression tests (no LLM needed)
   test_synthesis.py                citation and diversification tests (no LLM needed)
+  test_ui.py                       browser tests: citations, source panel, tabs
+  golden_conversations.json        26 multi-turn turns for the conversational tabs
   golden_qa.json                   71 graded questions over 17 papers
 docker-compose.yml       Weaviate service
 ```

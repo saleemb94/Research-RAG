@@ -9,3 +9,7 @@ jupyter>=1.0
 
 # Tests (tests/ also run standalone: python tests/test_section_classifier.py)
 pytest>=8.0
+
+# Browser tests for the page itself (tests/test_ui.py). After installing,
+# run `playwright install chromium` once. The suite skips cleanly without it.
+playwright>=1.40
