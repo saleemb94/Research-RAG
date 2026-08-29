@@ -120,10 +120,11 @@ with the source number in square brackets, like [2]. The ONLY valid source
 numbers are 1 to {n_sources}; never write any other number in brackets. Group
 related items rather than listing paper by paper.
 
-Check the findings actually answer the question that was asked. If they only
-address part of it, or if the question assumes something none of these papers
-did, say so plainly instead of assembling an answer out of loosely related
-items.
+Say plainly that the collection does not cover it ONLY when nothing in the
+findings is relevant, or when the question assumes something none of these
+papers did. A question with several parts is not such a case: answer the parts
+the findings do support and note briefly what the papers do not cover. A partial
+answer is more useful than a refusal.
 
 Findings:
 {findings}

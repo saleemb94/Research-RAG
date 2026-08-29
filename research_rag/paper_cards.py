@@ -54,7 +54,20 @@ _CARD_CONTEXT_CHARS = 6000
 # writes prose around the JSON and the parse gets harder, not richer.
 _CARD_MAX_TOKENS = 420
 
-_LIST_FIELDS = ("datasets", "models", "languages", "platforms", "metrics", "methods")
+# Papers report what they found and what went wrong, and a corpus-level question
+# often asks after exactly that - "what limitations do these papers report", "what
+# weaknesses of LLMs are described". Without these two fields the card schema had
+# nowhere to put such content, so those questions were routed to a mechanism
+# structurally incapable of answering them: "hallucination" and "traceability"
+# appeared in none of the seventeen cards while sitting in six chunks each.
+# "limitations" earns its place: it is what let a question about reported
+# weaknesses be answered at all, and costs 33 characters across the whole table.
+# A "findings" field was tried alongside it and removed - the model wrote
+# sentences rather than names, 2157 characters for 25 items, which grew the card
+# table by 60% and cost more elsewhere than it gained. What a paper found is
+# already in `summary`; what went wrong was the genuine gap.
+_LIST_FIELDS = ("datasets", "models", "languages", "platforms", "metrics",
+                "methods", "limitations")
 
 _CARD_PROMPT = """\
 Below are excerpts from the beginning of one research paper.
@@ -70,6 +83,9 @@ Return a JSON object describing it, with exactly these keys:
   "platforms"  where data came from, e.g. ["Twitter", "Reddit"]
   "metrics"    headline results with their numbers, e.g. ["accuracy 98.83%"]
   "methods"    key techniques, e.g. ["LIME", "genetic algorithm"]
+  "limitations" weaknesses, failure modes or caveats the paper reports - its own
+               or those of the technology it studies. Short phrases, not
+               sentences, e.g. ["hallucination", "poor traceability"]
 
 Use ONLY names that appear in the excerpts. Never invent a dataset or a number.
 Use an empty list for anything the paper does not have - a theoretical paper has
@@ -82,7 +98,8 @@ JSON:"""
 
 _ANSWER_PROMPT = """\
 Below is a card for every paper in a library, listing what each one studies and
-which datasets, models, languages, platforms, metrics and methods it names.
+the datasets, models, languages, platforms, metrics, methods and
+limitations it reports.
 
 Question: {query}
 
@@ -110,6 +127,7 @@ class PaperCard:
     platforms: list[str] = field(default_factory=list)
     metrics: list[str] = field(default_factory=list)
     methods: list[str] = field(default_factory=list)
+    limitations: list[str] = field(default_factory=list)
 
     def as_properties(self) -> dict:
         d = {"source_file": self.source_file, "summary": self.summary,
@@ -208,6 +226,13 @@ class PaperCardStore:
 
     def _ensure(self):
         if self._client.collections.exists(self._name):
+            col = self._client.collections.get(self._name)
+            have = {p.name for p in col.config.get().properties}
+            for f in _LIST_FIELDS:
+                if f not in have:
+                    col.config.add_property(
+                        Property(name=f, data_type=DataType.TEXT_ARRAY)
+                    )
             return
         self._client.collections.create(
             name=self._name,
