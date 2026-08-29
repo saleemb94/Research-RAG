@@ -188,6 +188,26 @@ never corrupts parsed output; the cost is latency, not correctness.
 All Ollama traffic goes through [`research_rag/llm.py`](research_rag/llm.py), which
 applies this policy in one place.
 
+### Measuring retrieval and generation quality
+
+`tests/golden_qa.json` holds 43 questions over the 11 sample papers, with 111 fact
+groups that a correct answer must contain. Every fact was read from the source PDF,
+not from the search index, so the set also detects content lost during ingestion.
+
+A RAG system can fail in three separate places and one end-to-end number hides which
+one broke, so the scorer reports them apart:
+
+```bash
+python scripts/eval_rag.py --coverage      # is the fact in the index at all? (no LLM)
+python scripts/eval_rag.py --retrieval     # asked blind, does the right paper come back?
+python scripts/eval_rag.py --generation    # given the right paper, is the fact stated?
+python scripts/eval_rag.py --all -v
+```
+
+`--coverage` is the one to run after changing anything in ingestion: it is instant,
+needs no LLM, and a drop there means content was dropped or mangled before retrieval
+ever got a chance.
+
 ### Running the tests
 
 Classification is covered by tests that need neither Ollama nor Weaviate, so they run
@@ -314,8 +334,10 @@ static/index.html        single-page web UI
 scripts/
   migrate_chroma_to_weaviate.py    one-time import from a legacy ChromaDB index
   eval_models.py                   score models on the routing tasks
+  eval_rag.py                      score coverage / retrieval / generation
 tests/
   test_section_classifier.py       cross-discipline classification tests (no LLM needed)
+  golden_qa.json                   43 graded questions over the 11 sample papers
 docker-compose.yml       Weaviate service
 ```
 

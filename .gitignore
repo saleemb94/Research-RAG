@@ -9,6 +9,9 @@ papers/*
 chroma_data/
 weaviate_data/
 
+# Eval output (regenerate with: python scripts/eval_rag.py --all)
+eval_results.json
+
 # ── Secrets / local config ─────────────────────────────────────────────────
 .env
 .env.local

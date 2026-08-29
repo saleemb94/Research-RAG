@@ -1,0 +1,369 @@
+{
+  "_about": {
+    "purpose": "Golden question/answer set for measuring retrieval and generation quality.",
+    "provenance": "Every fact was read from the source PDF with PyMuPDF, not from the search index, so the set also detects content lost during ingestion.",
+    "fields": {
+      "paper": "Filename the answer lives in.",
+      "question": "Asked verbatim through /api/chat.",
+      "section_type": "Section the router should target. null means no single section owns the answer.",
+      "expected_sections": "Stored section_name values that should supply the chunks. Advisory, not scored strictly.",
+      "key_facts": "List of fact groups. A group is a list of acceptable surface forms (OR). A summary scores a point per group it contains. Digits are compared with commas stripped, so '1,054' matches '1054'."
+    }
+  },
+  "items": [
+    {
+      "id": "p01-classifiers",
+      "paper": "1-s2.0-S277244252300045X-main.pdf",
+      "question": "Which machine learning classifiers were compared for autism spectrum disorder screening?",
+      "section_type": "methodology",
+      "expected_sections": ["A B S T R A C T", "Introduction", "Proposed methodology"],
+      "key_facts": [["naive bayes", "naïve bayes", " nb "], ["logistic regression", " lr "], ["support vector machine", "svm"], ["random forest", " rf "]]
+    },
+    {
+      "id": "p01-toddler-size",
+      "paper": "1-s2.0-S277244252300045X-main.pdf",
+      "question": "How many records are in the toddler autism screening dataset and how many attributes does it have?",
+      "section_type": "dataset",
+      "expected_sections": ["Autism screening data for toddlers:"],
+      "key_facts": [["1054"], ["18"]]
+    },
+    {
+      "id": "p01-adolescent-size",
+      "paper": "1-s2.0-S277244252300045X-main.pdf",
+      "question": "How many instances does the adolescent autism screening dataset contain?",
+      "section_type": "dataset",
+      "expected_sections": ["Autism screening data for toddlers:"],
+      "key_facts": [["248"]]
+    },
+    {
+      "id": "p01-screening-tool",
+      "paper": "1-s2.0-S277244252300045X-main.pdf",
+      "question": "Which screening questionnaire supplies the behavioural features in the autism datasets?",
+      "section_type": "dataset",
+      "expected_sections": ["Autism screening data for toddlers:"],
+      "key_facts": [["q-chat", "qchat", "q chat"]]
+    },
+
+    {
+      "id": "p02-workflow",
+      "paper": "2408.08921v2.pdf",
+      "question": "What are the three stages of the GraphRAG workflow?",
+      "section_type": null,
+      "expected_sections": ["Graph Retrieval-Augmented Generation: A Survey", "Overview of GraphRAG"],
+      "key_facts": [["graph-based indexing", "graph based indexing"], ["graph-guided retrieval", "graph guided retrieval"], ["graph-enhanced generation", "graph enhanced generation"]]
+    },
+    {
+      "id": "p02-llm-problems",
+      "paper": "2408.08921v2.pdf",
+      "question": "Which shortcomings of large language models does retrieval-augmented generation aim to mitigate?",
+      "section_type": "introduction",
+      "expected_sections": ["Introduction"],
+      "key_facts": [["hallucination"], ["outdated", "out-of-date"], ["domain-specific", "domain specific"]]
+    },
+    {
+      "id": "p02-graph-sources",
+      "paper": "2408.08921v2.pdf",
+      "question": "What two categories of graph data sources are used for graph-based indexing?",
+      "section_type": null,
+      "expected_sections": ["Graph-Based Indexing"],
+      "key_facts": [["open knowledge graph"], ["self-constructed", "self constructed"]]
+    },
+
+    {
+      "id": "p03-corpus-size",
+      "paper": "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+      "question": "How many posts are in the cyberbullying lexicon corpus, and how do they split between bullying and non-bullying?",
+      "section_type": "dataset",
+      "expected_sections": ["METHODOLOGY"],
+      "key_facts": [["20000"], ["7821"], ["12179"]]
+    },
+    {
+      "id": "p03-best-classifier",
+      "paper": "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+      "question": "Which classifier achieved the highest average accuracy in the cyberbullying word distribution study, and what was it?",
+      "section_type": "results",
+      "expected_sections": ["EXPERIMENTAL RESULTS", "INTRODUCTION"],
+      "key_facts": [["svm", "support vector"], ["84"]]
+    },
+    {
+      "id": "p03-preprocessing",
+      "paper": "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+      "question": "What text preprocessing steps were applied to the cyberbullying tweet corpus?",
+      "section_type": "methodology",
+      "expected_sections": ["METHODOLOGY"],
+      "key_facts": [["lowercase", "lower case", "case folding"], ["punctuation"], ["hashtag", "mention", "numerical", "number"]]
+    },
+    {
+      "id": "p03-phases",
+      "paper": "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+      "question": "What are the four phases of the analysis process for determining cyberbullying word distribution?",
+      "section_type": "methodology",
+      "expected_sections": ["METHODOLOGY"],
+      "key_facts": [["selection", "dataset selection"], ["preparation"], ["preprocessing", "pre-processing"], ["extraction"]]
+    },
+
+    {
+      "id": "p04-corpus-total",
+      "paper": "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
+      "question": "How many tweets were collected in total for the Ecuadorian hate speech study, and from which sources?",
+      "section_type": "dataset",
+      "expected_sections": ["METHODOLOGY"],
+      "key_facts": [["178320"], ["hateeval"], ["166850"]]
+    },
+    {
+      "id": "p04-methodology",
+      "paper": "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
+      "question": "Which two research methodologies were combined to structure the Ecuadorian hate speech study?",
+      "section_type": "methodology",
+      "expected_sections": ["METHODOLOGY"],
+      "key_facts": [["design science", "dsr"], ["crisp-dm", "crisp dm"]]
+    },
+    {
+      "id": "p04-bert-results",
+      "paper": "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
+      "question": "What accuracy did the BERT transfer learning model reach on the Ecuadorian hate speech data?",
+      "section_type": "results",
+      "expected_sections": ["EXPERIMENTS AND RESULTS"],
+      "key_facts": [["0.88", "88"]]
+    },
+    {
+      "id": "p04-finding",
+      "paper": "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
+      "question": "In the Ecuador study, which technique adapted better to local linguistic idiosyncrasies and which generalised better?",
+      "section_type": "conclusion",
+      "expected_sections": ["CONCLUSIONS AND FUTURE WORK", "EXPERIMENTS AND RESULTS"],
+      "key_facts": [["word embedding", "word2vec"], ["bert"]]
+    },
+
+    {
+      "id": "p05-ai-tool",
+      "paper": "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+      "question": "Which AI tool was applied to the haptic boot engineering design process?",
+      "section_type": "methodology",
+      "expected_sections": ["METHODOLOGY", "INTRODUCTION"],
+      "key_facts": [["chatgpt"], ["3.5"]]
+    },
+    {
+      "id": "p05-experts",
+      "paper": "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+      "question": "How many domain experts assessed the AI contributions to the haptic boot design?",
+      "section_type": "methodology",
+      "expected_sections": ["EVALUATION", "METHODOLOGY"],
+      "key_facts": [["eight", "8"]]
+    },
+    {
+      "id": "p05-prompt-elements",
+      "paper": "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+      "question": "What are the five fundamental components of a well-crafted prompt in the haptic boot study?",
+      "section_type": "methodology",
+      "expected_sections": ["METHODOLOGY"],
+      "key_facts": [["instruction"], ["context"], ["example"], ["constraint"], ["role"]]
+    },
+    {
+      "id": "p05-limitations",
+      "paper": "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+      "question": "What weaknesses did the authors observe in ChatGPT's design output for the haptic boot?",
+      "section_type": "conclusion",
+      "expected_sections": ["DISCUSSION, FUTURE WORK, AND LIMITATIONS", "CONCLUSION"],
+      "key_facts": [["hallucination"], ["traceability"]]
+    },
+
+    {
+      "id": "p06-dataset-size",
+      "paper": "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+      "question": "How many tweets are in the Indonesian hate-speech dataset, and how are they split between the two labels?",
+      "section_type": "dataset",
+      "expected_sections": ["RESEARCH METHODOLOGY"],
+      "key_facts": [["13169"], ["7608"], ["5561"]]
+    },
+    {
+      "id": "p06-best-config",
+      "paper": "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+      "question": "Which batch size and learning rate gave the best Indonesian hate-speech detection results, and what accuracy followed?",
+      "section_type": "results",
+      "expected_sections": ["EXPERIMENTS AND RESULTS", "INTRODUCTION"],
+      "key_facts": [["batch size of 8", "batch size 8", " 8 "], ["0.001"], ["85.45"]]
+    },
+    {
+      "id": "p06-models",
+      "paper": "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+      "question": "Which three models were combined for Indonesian hate speech detection?",
+      "section_type": "methodology",
+      "expected_sections": ["RESEARCH METHODOLOGY", "INTRODUCTION"],
+      "key_facts": [["indobertweet"], ["bilstm", "bi-lstm"], ["cnn"]]
+    },
+    {
+      "id": "p06-preprocessing",
+      "paper": "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+      "question": "Which preprocessing techniques were applied to the Indonesian tweets?",
+      "section_type": "methodology",
+      "expected_sections": ["RESEARCH METHODOLOGY"],
+      "key_facts": [["case folding", "lowercase"], ["stopword", "stop word"], ["cleaning", "cleansing"], ["tokeniz", "tokenis"]]
+    },
+
+    {
+      "id": "p07-languages",
+      "paper": "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+      "question": "Which languages does the fine-grained multilingual hate speech model cover?",
+      "section_type": "methodology",
+      "expected_sections": ["INTRODUCTION", "METHODOLOGY"],
+      "key_facts": [["english"], ["urdu"], ["sindhi"]]
+    },
+    {
+      "id": "p07-categories",
+      "paper": "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+      "question": "What are the five fine-grained hate speech categories used in the multilingual study?",
+      "section_type": "methodology",
+      "expected_sections": ["METHODOLOGY", "INTRODUCTION"],
+      "key_facts": [["disability"], ["gender"], ["nationality", "origin"], ["race"], ["religion"]]
+    },
+    {
+      "id": "p07-scores",
+      "paper": "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+      "question": "What F-score did XLM-RoBERTa achieve for binary and fine-grained multilingual hate speech classification?",
+      "section_type": "results",
+      "expected_sections": ["RESULTS", "INTRODUCTION"],
+      "key_facts": [["xlm-roberta", "xlm roberta"], ["91"], ["86"]]
+    },
+    {
+      "id": "p07-xai",
+      "paper": "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+      "question": "Which explainable AI technique was used to interpret the multilingual hate speech models?",
+      "section_type": "methodology",
+      "expected_sections": ["METHODOLOGY", "INTRODUCTION"],
+      "key_facts": [["lime", "local interpretable"]]
+    },
+
+    {
+      "id": "p08-accuracy",
+      "paper": "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+      "question": "What accuracy and F1-score did the CNN-BiLSTM-GRU model reach for Arabic cyberbullying detection?",
+      "section_type": "results",
+      "expected_sections": ["RESULTS AND DISCUSSION", "INTRODUCTION"],
+      "key_facts": [["98.83"], ["98.81"]]
+    },
+    {
+      "id": "p08-collection",
+      "paper": "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+      "question": "How many tweets were gathered in the initial Arabic cyberbullying collection, and over what period?",
+      "section_type": "dataset",
+      "expected_sections": ["DATA ACQUISITION"],
+      "key_facts": [["14596"], ["2022"], ["march", "june", "three month"]]
+    },
+    {
+      "id": "p08-agreement",
+      "paper": "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+      "question": "What inter-annotator agreement was reported for the Arabic cyberbullying annotation?",
+      "section_type": "dataset",
+      "expected_sections": ["ANNOTATION CONSENSUS AND EXPERT GUIDANCE"],
+      "key_facts": [["0.86"], ["kappa"]]
+    },
+    {
+      "id": "p08-benchmarks",
+      "paper": "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+      "question": "How many benchmark Arabic datasets were used and how many records did they contain in total?",
+      "section_type": "dataset",
+      "expected_sections": ["DATA ACQUISITION", "ENRICHING THE DATASET"],
+      "key_facts": [["six", " 6 "], ["243849"]]
+    },
+
+    {
+      "id": "p09-dataset",
+      "paper": "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
+      "question": "Which dataset was used to test adversarial attacks on Arabic offensive language classifiers?",
+      "section_type": "dataset",
+      "expected_sections": ["EXPERIMENTAL SETUP"],
+      "key_facts": [["osact5", "osact 5"]]
+    },
+    {
+      "id": "p09-victims",
+      "paper": "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
+      "question": "Which two victim transformer models were fine-tuned, and what F1 scores did they reach before the attack?",
+      "section_type": "dataset",
+      "expected_sections": ["EXPERIMENTAL SETUP"],
+      "key_facts": [["arabert"], ["qarib"], ["85"], ["84"]]
+    },
+    {
+      "id": "p09-success-rate",
+      "paper": "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
+      "question": "What attack success rate was achieved against the Arabic offensive language classifiers by substituting a single word?",
+      "section_type": "results",
+      "expected_sections": ["RESULTS AND DISCUSSION"],
+      "key_facts": [["29.6", "30"], ["unigram", "one word", "single word"]]
+    },
+    {
+      "id": "p09-method",
+      "paper": "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
+      "question": "Which explainability method and which embeddings guided the adversarial word replacement?",
+      "section_type": "methodology",
+      "expected_sections": ["EXPERIMENTAL SETUP", "APPROACH"],
+      "key_facts": [["lime"], ["fasttext", "fast text"]]
+    },
+
+    {
+      "id": "p10-videos",
+      "paper": "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+      "question": "How many videos were collected for the multi-modal hate speech study and how were they split for training?",
+      "section_type": "dataset",
+      "expected_sections": ["METHODOLOGY"],
+      "key_facts": [["1051"], ["80"], ["20"]]
+    },
+    {
+      "id": "p10-best",
+      "paper": "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+      "question": "Which classifier gave the best accuracy in the multi-modal hate speech approach?",
+      "section_type": "results",
+      "expected_sections": ["EVALUATION AND RESULTS", "CONCLUSION"],
+      "key_facts": [["adaboost"], ["87"]]
+    },
+    {
+      "id": "p10-fusion",
+      "paper": "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+      "question": "How are the predictions from the separate modalities combined into a final decision?",
+      "section_type": "methodology",
+      "expected_sections": ["METHODOLOGY", "EVALUATION AND RESULTS"],
+      "key_facts": [["majority voting", "hard voting"], ["two or more", "two"]]
+    },
+    {
+      "id": "p10-modalities",
+      "paper": "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+      "question": "Which modalities are extracted from the video data for hate speech detection?",
+      "section_type": "methodology",
+      "expected_sections": ["METHODOLOGY"],
+      "key_facts": [["image"], ["audio"], ["text"]]
+    },
+
+    {
+      "id": "p11-corpus",
+      "paper": "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+      "question": "What corpus was used for Arabic offensive language detection with evolutionary classifiers?",
+      "section_type": "dataset",
+      "expected_sections": ["THE METHODOLOGY"],
+      "key_facts": [["arcybc"], ["arabic"]]
+    },
+    {
+      "id": "p11-domains",
+      "paper": "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+      "question": "From which four Twitter domains were the ArCybC tweets collected?",
+      "section_type": "dataset",
+      "expected_sections": ["THE METHODOLOGY"],
+      "key_facts": [["gaming"], ["sport"], ["news"], ["celebrit"]]
+    },
+    {
+      "id": "p11-best",
+      "paper": "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+      "question": "Which combination achieved the best accuracy for Arabic offensive language detection with evolutionary classifiers?",
+      "section_type": "results",
+      "expected_sections": ["EXPERIMENT AND RESULTS", "INTRODUCTION"],
+      "key_facts": [["svm"], ["aravec"], ["88.2"]]
+    },
+    {
+      "id": "p11-optimization",
+      "paper": "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+      "question": "Which two classifiers were hybridised with a genetic algorithm in the two-stage optimisation approach?",
+      "section_type": "methodology",
+      "expected_sections": ["THE METHODOLOGY"],
+      "key_facts": [["xgboost"], ["svm"], ["genetic", " ga "]]
+    }
+  ]
+}
