@@ -3,6 +3,9 @@
 # not redistributed with this repo. Drop your own into papers/.
 papers/*
 !papers/.gitkeep
+# The manifest is not data, it is the recipe: pinned arXiv ids so anyone can
+# rebuild the exact corpus the golden question set was written against.
+!papers/arxiv_manifest.json
 
 # Legacy ChromaDB index (superseded by Weaviate) and the on-disk Weaviate dir.
 # Weaviate's live data lives in the named Docker volume, not in the repo.
@@ -13,6 +16,7 @@ weaviate_data/
 eval_results.json
 eval_quick.json
 eval_deep.json
+eval_synthesis.json
 
 # ── Secrets / local config ─────────────────────────────────────────────────
 .env

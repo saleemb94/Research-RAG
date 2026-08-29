@@ -1,0 +1,67 @@
+{
+ "arxiv_2004.07833.pdf": {
+  "id": "2004.07833v5",
+  "base_id": "2004.07833",
+  "title": "Accurate closed-form solution of the SIR epidemic model",
+  "published": "2020-04-16",
+  "primary": "q-bio.PE",
+  "categories": [
+   "q-bio.PE",
+   "physics.soc-ph"
+  ]
+ },
+ "arxiv_1909.04251.pdf": {
+  "id": "1909.04251v1",
+  "base_id": "1909.04251",
+  "title": "A Benchmark Dataset for Learning to Intervene in Online Hate Speech",
+  "published": "2019-09-10",
+  "primary": "cs.CL",
+  "categories": [
+   "cs.CL",
+   "cs.AI",
+   "cs.CY"
+  ]
+ },
+ "arxiv_1906.09304.pdf": {
+  "id": "1906.09304v1",
+  "base_id": "1906.09304",
+  "title": "Design and analysis considerations for a sequentially randomized HIV prevention trial",
+  "published": "2019-06-21",
+  "primary": "stat.AP",
+  "categories": [
+   "stat.AP"
+  ]
+ },
+ "arxiv_2304.00913.pdf": {
+  "id": "2304.00913v1",
+  "base_id": "2304.00913",
+  "title": "LAHM : Large Annotated Dataset for Multi-Domain and Multilingual Hate Speech Identification",
+  "published": "2023-04-03",
+  "primary": "cs.CL",
+  "categories": [
+   "cs.CL",
+   "cs.AI"
+  ]
+ },
+ "arxiv_2408.03849.pdf": {
+  "id": "2408.03849v1",
+  "base_id": "2408.03849",
+  "title": "Hate Speech Detection and Classification in Amharic Text with Deep Learning",
+  "published": "2024-08-07",
+  "primary": "cs.CL",
+  "categories": [
+   "cs.CL",
+   "cs.LG"
+  ]
+ },
+ "arxiv_2409.20199.pdf": {
+  "id": "2409.20199v1",
+  "base_id": "2409.20199",
+  "title": "Synthetic Difference in Differences for Repeated Cross-Sectional Data",
+  "published": "2024-09-30",
+  "primary": "econ.EM",
+  "categories": [
+   "econ.EM"
+  ]
+ }
+}
