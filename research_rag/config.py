@@ -79,6 +79,14 @@ USE_SECTION_SUMMARIES = _env_bool("USE_SECTION_SUMMARIES", True)
 # Kept on, and left switchable, so the question can be settled with repeats.
 USE_SECTION_CHANNEL = _env_bool("USE_SECTION_CHANNEL", True)
 
+# Fuse BM25 with the vector search as a third channel. Most facts the pipeline
+# misses are rare literal strings, which a dense embedding smears and a keyword
+# index matches exactly.
+USE_HYBRID_CHANNEL = _env_bool("USE_HYBRID_CHANNEL", True)
+# 1.0 is pure vector, 0.0 pure keyword. Low favours keyword; 0.5 was measured
+# losing a case that pure vector found, 0.3 did not.
+HYBRID_ALPHA = float(os.getenv("HYBRID_ALPHA", "0.3"))
+
 # ── Retrieval ──────────────────────────────────────────────────────────────
 TOP_K = _env_int("TOP_K", 5)
 RERANKER_MODEL = os.getenv("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")

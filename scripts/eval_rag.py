@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import statistics
 import sys
 import time
 from collections import defaultdict
@@ -157,7 +158,7 @@ def run_negative(items, verbose):
 
 # ── synthesis: one cited answer over the whole corpus ──────────────────────
 
-def run_synthesis(items, verbose):
+def run_synthesis(items, verbose, client=None):
     """
     Score the corpus-wide tab: does one answer state the facts, and does it
     actually draw on the papers that hold them?
@@ -169,8 +170,16 @@ def run_synthesis(items, verbose):
     from fastapi.testclient import TestClient
     import app as appmod
 
+    # The client must be shared across repeats. Leaving the TestClient context
+    # runs the app's lifespan shutdown, which closes every Weaviate client, so a
+    # second run against a fresh context queries closed connections and scores
+    # zero - which looks like a catastrophic regression rather than a harness bug.
+    if client is None:
+        with TestClient(appmod.app) as c:
+            return run_synthesis(items, verbose, client=c)
+
     rows = []
-    with TestClient(appmod.app) as client:
+    if True:
         for i, it in enumerate(items, 1):
             print(f"  [{i}/{len(items)}] {it['id']}", flush=True)
             t0 = time.perf_counter()
@@ -333,6 +342,10 @@ def main():
                     help="Score the questions the corpus cannot answer")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--repeat", type=int, default=1,
+                    help="Run N times and report mean and spread. Answers vary "
+                         "between identical runs by several points, so a single "
+                         "run cannot settle a small difference.")
     ap.add_argument("--deep", action="store_true",
                     help="Answer with deep scan (map-reduce) instead of quick search")
     ap.add_argument("-o", "--out", default="eval_results.json")
@@ -355,7 +368,33 @@ def main():
     if a.coverage:
         run_coverage(items, a.verbose)
     if a.synthesis and syn_items:
-        run_synthesis(syn_items, a.verbose)
+        from fastapi.testclient import TestClient
+        import app as appmod
+        with TestClient(appmod.app) as _client:
+            runs = [run_synthesis(syn_items, a.verbose, client=_client)
+                    for _ in range(max(1, a.repeat))]
+        if len(runs) > 1:
+            facts = [sum(r["g_ok"] for r in run) for run in runs]
+            papers = [sum(r["papers_hit"] for r in run) for run in runs]
+            f_n = sum(r["g_n"] for r in runs[0])
+            p_n = sum(r["papers_want"] for r in runs[0])
+            bar = "=" * 74
+            print(f"\n{bar}\nSYNTHESIS over {len(runs)} runs\n{bar}")
+            print(f"  facts  : {statistics.mean(facts):.1f}/{f_n} "
+                  f"({statistics.mean(facts) / f_n:.0%})  "
+                  f"range {min(facts)}-{max(facts)}  "
+                  f"sd {statistics.pstdev(facts):.1f}")
+            print(f"  papers : {statistics.mean(papers):.1f}/{p_n} "
+                  f"({statistics.mean(papers) / p_n:.0%})  "
+                  f"range {min(papers)}-{max(papers)}  "
+                  f"sd {statistics.pstdev(papers):.1f}")
+            # Per-question stability: a question that swings is not evidence
+            # either way, and knowing which ones swing matters as much as the mean.
+            print("\n  per-question spread (facts):")
+            for i, it in enumerate(syn_items):
+                vals = [run[i]["g_ok"] for run in runs]
+                flag = "  <-- unstable" if max(vals) != min(vals) else ""
+                print(f"    {it['id']:22s} {vals}  /{runs[0][i]['g_n']}{flag}")
     if a.negative and neg_items:
         run_negative(neg_items, a.verbose)
     if a.retrieval or a.generation:

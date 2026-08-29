@@ -230,6 +230,24 @@ They are scored on two axes that fail apart: facts stated, and which papers were
 actually cited. An answer can name four datasets while citing one paper, which reads
 as authoritative and silently under-reports the corpus.
 
+Answers vary between identical runs, so `--repeat N` reports a mean and spread
+instead of a single number. Measuring the two extra retrieval channels three
+times each:
+
+| channels | facts | papers |
+| --- | --- | --- |
+| neither | 73% (sd 0.9) | 86% (sd 0.9) |
+| section summaries only | 71% (sd 1.7) | 86% (sd 1.7) |
+| BM25 only | 74% (sd 2.2) | 84% (sd 0.5) |
+| **both** | **75% (sd 0.8)** | **89% (sd 0.5)** |
+
+Neither channel justifies itself alone — summaries alone measured slightly worse
+than baseline, BM25 alone was no better and much noisier. Together they are best
+on both metrics and, more convincingly, the most stable: every other
+configuration swings three to four points between identical runs, this one
+swings one. The ranges still overlap at n=3, so this is a consistency argument
+rather than a decisive one.
+
 **Negative controls** cover the gap every other metric leaves. All of them measure
 denying content that is present; none measures inventing content that is absent,
 which for a research tool is the worse failure — retrieval always returns *something*,
@@ -258,8 +276,8 @@ Current scores, and what the set caught on its first run:
 | Routing — right section targeted | 46% | **78%** |
 | Generation — fact stated in the answer | 59% | **79%** |
 | Generation — fully correct answers | 49% | **71%** |
-| Synthesis — facts stated in one cited answer | 64% | **74%** |
-| Synthesis — expected papers actually cited | 58% | **83–88%** |
+| Synthesis — facts stated in one cited answer | 64% | **75%** |
+| Synthesis — expected papers actually cited | 58% | **89%** |
 | Negative controls — correctly declined | — | **100%** |
 
 The synthesis figures were 89% and 71% against an earlier six-question set. That set

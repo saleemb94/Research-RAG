@@ -23,6 +23,8 @@ from .config import (
     OLLAMA_MODEL,
     RERANK_FETCH_MULTIPLIER,
     TOP_K,
+    HYBRID_ALPHA,
+    USE_HYBRID_CHANNEL,
     USE_SECTION_CHANNEL,
 )
 from .embedder import Embedder
@@ -418,6 +420,26 @@ def synthesize_answer(
                     hits.append(h)
         except (OSError, RuntimeError, ValueError):
             pass        # the extra channel is an improvement, never a dependency
+
+    # Third channel: BM25 fused with the vector. Rare proper nouns - AraVec,
+    # ArCybC, OSACT5 - have almost no dense neighbourhood and are matched exactly
+    # by a keyword index. Unioned like the others; the reranker decides.
+    if USE_HYBRID_CHANNEL:
+        try:
+            seen = {
+                (h.properties.get("source_file"), h.properties.get("chunk_index"))
+                for h in hits
+            }
+            for h in store.hybrid_search(
+                standalone, query_vector, limit=fetch_k,
+                alpha=HYBRID_ALPHA, source_filter=source_filter,
+            ):
+                key = (h.properties.get("source_file"), h.properties.get("chunk_index"))
+                if key not in seen:
+                    seen.add(key)
+                    hits.append(h)
+        except (OSError, RuntimeError, ValueError):
+            pass        # an extra channel is an improvement, never a dependency
 
     if not hits:
         return SynthesisResult(

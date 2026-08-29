@@ -324,6 +324,42 @@ class VectorStore:
             for obj in result.objects
         ]
 
+    def hybrid_search(
+        self,
+        query_text: str,
+        query_vector: list[float],
+        limit: int = 24,
+        alpha: float = 0.3,
+        source_filter: str | None = None,
+    ) -> list[SearchHit]:
+        """
+        Weaviate hybrid search: BM25 over the chunk text fused with the vector.
+
+        `alpha` weights the two - 1.0 is pure vector, 0.0 is pure keyword. Low
+        values favour keyword, which is the point: most of the facts this
+        pipeline misses are rare literal strings (AraVec, ArCybC, OSACT5,
+        QARiB), and a dense embedding has almost no neighbourhood for a proper
+        noun it saw a handful of times. BM25 matches them exactly.
+
+        The standing limitation is that BM25 can only match terms the *query*
+        contains, so this helps when the rare term is asked about and not when
+        it is the answer being looked for.
+
+        Hits carry no distance: hybrid returns a fused score on a different
+        scale, and everything downstream reranks anyway.
+        """
+        result = self._col.query.hybrid(
+            query=query_text,
+            vector=query_vector,
+            alpha=alpha,
+            limit=limit,
+            filters=self._build_filters(source_filter=source_filter),
+        )
+        return [
+            SearchHit(properties=self._normalise(obj.properties), distance=None)
+            for obj in result.objects
+        ]
+
     def get_by_section(
         self,
         section_types: list[str] | None = None,
