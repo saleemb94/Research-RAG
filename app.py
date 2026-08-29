@@ -22,6 +22,7 @@ from research_rag.config import (
 from research_rag.config import PAPERS_DIR as PAPERS_DIR_SETTING
 from research_rag.paper_cards import PaperCardStore, build_card
 from research_rag.pdf_viewer import render_chunk as _render_chunk
+from research_rag.section_index import open_section_index
 from research_rag.synthesize import MAX_SOURCES
 from research_rag.vector_store import WeaviateUnavailableError
 
@@ -47,6 +48,8 @@ scratch_store = VectorStore(collection=WEAVIATE_SCRATCH_COLLECTION)
 # One structured card per paper. Small enough to hold in memory and to put
 # in a single prompt, so corpus-level questions do not need retrieval.
 card_store = PaperCardStore()
+# Section summaries as a searchable second retrieval channel.
+section_index = open_section_index()
 print("All services ready.\n")
 
 
@@ -58,6 +61,7 @@ async def lifespan(_app: FastAPI):
     store.close()
     scratch_store.close()
     card_store.close()
+    section_index.close()
 
 
 app = FastAPI(title="Research RAG", lifespan=lifespan)
@@ -213,6 +217,7 @@ def ask(req: AskRequest):
             history=[t.model_dump() for t in req.history],
             max_sources=req.max_sources,
             cards=None if req.scratch else card_store.all_cards(),
+            section_index=None if req.scratch else section_index,
         )
         return {"ok": True, **result.as_dict()}
     except Exception as e:

@@ -395,6 +395,7 @@ research_rag/
   reranker.py            cross-encoder reranking
   enumerate_.py          fan-out over papers for "which X across these papers"
   paper_cards.py         one structured card per paper, for corpus-level questions
+  section_index.py       section summaries as a searchable second retrieval channel
   llm.py                 single entry point for Ollama calls
   pdf_viewer.py          renders a chunk back onto its PDF page
   cli.py                 ingest / search / list / sections / delete

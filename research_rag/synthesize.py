@@ -19,11 +19,17 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from .config import OLLAMA_MODEL, RERANK_FETCH_MULTIPLIER, TOP_K
+from .config import (
+    OLLAMA_MODEL,
+    RERANK_FETCH_MULTIPLIER,
+    TOP_K,
+    USE_SECTION_CHANNEL,
+)
 from .embedder import Embedder
 from .llm import generate as _llm
 from .enumerate_ import classify_question, gather, reduce_findings
 from .paper_cards import answer_from_cards
+from .section_index import chunks_for_sections, sections_for_query
 from .search import _hierarchical_search
 from .section_classifier import classify_query, prefer_exact_types
 from .vector_store import SearchHit, VectorStore
@@ -262,6 +268,7 @@ def synthesize_answer(
     per_paper: int = PER_PAPER_SOURCES,
     allow_enumeration: bool = True,
     cards: list | None = None,
+    section_index=None,
 ) -> SynthesisResult:
     """
     Retrieve across the corpus (or within one paper) and write a single cited answer.
@@ -389,6 +396,28 @@ def synthesize_answer(
         hits = prefer_exact_types(
             hits, lambda h: h.properties.get("section_type"), orig_section_type
         )
+
+    # Second retrieval channel: the section summaries, searched directly. They
+    # name concrete things - datasets, models, metrics - where a chunk buries the
+    # same fact in a sentence, so this surfaces candidates the chunk channel
+    # ranks poorly. Unioned rather than substituted: summaries are lossy, and the
+    # reranker is what decides between the two sets.
+    if section_index is not None and USE_SECTION_CHANNEL:
+        try:
+            pairs = sections_for_query(
+                section_index, query_vector, source_filter=source_filter
+            )
+            seen = {
+                (h.properties.get("source_file"), h.properties.get("chunk_index"))
+                for h in hits
+            }
+            for h in chunks_for_sections(store, pairs):
+                key = (h.properties.get("source_file"), h.properties.get("chunk_index"))
+                if key not in seen:
+                    seen.add(key)
+                    hits.append(h)
+        except (OSError, RuntimeError, ValueError):
+            pass        # the extra channel is an improvement, never a dependency
 
     if not hits:
         return SynthesisResult(

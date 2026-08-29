@@ -71,6 +71,14 @@ FETCH_PAGE_SIZE = _env_int("FETCH_PAGE_SIZE", 1_000)
 # route on heading names alone (useful for measuring what it is worth).
 USE_SECTION_SUMMARIES = _env_bool("USE_SECTION_SUMMARIES", True)
 
+# Search the section summaries as a second retrieval channel and union the
+# results with chunk search. Every fact the pipeline was missing appears in some
+# summary, and the summaries are 6% the size of the chunk text, so the signal is
+# there - but the end-to-end effect measured within run-to-run noise, because the
+# channel selects chunks and the summary's density is lost on expansion.
+# Kept on, and left switchable, so the question can be settled with repeats.
+USE_SECTION_CHANNEL = _env_bool("USE_SECTION_CHANNEL", True)
+
 # ── Retrieval ──────────────────────────────────────────────────────────────
 TOP_K = _env_int("TOP_K", 5)
 RERANKER_MODEL = os.getenv("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
