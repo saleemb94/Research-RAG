@@ -216,6 +216,28 @@ python scripts/eval_rag.py --synthesis   # corpus-wide cited answers
 python scripts/eval_rag.py --all -v
 ```
 
+A corpus-wide question is not a single-paper question asked louder, so the two sets
+are kept apart and scored by different code. Questions in the synthesis set must:
+
+1. need **at least two papers** for a complete answer — otherwise it is needle
+   retrieval wearing a synthesis costume;
+2. have a **closed, enumerable** answer — languages, models, datasets, scores — rather
+   than inviting discussion;
+3. be answerable **without naming a paper**;
+4. use **discriminating** fact groups, so a fluent non-answer scores zero.
+
+They are scored on two axes that fail apart: facts stated, and which papers were
+actually cited. An answer can name four datasets while citing one paper, which reads
+as authoritative and silently under-reports the corpus.
+
+**Negative controls** cover the gap every other metric leaves. All of them measure
+denying content that is present; none measures inventing content that is absent,
+which for a research tool is the worse failure — retrieval always returns *something*,
+so nothing upstream prevents it. Five questions the corpus genuinely cannot answer
+(Japanese hate speech, RLHF, carbon cost, federated learning, clinical-notes hate
+speech) are scored purely on whether the system declines. Note the tension: a system
+that abstains on everything scores 100% here and 0% on synthesis.
+
 `--coverage` is the one to run after changing anything in ingestion: it is instant,
 needs no LLM, and a drop there means content was dropped or mangled before retrieval
 ever got a chance.
@@ -236,8 +258,16 @@ Current scores, and what the set caught on its first run:
 | Routing — right section targeted | 46% | **78%** |
 | Generation — fact stated in the answer | 59% | **79%** |
 | Generation — fully correct answers | 49% | **71%** |
-| Synthesis — facts stated in one cited answer | 61% | **89%** |
-| Synthesis — expected papers actually cited | 50% | **71%** |
+| Synthesis — facts stated in one cited answer | — | **64%** |
+| Synthesis — expected papers actually cited | — | **58%** |
+| Negative controls — correctly declined | — | **100%** |
+
+The synthesis figures were 89% and 71% against an earlier six-question set. That set
+was too easy: one of its questions expected a single paper, which makes it needle
+retrieval rather than synthesis, and another scored a fact group of `["annotat"]`,
+which almost any fluent answer matches. Rewritten to fifteen questions that each
+genuinely span two or more papers, the same system scores 64% and 58%. The lower
+number is the more honest one.
 
 The "before" column is not a weaker model; it is the same pipeline with three silent
 bugs that only graded ground truth could surface — heading matching pooled across

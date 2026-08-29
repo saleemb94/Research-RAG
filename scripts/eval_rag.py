@@ -7,8 +7,9 @@ hides which one broke. This script measures them separately:
   coverage    Is the fact even in the index? Facts were read from the source PDFs,
               so a miss here means ingestion dropped or mangled the content, and
               no amount of retrieval tuning would recover it.
-  retrieval   Asked without naming a paper, does the right paper come back, and
-              does the router target the right section type?
+  retrieval   A single-paper fact asked of the whole corpus: does the right
+              paper come back? This is needle retrieval, not the corpus-wide
+              Ask tab, which is scored by --synthesis.
   generation  Given the right paper, does the answer actually state the fact?
               Scored against the paper the fact really lives in, so a low score
               is the LLM's summary omitting or contradicting retrieved content.
@@ -98,6 +99,60 @@ def run_coverage(items, verbose):
         for qid, gone in missing:
             print(f"    {qid}: {gone}")
     return {"coverage": total_ok / total_n if total_n else 0.0}
+
+
+# Phrases an honest answer uses when the corpus does not hold the answer. This is
+# a blunt check, but the failure it looks for is not subtle: a fabricated answer
+# states findings, names models and quotes numbers, and contains none of these.
+_ABSTAIN = (
+    "do not mention", "does not mention", "not mentioned", "no mention",
+    "do not discuss", "does not discuss", "not discussed",
+    "do not provide", "does not provide", "not provided",
+    "do not contain", "does not contain", "not contain",
+    "do not report", "does not report", "not report",
+    "do not address", "does not address", "not addressed",
+    "do not specify", "does not specify", "not specified",
+    "no information", "not available", "none of the", "no papers",
+    "not covered", "cannot be answered", "no evidence", "not present",
+    "do not include", "does not include", "no such", "not applicable",
+    "sources do not", "no study", "no studies", "not apply",
+)
+
+
+def abstained(answer: str) -> bool:
+    return any(m in (answer or "").lower() for m in _ABSTAIN)
+
+
+# ── negative controls: does it invent an answer that is not there? ─────────
+
+def run_negative(items, verbose):
+    """
+    Every other metric measures denying content that is present. This measures
+    the opposite and, for a research tool, the more dangerous failure: stating
+    findings for something the corpus does not contain. Retrieval always returns
+    something, so nothing upstream prevents it.
+    """
+    from fastapi.testclient import TestClient
+    import app as appmod
+
+    rows = []
+    with TestClient(appmod.app) as client:
+        for i, it in enumerate(items, 1):
+            print(f"  [{i}/{len(items)}] {it['id']}", flush=True)
+            r = client.post("/api/ask", json={"query": it["question"]}).json()
+            answer = r.get("answer", "") if r.get("ok") else ""
+            rows.append({"id": it["id"], "why": it.get("why", ""),
+                         "abstained": abstained(answer), "answer": answer})
+
+    ok = sum(r["abstained"] for r in rows)
+    bar = "=" * 74
+    print(f"\n{bar}\nNEGATIVE CONTROLS - the corpus cannot answer these\n{bar}")
+    print(f"  correctly declined     : {ok}/{len(rows)} ({ok / len(rows):.0%})")
+    for r in rows:
+        print(f"  {'ok ' if r['abstained'] else 'INVENTED'} {r['id']:18s} {r['why']}")
+        if not r["abstained"] or verbose:
+            print(f"        {r['answer'][:230]!r}")
+    return rows
 
 
 # ── synthesis: one cited answer over the whole corpus ──────────────────────
@@ -274,6 +329,8 @@ def main():
     ap.add_argument("--generation", action="store_true")
     ap.add_argument("--synthesis", action="store_true",
                     help="Score the corpus-wide cited-answer questions")
+    ap.add_argument("--negative", action="store_true",
+                    help="Score the questions the corpus cannot answer")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--deep", action="store_true",
@@ -282,22 +339,25 @@ def main():
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     if a.all:
-        a.coverage = a.retrieval = a.generation = a.synthesis = True
-    if not (a.coverage or a.retrieval or a.generation or a.synthesis):
+        a.coverage = a.retrieval = a.generation = a.synthesis = a.negative = True
+    if not (a.coverage or a.retrieval or a.generation or a.synthesis or a.negative):
         ap.error("choose at least one of --coverage / --retrieval / "
                  "--generation / --synthesis / --all")
 
     items = load_items(a.limit, "single")
     syn_items = load_items(a.limit, "synthesis")
+    neg_items = load_items(a.limit, "negative")
     print(f"Golden set: {len(items)} single-paper question(s) over "
           f"{len({i['paper'] for i in items})} paper(s) "
-          f"+ {len(syn_items)} synthesis question(s); "
+          f"+ {len(syn_items)} synthesis + {len(neg_items)} negative control(s); "
           f"{sum(len(i['key_facts']) for i in items + syn_items)} fact group(s)")
 
     if a.coverage:
         run_coverage(items, a.verbose)
     if a.synthesis and syn_items:
         run_synthesis(syn_items, a.verbose)
+    if a.negative and neg_items:
+        run_negative(neg_items, a.verbose)
     if a.retrieval or a.generation:
         results = run_pipeline(items, a.verbose, a.retrieval, a.generation, deep=a.deep)
         report(results, a.verbose, a.retrieval, a.generation, deep=a.deep)

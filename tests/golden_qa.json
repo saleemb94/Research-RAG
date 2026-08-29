@@ -8,10 +8,18 @@
    "section_type": "Section the router should target. null means no single section owns the answer.",
    "expected_sections": "Stored section_name values that should supply the chunks. Advisory, not scored strictly.",
    "key_facts": "List of fact groups. A group is a list of acceptable surface forms (OR). A summary scores a point per group it contains. Digits are compared with commas stripped, so '1,054' matches '1054'.",
-   "mode": "Absent or 'single' = a fact that lives in one paper, asked with that paper in scope. 'synthesis' = a corpus-wide question answered by /api/ask with no paper filter, scored on facts stated AND on how many of expected_papers it cites.",
+   "mode": "'single' (or absent) = a fact inside one paper, asked with that paper in scope. 'synthesis' = a corpus-wide question whose complete answer spans at least two papers. 'negative' = a question the corpus cannot answer, where the only correct behaviour is to say so.",
    "expected_papers": "synthesis only: papers a complete answer should draw on."
   },
-  "corpus": "17 papers: 11 supplied by the user plus 6 fetched from arXiv (scripts/fetch_arxiv.py; ids pinned in papers/arxiv_manifest.json). The arXiv set spans cs.CL, q-bio.PE, stat.AP and econ.EM so the discipline-agnostic classifier is exercised on real papers rather than assumed to work."
+  "corpus": "17 papers: 11 supplied by the user plus 6 fetched from arXiv (scripts/fetch_arxiv.py; ids pinned in papers/arxiv_manifest.json). The arXiv set spans cs.CL, q-bio.PE, stat.AP and econ.EM so the discipline-agnostic classifier is exercised on real papers rather than assumed to work.",
+  "synthesis_rules": [
+   "A complete answer needs at least two papers, or it is needle retrieval wearing a synthesis costume.",
+   "The answer is a closed, enumerable set - languages, models, datasets, scores - not an invitation to discuss.",
+   "It is answerable without naming a paper.",
+   "Fact groups must be discriminating: a fluent non-answer must score zero. A group like ['annotat'] matches almost anything and measures nothing.",
+   "Scored on two axes that fail apart - facts stated, and which papers were actually cited. An answer can name four datasets while citing one paper."
+  ],
+  "negative_controls": "Everything else measures false negatives - denying content that is present. These measure the opposite and more dangerous failure for a research tool: inventing an answer for content that is absent. Abstention rate here is in tension with recall on the synthesis questions, which is the point: a system that abstains on everything scores 100% here and 0% there."
  },
  "items": [
   {
@@ -1296,22 +1304,24 @@
     "arxiv_2304.00913.pdf",
     "arxiv_2408.03849.pdf",
     "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
-    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf"
+    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf"
    ],
    "key_facts": [
     [
      "arabic"
     ],
     [
-     "urdu",
-     "sindhi",
-     "hindi"
+     "urdu"
     ],
     [
      "indonesian"
     ],
     [
      "amharic"
+    ],
+    [
+     "hindi"
     ]
    ]
   },
@@ -1322,7 +1332,8 @@
    "question": "What preprocessing steps are commonly applied to social media text before hate speech classification?",
    "expected_papers": [
     "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
-    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf"
+    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf"
    ],
    "key_facts": [
     [
@@ -1345,7 +1356,7 @@
    "id": "syn-transformers",
    "mode": "synthesis",
    "section_type": null,
-   "question": "Which transformer models have been used for hate speech and offensive language detection?",
+   "question": "Which BERT-family transformer models have been fine-tuned for hate speech and offensive language detection?",
    "expected_papers": [
     "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
     "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
@@ -1353,19 +1364,19 @@
    ],
    "key_facts": [
     [
-     "bert"
+     "arabert"
     ],
     [
-     "arabert",
      "qarib",
      "marbert"
     ],
     [
-     "roberta",
-     "xlm"
+     "indobertweet"
     ],
     [
-     "indobertweet"
+     "roberta",
+     "xlm-r",
+     "xlm roberta"
     ]
    ]
   },
@@ -1373,18 +1384,26 @@
    "id": "syn-annotation",
    "mode": "synthesis",
    "section_type": null,
-   "question": "How were the hate speech datasets annotated across these studies, and what inter-annotator agreement was reported?",
+   "question": "How many annotators labelled each dataset, and what inter-annotator agreement was reported?",
    "expected_papers": [
     "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+    "arxiv_2408.03849.pdf",
     "arxiv_1909.04251.pdf"
    ],
    "key_facts": [
     [
-     "annotat"
+     "0.86"
     ],
     [
-     "kappa",
-     "agreement"
+     "kappa"
+    ],
+    [
+     "100"
+    ],
+    [
+     "mechanical turk",
+     "mturk"
     ]
    ]
   },
@@ -1392,7 +1411,7 @@
    "id": "syn-causal",
    "mode": "synthesis",
    "section_type": null,
-   "question": "What causal inference methods are discussed in this collection?",
+   "question": "What causal inference methods are used in this collection?",
    "expected_papers": [
     "arxiv_2409.20199.pdf",
     "arxiv_1906.09304.pdf"
@@ -1400,34 +1419,311 @@
    "key_facts": [
     [
      "difference-in-differences",
-     "difference in differences",
-     "synthetic control"
+     "difference in differences"
+    ],
+    [
+     "synthetic control",
+     "synthetic difference"
     ],
     [
      "randomized",
-     "randomised",
-     "trial"
+     "randomised"
+    ],
+    [
+     "targeted minimum loss",
+     "tmle"
     ]
    ]
   },
   {
-   "id": "syn-epidemic",
+   "id": "syn-non-nlp",
    "mode": "synthesis",
    "section_type": null,
-   "question": "What mathematical modelling of epidemics appears in this collection?",
+   "question": "Which studies in this collection are not about text classification, and what do they study instead?",
    "expected_papers": [
-    "arxiv_2004.07833.pdf"
+    "arxiv_2004.07833.pdf",
+    "arxiv_1906.09304.pdf",
+    "arxiv_2409.20199.pdf"
    ],
    "key_facts": [
     [
-     "sir"
+     "sir",
+     "epidemic"
     ],
     [
-     "closed-form",
-     "closed form",
-     "approximant"
+     "hiv",
+     "transgender"
+    ],
+    [
+     "difference-in-differences",
+     "difference in differences",
+     "cross-section"
     ]
    ]
+  },
+  {
+   "id": "syn-arabic-corpora",
+   "mode": "synthesis",
+   "section_type": null,
+   "question": "Which named Arabic corpora or datasets are used across these papers?",
+   "expected_papers": [
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+    "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
+    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf"
+   ],
+   "key_facts": [
+    [
+     "arcybc"
+    ],
+    [
+     "osact"
+    ],
+    [
+     "14596",
+     "22898"
+    ]
+   ]
+  },
+  {
+   "id": "syn-headline-accuracy",
+   "mode": "synthesis",
+   "section_type": null,
+   "question": "What headline accuracy or F1 scores are reported by the hate speech detection models?",
+   "expected_papers": [
+    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+    "arxiv_2408.03849.pdf",
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf"
+   ],
+   "key_facts": [
+    [
+     "98.83",
+     "98.81"
+    ],
+    [
+     "94.8"
+    ],
+    [
+     "88.2"
+    ],
+    [
+     "85.45",
+     "85.06"
+    ]
+   ]
+  },
+  {
+   "id": "syn-xai",
+   "mode": "synthesis",
+   "section_type": null,
+   "question": "Which explainability techniques are applied to hate speech models, and in which studies?",
+   "expected_papers": [
+    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+    "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf"
+   ],
+   "key_facts": [
+    [
+     "lime",
+     "local interpretable"
+    ],
+    [
+     "adversarial"
+    ],
+    [
+     "multilingual",
+     "fine-grained"
+    ]
+   ]
+  },
+  {
+   "id": "syn-platforms",
+   "mode": "synthesis",
+   "section_type": null,
+   "question": "Which social media platforms was the training data collected from across these studies?",
+   "expected_papers": [
+    "arxiv_1909.04251.pdf",
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf"
+   ],
+   "key_facts": [
+    [
+     "twitter",
+     " x "
+    ],
+    [
+     "gab"
+    ],
+    [
+     "reddit"
+    ],
+    [
+     "facebook",
+     "instagram"
+    ]
+   ]
+  },
+  {
+   "id": "syn-embeddings",
+   "mode": "synthesis",
+   "section_type": null,
+   "question": "Which word embedding models are used for text representation across these papers?",
+   "expected_papers": [
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+    "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
+    "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf"
+   ],
+   "key_facts": [
+    [
+     "aravec"
+    ],
+    [
+     "fasttext",
+     "fast text"
+    ],
+    [
+     "glove"
+    ],
+    [
+     "word2vec"
+    ]
+   ]
+  },
+  {
+   "id": "syn-architectures",
+   "mode": "synthesis",
+   "section_type": null,
+   "question": "Which neural network architectures other than transformers are used for classification?",
+   "expected_papers": [
+    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+    "arxiv_2408.03849.pdf"
+   ],
+   "key_facts": [
+    [
+     "cnn",
+     "convolutional"
+    ],
+    [
+     "bilstm",
+     "bi-lstm"
+    ],
+    [
+     "gru"
+    ]
+   ]
+  },
+  {
+   "id": "syn-ensembles",
+   "mode": "synthesis",
+   "section_type": null,
+   "question": "Which studies combine several models into one prediction, and how are the predictions combined?",
+   "expected_papers": [
+    "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf"
+   ],
+   "key_facts": [
+    [
+     "voting"
+    ],
+    [
+     "hybrid",
+     "combin",
+     "ensemble"
+    ],
+    [
+     "cnn-bilstm-gru",
+     "indobertweet"
+    ]
+   ]
+  },
+  {
+   "id": "syn-llm-weaknesses",
+   "mode": "synthesis",
+   "section_type": null,
+   "question": "What weaknesses of large language models are reported in this collection?",
+   "expected_papers": [
+    "2408.08921v2.pdf",
+    "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf"
+   ],
+   "key_facts": [
+    [
+     "hallucinat"
+    ],
+    [
+     "traceability",
+     "outdated",
+     "domain-specific"
+    ]
+   ]
+  },
+  {
+   "id": "syn-class-imbalance",
+   "mode": "synthesis",
+   "section_type": null,
+   "question": "Which datasets are class-imbalanced, and what is the split between hateful and non-hateful items?",
+   "expected_papers": [
+    "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+    "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf"
+   ],
+   "key_facts": [
+    [
+     "7821",
+     "12179",
+     "39.1"
+    ],
+    [
+     "7608",
+     "5561"
+    ],
+    [
+     "60",
+     "40"
+    ]
+   ]
+  },
+  {
+   "id": "neg-japanese",
+   "mode": "negative",
+   "section_type": null,
+   "question": "What accuracy did the Japanese hate speech detection models achieve in these papers?",
+   "why": "No paper in the corpus studies Japanese.",
+   "key_facts": []
+  },
+  {
+   "id": "neg-rlhf",
+   "mode": "negative",
+   "section_type": null,
+   "question": "Which of these papers use reinforcement learning from human feedback to train their classifiers?",
+   "why": "RLHF is not used anywhere in the corpus.",
+   "key_facts": []
+  },
+  {
+   "id": "neg-carbon",
+   "mode": "negative",
+   "section_type": null,
+   "question": "What carbon footprint or energy consumption is reported for training the models in these papers?",
+   "why": "No paper reports energy or carbon cost.",
+   "key_facts": []
+  },
+  {
+   "id": "neg-federated",
+   "mode": "negative",
+   "section_type": null,
+   "question": "What were the results of the federated learning experiments across these hate speech datasets?",
+   "why": "No paper runs federated learning; the premise is false.",
+   "key_facts": []
+  },
+  {
+   "id": "neg-clinical-nlp",
+   "mode": "negative",
+   "section_type": null,
+   "question": "Which papers apply hate speech detection to clinical notes from electronic health records?",
+   "why": "The clinical paper is an HIV prevention trial, unrelated to hate speech.",
+   "key_facts": []
   }
  ]
 }
