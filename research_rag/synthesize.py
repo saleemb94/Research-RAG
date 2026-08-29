@@ -69,12 +69,20 @@ Sources:
 
 Answer:"""
 
+# Bracketed numerals in an answer are citations, not things a follow-up can
+# refer to by name.
+_CITE_MARKER = re.compile(r"\[\s*\d+\s*\]")
+
 _CONDENSE_PROMPT = """\
 Rewrite the follow-up question as a standalone question that can be understood
 without the conversation.
 
 Resolve pronouns and references ("it", "that paper", "the second one") using the
-conversation. Keep the user's wording wherever you can. Add no new topics.
+conversation, naming what they refer to in words - a title, a topic, a method.
+Never identify a paper by a number or a citation marker: the result is searched
+as text, and "paper 9" identifies nothing to a search index.
+
+Keep the user's wording wherever you can. Add no new topics.
 If it already stands alone, return it unchanged.
 
 Conversation so far:
@@ -151,9 +159,14 @@ def condense_question(
     if not recent:
         return question
 
+    # Strip citation markers before the rewriter sees the history. An assistant
+    # turn is full of [1][4][9], and left in place the rewriter latches onto
+    # them: "the adversarial robustness one" came back as "paper [9]", which is
+    # a perfectly resolved reference and useless to retrieval, since no embedding
+    # or keyword index knows what paper [9] is.
     rendered = "\n".join(
         f"{'User' if h.get('role') == 'user' else 'Assistant'}: "
-        f"{' '.join(str(h['content']).split())[:400]}"
+        f"{' '.join(_CITE_MARKER.sub('', str(h['content'])).split())[:400]}"
         for h in recent
     )
     try:

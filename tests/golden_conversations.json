@@ -1,0 +1,427 @@
+{
+ "_about": {
+  "purpose": "Multi-turn conversations for the single-paper tab and the ad-hoc upload tab.",
+  "why": "The corpus-wide set asks one self-contained question at a time, so it never exercises what these two tabs are for: a follow-up that only means anything given what came before. 'And how were they split for training?' is embedded literally by retrieval, so without history it matches nothing. Every second and third turn here is written to be unanswerable on its own.",
+  "fields": {
+   "paper": "Filename the conversation is scoped to.",
+   "turns": "Asked in order, each with the previous turns as history.",
+   "q": "The question as a user would type it.",
+   "key_facts": "Fact groups the answer must contain, same scoring as golden_qa.json.",
+   "needs_history": "true when the question cannot be understood alone. Those turns are also scored on whether the rewritten question resolved the reference.",
+   "resolves_to": "A term the rewritten standalone question should contain once the reference is resolved."
+  },
+  "resolution_note": "Resolution only bites when it changes what gets retrieved. Inside one paper a reference like 'the trial' needs no expanding, and the system correctly leaves such turns alone - every unresolved turn in the scoped conversations still answered correctly. The unscoped conversations below are where it matters: 'the adversarial robustness one' must become a paper the retriever can find, or the wrong paper answers."
+ },
+ "conversations": [
+  {
+   "id": "conv-multimodal",
+   "paper": "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+   "turns": [
+    {
+     "q": "How many videos were collected for this study?",
+     "key_facts": [
+      [
+       "1051"
+      ]
+     ]
+    },
+    {
+     "q": "And how were they split for training and testing?",
+     "needs_history": true,
+     "resolves_to": [
+      "video"
+     ],
+     "key_facts": [
+      [
+       "80"
+      ],
+      [
+       "20"
+      ]
+     ]
+    },
+    {
+     "q": "Which classifier performed best on them?",
+     "needs_history": true,
+     "resolves_to": [
+      "video",
+      "multi-modal",
+      "multimodal"
+     ],
+     "key_facts": [
+      [
+       "adaboost"
+      ],
+      [
+       "87"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "conv-indonesian",
+   "paper": "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+   "turns": [
+    {
+     "q": "Which models are combined in this paper?",
+     "key_facts": [
+      [
+       "indobertweet"
+      ],
+      [
+       "bilstm",
+       "bi-lstm"
+      ],
+      [
+       "cnn"
+      ]
+     ]
+    },
+    {
+     "q": "What accuracy did that combination reach?",
+     "needs_history": true,
+     "resolves_to": [
+      "indobertweet",
+      "bilstm",
+      "cnn",
+      "combination"
+     ],
+     "key_facts": [
+      [
+       "85.45"
+      ]
+     ]
+    },
+    {
+     "q": "And what batch size and learning rate produced it?",
+     "needs_history": true,
+     "resolves_to": [
+      "accuracy",
+      "85.45",
+      "indobertweet"
+     ],
+     "key_facts": [
+      [
+       "0.001"
+      ],
+      [
+       "8"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "conv-arabic-cnn",
+   "paper": "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+   "turns": [
+    {
+     "q": "How many tweets were collected initially?",
+     "key_facts": [
+      [
+       "14596"
+      ]
+     ]
+    },
+    {
+     "q": "How were those annotated, and what agreement was reported?",
+     "needs_history": true,
+     "resolves_to": [
+      "tweet"
+     ],
+     "key_facts": [
+      [
+       "0.86"
+      ],
+      [
+       "kappa"
+      ]
+     ]
+    },
+    {
+     "q": "What accuracy did the final model achieve on that data?",
+     "needs_history": true,
+     "resolves_to": [
+      "tweet",
+      "arabic",
+      "cyberbullying"
+     ],
+     "key_facts": [
+      [
+       "98.83"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "conv-techstep",
+   "paper": "arxiv_1906.09304.pdf",
+   "turns": [
+    {
+     "q": "Which population does the TechStep trial target?",
+     "key_facts": [
+      [
+       "transgender"
+      ]
+     ]
+    },
+    {
+     "q": "What interventions are they offered?",
+     "needs_history": true,
+     "resolves_to": [
+      "transgender",
+      "techstep"
+     ],
+     "key_facts": [
+      [
+       "short message",
+       "sms",
+       "text message"
+      ],
+      [
+       "counseling",
+       "counselling"
+      ]
+     ]
+    },
+    {
+     "q": "How is the trial randomised?",
+     "needs_history": true,
+     "resolves_to": [
+      "techstep"
+     ],
+     "key_facts": [
+      [
+       "sequential"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "conv-adversarial",
+   "paper": "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
+   "turns": [
+    {
+     "q": "Which victim models were attacked?",
+     "key_facts": [
+      [
+       "arabert"
+      ],
+      [
+       "qarib"
+      ]
+     ]
+    },
+    {
+     "q": "What success rate did the attack achieve against them?",
+     "needs_history": true,
+     "resolves_to": [
+      "arabert",
+      "qarib",
+      "attack"
+     ],
+     "key_facts": [
+      [
+       "29.6",
+       "30"
+      ]
+     ]
+    },
+    {
+     "q": "Which dataset was that measured on?",
+     "needs_history": true,
+     "resolves_to": [
+      "attack",
+      "arabert",
+      "success"
+     ],
+     "key_facts": [
+      [
+       "osact"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "conv-autism",
+   "paper": "1-s2.0-S277244252300045X-main.pdf",
+   "turns": [
+    {
+     "q": "Which classifiers are compared in this paper?",
+     "key_facts": [
+      [
+       "naive bayes",
+       "naïve bayes"
+      ],
+      [
+       "support vector",
+       "svm"
+      ],
+      [
+       "random forest"
+      ]
+     ]
+    },
+    {
+     "q": "How many records are in the toddler dataset they used?",
+     "needs_history": true,
+     "resolves_to": [
+      "toddler",
+      "autism",
+      "dataset"
+     ],
+     "key_facts": [
+      [
+       "1054"
+      ]
+     ]
+    },
+    {
+     "q": "Which questionnaire supplies its behavioural features?",
+     "needs_history": true,
+     "resolves_to": [
+      "toddler",
+      "dataset",
+      "autism"
+     ],
+     "key_facts": [
+      [
+       "q-chat",
+       "qchat",
+       "q chat"
+      ]
+     ]
+    }
+   ]
+  }
+ ],
+ "scratch": [
+  {
+   "id": "scratch-multimodal",
+   "source_pdf": "papers/Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+   "upload_as": "eval_scratch_doc.pdf",
+   "turns": [
+    {
+     "q": "What modalities does this paper use?",
+     "key_facts": [
+      [
+       "image"
+      ],
+      [
+       "audio"
+      ],
+      [
+       "text"
+      ]
+     ]
+    },
+    {
+     "q": "How are those combined into a final decision?",
+     "needs_history": true,
+     "resolves_to": [
+      "modalit",
+      "image",
+      "audio"
+     ],
+     "key_facts": [
+      [
+       "voting"
+      ]
+     ]
+    }
+   ]
+  }
+ ],
+ "unscoped": [
+  {
+   "id": "conv-corpus-reference",
+   "turns": [
+    {
+     "q": "Which papers study Arabic offensive or abusive language?",
+     "key_facts": [
+      [
+       "arabert",
+       "arcybc",
+       "osact"
+      ]
+     ]
+    },
+    {
+     "q": "What dataset does the adversarial robustness one use?",
+     "needs_history": true,
+     "resolves_to": [
+      "adversarial",
+      "robustness"
+     ],
+     "key_facts": [
+      [
+       "osact"
+      ]
+     ]
+    },
+    {
+     "q": "And what attack success rate did it report?",
+     "needs_history": true,
+     "resolves_to": [
+      "adversarial",
+      "attack",
+      "osact"
+     ],
+     "key_facts": [
+      [
+       "29.6",
+       "30"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "conv-corpus-languages",
+   "turns": [
+    {
+     "q": "Which languages besides English are studied for hate speech detection?",
+     "key_facts": [
+      [
+       "arabic"
+      ],
+      [
+       "indonesian",
+       "amharic",
+       "urdu"
+      ]
+     ]
+    },
+    {
+     "q": "Which model was used for the Indonesian one?",
+     "needs_history": true,
+     "resolves_to": [
+      "indonesian"
+     ],
+     "key_facts": [
+      [
+       "indobertweet"
+      ]
+     ]
+    },
+    {
+     "q": "What accuracy did it reach?",
+     "needs_history": true,
+     "resolves_to": [
+      "indonesian",
+      "indobertweet"
+     ],
+     "key_facts": [
+      [
+       "85.45"
+      ]
+     ]
+    }
+   ]
+  }
+ ]
+}

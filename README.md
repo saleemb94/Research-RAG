@@ -293,6 +293,36 @@ papers, post-retrieval filters cancelling the global fallback, and abstracts dro
 as boilerplate. Each produced a fluent, plausible answer while discarding correct
 content, which is exactly the failure mode eyeballing output cannot catch.
 
+### Measuring the conversational tabs
+
+The corpus-wide set asks one self-contained question at a time, so it never
+touches what the other two tabs are for: a follow-up that only means something
+given what came before.
+
+```bash
+python scripts/eval_chat.py --single     # chat with one paper
+python scripts/eval_chat.py --unscoped   # follow-ups across the whole library
+python scripts/eval_chat.py --scratch    # upload, ask, prove isolation, clean up
+python scripts/eval_chat.py --all
+```
+
+| | facts stated | fully correct turns | follow-ups resolved |
+| --- | --- | --- | --- |
+| Single paper (18 turns) | 93% | 89% | 92% |
+| Corpus-wide (6 turns) | 86% | 83% | 100% |
+| Ad-hoc upload (2 turns) | 100% | 100% | 100% |
+
+The scratch run also asserts isolation rather than assuming it: the uploaded
+document appears in the scratch store, leaves the library list unchanged, is
+absent from a library-wide answer, and disappears on cleanup.
+
+Resolution only matters when it changes what gets retrieved. Inside one paper a
+reference like "the trial" needs no expanding, and the system correctly leaves
+those alone. The unscoped conversations are where it bites, and they immediately
+found a real defect: asked "what dataset does the adversarial robustness one
+use?", the rewriter answered "what dataset does paper [9] use?" - a perfectly
+resolved reference, and useless, because no index knows what paper [9] is.
+
 ### Running the tests
 
 Classification is covered by tests that need neither Ollama nor Weaviate, so they run
