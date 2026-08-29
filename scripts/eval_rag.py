@@ -121,7 +121,18 @@ _ABSTAIN = (
 
 
 def abstained(answer: str) -> bool:
+    # Import the phrase the pipeline actually emits rather than guessing at it.
+    # Hand-maintaining this list has now mis-scored a correct refusal as a
+    # fabrication three times, which sends you hunting a hallucination that was
+    # never there.
+    try:
+        from research_rag.enumerate_ import NOTHING_FOUND
+    except ImportError:
+        NOTHING_FOUND = ""
+
     a = (answer or "").strip().lower()
+    if NOTHING_FOUND and NOTHING_FOUND.lower() in a:
+        return True
     # A bare sentinel is an abstention too, and scoring it as a fabrication sent
     # me looking for a hallucination that was not there.
     if a in ("none", "n/a", "nothing", ""):

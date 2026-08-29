@@ -107,6 +107,10 @@ Answer using ONLY these cards. Cite each claim with the paper's number in square
 brackets, like [2]; the only valid numbers are 1 to {n}. Write one continuous
 answer, not a list of papers.
 
+Read every line of a card, not just its field label and summary. A paper whose
+field says "clinical trial" may still list the technique being asked about in its
+methods, and judging it by the label alone would wrongly exclude it.
+
 If the cards do not answer the question, or the question assumes something none
 of these papers did, say so plainly instead of assembling loosely related items.
 

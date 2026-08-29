@@ -276,7 +276,7 @@ Current scores, and what the set caught on its first run:
 | Routing — right section targeted | 46% | **78%** |
 | Generation — fact stated in the answer | 59% | **79%** |
 | Generation — fully correct answers | 49% | **71%** |
-| Synthesis — facts stated in one cited answer | 64% | **85%** |
+| Synthesis — facts stated in one cited answer | 64% | **89%** |
 | Synthesis — expected papers actually cited | 58% | **94%** |
 | Negative controls — correctly declined | — | **100%** |
 
@@ -488,6 +488,14 @@ safe to re-run. Once verified, `chroma_data/` can be deleted.
 ---
 
 ## Notes & limitations
+
+- **Corpus-level questions are judged from the paper cards, and a card's stated
+  field can override its own contents.** Asked which papers use causal inference,
+  both the 4B and the 14B answer "only the econometrics paper", even though the
+  clinical-trial card lists `targeted minimum loss-based estimators` — a causal
+  estimator — in its own methods line. Both models classify the paper by topic
+  rather than by what it lists. Editing that one card would pass the question and
+  teach the system nothing, so it stands as a known limitation.
 
 - **Not a general PDF chatbot.** It assumes academic papers with recognisable section
   headings. Slide decks, scanned documents without OCR, and reports with no headings
