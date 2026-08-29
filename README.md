@@ -33,6 +33,7 @@ whole design here is built around exploiting it.
 | References and ethics statements pollute results | Boilerplate sections are dropped at ingest time via a blacklist plus a title-detection heuristic |
 | Top-k vector hits are often loosely relevant | A cross-encoder reranks 4× the candidates down to the best `k` |
 | Answers are hard to trust | Each answer links to the exact passage, rendered onto its original PDF page |
+| Section vocabulary is field-specific — `corpus`, `cohort`, `specimen` and `primary sources` all mean *the data* | Classification is by section **function**, with vocabulary from nine disciplines and a deliberate refusal to guess on words that flip meaning between fields |
 
 ---
 
@@ -104,6 +105,58 @@ alone is not trustworthy enough to silently drop content:
 
 If a section turns out to be empty, retrieval falls back to a global search rather
 than returning nothing.
+
+### Working across disciplines
+
+Papers are not all from one field, so the classifier is built around section
+**function** rather than any field's vocabulary.
+
+The eight labels (`abstract`, `introduction`, `theory`, `related_work`, `methodology`,
+`dataset`, `results`, `conclusion`) describe roles that recur across empirical research
+regardless of subject. `theory` covers papers that are not empirical at all — theorems
+and proofs in mathematics, derivations in physics, formal models in economics,
+conceptual frameworks in the social sciences.
+
+Each label carries vocabulary from several fields, because the same role is named
+differently everywhere:
+
+| Role | Computing | Medicine | Social science | Humanities |
+| --- | --- | --- | --- | --- |
+| `dataset` | corpus, benchmark, training set | cohort, study population, inclusion criteria | participants, respondents, sample | primary sources, archival material |
+| `methodology` | proposed method, architecture | trial protocol, randomization, assay | interview protocol, coding procedure | fieldwork, ethnography |
+| `related_work` | related work, prior art | systematic review, meta-analysis | literature review | historiography |
+
+**Where it deliberately refuses to guess.** Some headings mean different things in
+different fields, and a confident wrong answer from the fast keyword stage would
+prevent the later stages from ever reading the section's text. Those headings are
+listed in `_DEFER_TO_CONTENT` and returned as unclassified on purpose, which routes
+them to the LLM stages that *can* read the content:
+
+| Heading | In computing | In another field |
+| --- | --- | --- |
+| "Statistical Analysis" | reported findings | the analysis plan, inside Methods (medicine) |
+| "Survey" | a literature survey | a questionnaire instrument (sociology) |
+| "Materials" | — | reagents (chemistry), stimuli (psychology), or half of "Materials and Methods" |
+| "Model" | an implemented system | a formal model (economics, theory) |
+| "Baseline Characteristics" | a comparison result | a description of the participants (clinical trials) |
+
+That last one used to be classified as a *result*, which is simply wrong for a clinical
+paper — it describes who was enrolled.
+
+### Running the tests
+
+Classification is covered by tests that need neither Ollama nor Weaviate, so they run
+in milliseconds:
+
+```bash
+python tests/test_section_classifier.py     # standalone
+pytest tests/                               # or with pytest installed
+```
+
+They assert correct labels for headings drawn from computing, medicine, psychology,
+chemistry, physics, mathematics, economics, law and history, and pin the two
+distinctions the retrieval design depends on: background is not related work, and
+ambiguous headings must defer rather than guess.
 
 ---
 
@@ -213,6 +266,8 @@ app.py                   FastAPI server + JSON API
 static/index.html        single-page web UI
 scripts/
   migrate_chroma_to_weaviate.py    one-time import from a legacy ChromaDB index
+tests/
+  test_section_classifier.py       cross-discipline classification tests (no LLM needed)
 docker-compose.yml       Weaviate service
 ```
 
@@ -243,7 +298,7 @@ vectorizer module is enabled on the server):
 | `heading` | `text` | Full breadcrumb, e.g. `3 Methods > 3.1 Data` |
 | `section_name` | `text` | `FIELD` tokenization — exact heading match |
 | `subsection_name` | `text` | `FIELD` tokenization |
-| `section_type` | `text` | One of `abstract`, `introduction`, `related_work`, `methodology`, `dataset`, `results`, `conclusion`, `general` |
+| `section_type` | `text` | One of `abstract`, `introduction`, `theory`, `related_work`, `methodology`, `dataset`, `results`, `conclusion`, `general` |
 | `page_numbers` | `text` | Comma-separated source pages |
 
 Object UUIDs are a deterministic `uuid5` of `source_file::chunk_index`, so re-ingesting

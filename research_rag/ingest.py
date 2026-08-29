@@ -23,38 +23,71 @@ from .vector_store import VectorStore
 
 _SKIP_SECTION_NAMES = {
     # Citations / bibliography
-    "references", "bibliography",
+    "references", "bibliography", "works cited", "reference list",
+    "literature cited", "notes", "endnotes", "footnotes",
     # Author admin
     "acknowledgments", "acknowledgements", "acknowledgment",
     "author contributions", "author contribution statement",
     "author contributions statement", "authors contributions",
-    "about the authors", "author biographies",
+    "about the authors", "author biographies", "author information",
+    "credit authorship contribution statement", "orcid", "orcid ids",
     # Legal / ethics / compliance
     "conflicts of interest", "conflict of interest",
     "declaration of competing interest", "declaration of competing interests",
-    "ethical considerations", "ethics statement",
-    "informed consent statement", "informed consent",
+    "declarations", "disclosure", "disclosures", "financial disclosure",
+    "ethical considerations", "ethics statement", "ethics approval",
+    "ethics approval and consent to participate", "irb approval",
+    "informed consent statement", "informed consent", "consent for publication",
     "safety considerations", "safety standards",
+    "trial registration", "registration", "protocol registration",
+    "permissions", "copyright", "provenance and peer review",
+    # Funding
+    "funding", "funding information", "funding statement",
+    "role of the funding source", "grant support",
     # Data & supplementary
     "data availability", "data availability statement",
-    "supporting information", "supplementary material", "supplementary materials",
-    # Format markers
+    "code availability", "supporting information",
+    "supplementary material", "supplementary materials",
+    "supplementary information", "additional file", "additional files",
+    # Format markers / reference apparatus
     "acm reference format", "acmreference format",
-    "appendix", "abbreviations", "nomenclature", "funding",
+    "appendix", "appendices", "abbreviations", "list of abbreviations",
+    "nomenclature", "glossary", "keywords", "highlights",
 }
 
 # Keywords whose presence in a section_name indicates it IS a real section
 # (used to rescue long headings that might look like titles but aren't).
-# Deliberately narrow: only terms that appear in section names but almost
-# never in paper titles.  Generic research words like "detection", "model",
-# "framework", "generation" are excluded because they are common in titles
-# ("Offensive Language Detection in Arabic Social Networks Using...").
+#
+# Only terms that appear in section names but almost never in paper titles.
+# Generic research words like "detection", "model", "framework", "generation",
+# "design" and "simulation" are excluded because they are common in titles
+# ("Offensive Language Detection in Arabic Social Networks Using...",
+#  "Designing a Haptic Boot for Space...").
+#
+# Covers section vocabulary from several disciplines, not just computing: a
+# long clinical heading like "Participants and Recruitment Procedures for the
+# Longitudinal Cohort" must not be mistaken for a paper title and discarded.
+# The asymmetry matters — a missed rescue silently drops real content, while a
+# false rescue only stores one extra heading.
 _SECTION_KEYWORDS = {
+    # structure, all fields
     "introduction", "related", "literature", "background", "preliminary",
-    "method", "approach", "algorithm",
-    "dataset", "data", "corpus",
-    "experiment", "evaluation", "result",
-    "analysis", "discussion", "conclusion", "future",
+    "method", "approach", "algorithm", "overview", "motivation",
+    "contribution", "discussion", "conclusion", "future",
+    "analysis", "experiment", "evaluation", "result", "finding",
+    "limitation", "implication", "recommendation", "summary",
+    # data, under whatever name the field uses
+    "dataset", "data", "corpus", "sample", "specimen", "cohort",
+    "participant", "population", "subject", "respondent",
+    "inclusion", "exclusion", "eligibility", "recruitment", "demographic",
+    # procedure
+    "materials", "procedure", "protocol", "instrument", "apparatus",
+    "measure", "questionnaire", "interview", "fieldwork", "setup",
+    # formal / theoretical
+    "theoretical", "conceptual", "theorem", "lemma", "proof", "derivation",
+    "hypothes", "notation", "definition",
+    # quantitative social science / economics
+    "estimation", "robustness", "descriptive", "specification", "outcome",
 }
 
 
