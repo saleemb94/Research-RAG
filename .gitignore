@@ -1,0 +1,45 @@
+# ── Local data ─────────────────────────────────────────────────────────────
+# Papers are the user's own PDFs; published articles are copyrighted and are
+# not redistributed with this repo. Drop your own into papers/.
+papers/*
+!papers/.gitkeep
+
+# Legacy ChromaDB index (superseded by Weaviate) and the on-disk Weaviate dir.
+# Weaviate's live data lives in the named Docker volume, not in the repo.
+chroma_data/
+weaviate_data/
+
+# ── Secrets / local config ─────────────────────────────────────────────────
+.env
+.env.local
+
+# ── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ── Notebooks ──────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── Models / caches ────────────────────────────────────────────────────────
+.cache/
+*.onnx
+
+# ── Editors & OS ───────────────────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Claude Code local settings ─────────────────────────────────────────────
+.claude/settings.local.json

@@ -1,0 +1,48 @@
+# Weaviate vector database for Research RAG.
+#
+#   docker compose up -d      start (data persists in the named volume)
+#   docker compose down       stop, keep data
+#   docker compose down -v    stop and wipe the index
+#
+# The app supplies its own embeddings (BAAI/bge-small-en-v1.5, 384-dim), so no
+# vectorizer module is enabled — Weaviate only stores and searches the vectors.
+
+services:
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.30.0
+    container_name: research-rag-weaviate
+    restart: unless-stopped
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --scheme
+      - http
+    ports:
+      - "${WEAVIATE_PORT:-8081}:8080"   # REST
+      - "${WEAVIATE_GRPC_PORT:-50052}:50051"   # gRPC (used by weaviate-client v4)
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    environment:
+      PERSISTENCE_DATA_PATH: /var/lib/weaviate
+      DEFAULT_VECTORIZER_MODULE: none
+      ENABLE_MODULES: ""
+      # Anonymous access is fine here: the container is bound to localhost only
+      # and the whole point of this project is a fully offline, local stack.
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      # Raise the ceiling on full-collection scans (section listings walk every
+      # chunk). Default is 10000, which a few dozen papers can exceed.
+      QUERY_MAXIMUM_RESULTS: "100000"
+      DISABLE_TELEMETRY: "true"
+      LOG_LEVEL: info
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/v1/.well-known/ready || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+volumes:
+  weaviate_data:
+    name: research_rag_weaviate_data

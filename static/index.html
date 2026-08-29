@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research RAG</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        colors: {
+          brand: { 50:'#eef2ff', 100:'#e0e7ff', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca' }
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+/* ── reset / base ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; font-family: 'Inter', system-ui, sans-serif; }
+body { background: #f8fafc; color: #0f172a; }
+
+/* ── custom scrollbar ─────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* ── nav active indicator ─────────────────────── */
+.nav-link { position: relative; color: #64748b; transition: color .15s; }
+.nav-link::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px; background: #4f46e5; transform: scaleX(0);
+  transition: transform .15s;
+}
+.nav-link:hover { color: #0f172a; }
+.nav-link.active { color: #0f172a; font-weight: 600; }
+.nav-link.active::after { transform: scaleX(1); }
+
+/* ── toggle switch ────────────────────────────── */
+.toggle-wrap { display: flex; align-items: center; cursor: pointer; }
+.toggle-wrap input { display: none; }
+.toggle-track {
+  width: 44px; height: 24px; border-radius: 12px; background: #cbd5e1;
+  position: relative; transition: background .2s; flex-shrink: 0;
+}
+.toggle-track::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s;
+}
+.toggle-wrap input:checked ~ .toggle-track { background: #4f46e5; }
+.toggle-wrap input:checked ~ .toggle-track::after { transform: translateX(20px); }
+
+/* ── loading dots ─────────────────────────────── */
+@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: #94a3b8; animation: bounce 1.2s ease-in-out infinite; }
+.dot:nth-child(2) { animation-delay: .15s; }
+.dot:nth-child(3) { animation-delay: .3s; }
+
+/* ── markdown prose in messages ───────────────── */
+.prose { font-size: 0.9rem; line-height: 1.7; color: #1e293b; }
+.prose h1,.prose h2 { font-size: 1rem; font-weight: 700; margin: 1em 0 .4em; }
+.prose h3 { font-size: .95rem; font-weight: 600; margin: .9em 0 .3em; color: #0f172a; }
+.prose p { margin: 0 0 .6em; }
+.prose p:last-child { margin-bottom: 0; }
+.prose ul { list-style: disc; padding-left: 1.4em; margin: .4em 0 .6em; }
+.prose ol { list-style: decimal; padding-left: 1.4em; margin: .4em 0 .6em; }
+.prose li { margin-bottom: .2em; }
+.prose strong { font-weight: 600; color: #0f172a; }
+.prose code {
+  font-family: ui-monospace, monospace; font-size: .82em;
+  background: #f1f5f9; color: #4338ca; padding: 1px 5px; border-radius: 4px;
+}
+.prose pre { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 12px; overflow-x: auto; margin: .6em 0; }
+.prose pre code { background: none; color: inherit; padding: 0; }
+.prose blockquote {
+  border-left: 3px solid #4f46e5; background: #f5f3ff;
+  margin: .6em 0; padding: 8px 12px; border-radius: 0 6px 6px 0;
+  font-style: italic; color: #475569;
+}
+.prose hr { border: none; border-top: 1px solid #e2e8f0; margin: 1em 0; }
+
+/* ── chunk card ───────────────────────────────── */
+.chunk-card {
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: 12px 14px;
+}
+.chunk-card:hover { border-color: #c7d2fe; background: #fafbff; }
+
+/* ── badge ────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .72rem; font-weight: 600; letter-spacing: .02em;
+  padding: 2px 8px; border-radius: 999px;
+}
+.badge-indigo { background: #eef2ff; color: #4338ca; }
+.badge-slate  { background: #f1f5f9; color: #475569; }
+
+/* ── tag ──────────────────────────────────────── */
+.tag {
+  display: inline-block; font-size: .72rem; font-weight: 500;
+  background: #e0e7ff; color: #4338ca; padding: 1px 8px; border-radius: 4px;
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── view-pdf button ──────────────────────────── */
+.view-pdf-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .75rem; font-weight: 500; color: #4f46e5;
+  background: none; border: 1px solid #c7d2fe; border-radius: 6px;
+  padding: 4px 10px; cursor: pointer; transition: all .15s;
+}
+.view-pdf-btn:hover { background: #eef2ff; border-color: #a5b4fc; }
+.view-pdf-btn.active {
+  background: #4f46e5; color: #fff; border-color: #4f46e5;
+}
+
+/* ── details chevron ──────────────────────────── */
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+details .chevron { transition: transform .2s; }
+details[open] .chevron { transform: rotate(90deg); }
+
+/* ── dropzone ─────────────────────────────────── */
+.dropzone-active { border-color: #4f46e5 !important; background: #f5f3ff !important; }
+
+/* ── slider ───────────────────────────────────── */
+input[type=range] {
+  -webkit-appearance: none; width: 100%; height: 6px;
+  border-radius: 3px; background: #e2e8f0; outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px;
+  border-radius: 50%; background: #4f46e5; cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(79,70,229,.15);
+}
+input[type=range]::-moz-range-thumb {
+  width: 18px; height: 18px; border: none; border-radius: 50%;
+  background: #4f46e5; cursor: pointer;
+}
+
+/* ── scope pill select ────────────────────────── */
+.scope-select {
+  appearance: none; -webkit-appearance: none;
+  font-size: .75rem; font-weight: 500;
+  border: 1px solid #e2e8f0; border-radius: 999px;
+  background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
+  padding: 4px 28px 4px 12px;
+  color: #475569; cursor: pointer;
+  transition: border-color .15s, background-color .15s;
+}
+.scope-select:hover { border-color: #a5b4fc; background-color: #f5f3ff; }
+.scope-select:focus { outline: none; border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+.scope-select.scoped { border-color: #4f46e5; background-color: #eef2ff; color: #4338ca; }
+
+/* ── example buttons ──────────────────────────── */
+.example-btn {
+  border: 1px solid #e2e8f0; border-radius: 999px; background: #fff;
+  color: #475569; font-size: .83rem; padding: 8px 18px; cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.example-btn:hover { border-color: #a5b4fc; background: #eef2ff; color: #4338ca; }
+
+/* ── PDF resize handle ────────────────────────── */
+#pdf-resize-handle {
+  width: 5px; min-width: 5px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: transparent;
+  display: none;
+  position: relative;
+  transition: background .15s;
+  z-index: 10;
+}
+#pdf-resize-handle::after {
+  content: ''; position: absolute;
+  top: 0; bottom: 0; left: 2px; width: 1px;
+  background: #e2e8f0;
+  transition: background .15s;
+}
+#pdf-resize-handle:hover,
+#pdf-resize-handle.resizing {
+  background: rgba(99,102,241,.08);
+}
+#pdf-resize-handle:hover::after,
+#pdf-resize-handle.resizing::after { background: #6366f1; }
+
+/* ── PDF side panel ───────────────────────────── */
+#pdf-panel {
+  width: 480px; min-width: 280px;
+  border-left: none;
+  background: #fff;
+  display: none;
+  flex-direction: column;
+  /* NO overflow:hidden — that would clip the scrollable body */
+}
+#pdf-panel.open { display: flex; }
+#pdf-panel-body {
+  flex: 1;
+  overflow: auto;          /* scrolls in both axes when image is zoomed */
+  background: #f1f5f9;
+  padding: 16px;
+}
+#pdf-image {
+  display: block;
+  max-width: none !important; /* override Tailwind preflight img{max-width:100%} so the
+                                 image can exceed the panel width and the container scrolls */
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+}
+</style>
+</head>
+
+<body class="flex flex-col h-full">
+
+<!-- ═══════════════════════════════════════════════════
+     HEADER / NAV
+════════════════════════════════════════════════════ -->
+<header class="flex-none h-14 bg-white border-b border-slate-200 flex items-center px-6 gap-6 z-50">
+  <div class="flex items-center gap-2 flex-1">
+    <span class="text-xl">📚</span>
+    <span class="font-semibold text-slate-900 text-[15px]">Research RAG</span>
+  </div>
+  <nav class="flex items-stretch h-full gap-6">
+    <button class="nav-link active text-sm px-1 pb-px" id="nav-chat"
+            onclick="switchView('chat')">Chat</button>
+    <button class="nav-link text-sm px-1 pb-px" id="nav-papers"
+            onclick="switchView('papers')">Papers</button>
+    <button class="nav-link text-sm px-1 pb-px" id="nav-settings"
+            onclick="switchView('settings')">Settings</button>
+  </nav>
+  <div class="flex-1 flex justify-end">
+    <button onclick="newChat()"
+      class="text-sm text-slate-600 border border-slate-200 rounded-full px-4 py-1.5
+             hover:bg-slate-50 hover:border-slate-300 transition-colors">
+      + New Chat
+    </button>
+  </div>
+</header>
+
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW: CHAT  (flex-row: chat col + pdf panel)
+════════════════════════════════════════════════════ -->
+<div id="view-chat" class="view flex flex-row flex-1 min-h-0">
+
+  <!-- ── Left: chat column ── -->
+  <div class="flex flex-col flex-1 min-h-0">
+
+    <!-- Messages / empty state -->
+    <div id="messages-scroll" class="flex-1 min-h-0 overflow-y-auto">
+
+      <!-- Empty state -->
+      <div id="empty-state"
+           class="flex flex-col items-center justify-center min-h-full gap-8 px-6 py-16">
+        <div class="text-center max-w-lg">
+          <div class="text-5xl mb-5">📚</div>
+          <h1 class="text-2xl font-semibold text-slate-900 mb-2">Research Paper RAG</h1>
+          <p class="text-slate-500 leading-relaxed">
+            Ask natural-language questions about your ingested papers.<br>
+            Answers are cited and grounded — fully offline.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2.5 justify-center max-w-2xl">
+          <button class="example-btn" onclick="useExample(this)">Summarize the methodology</button>
+          <button class="example-btn" onclick="useExample(this)">What is discussed in the related work?</button>
+          <button class="example-btn" onclick="useExample(this)">What datasets were used in the experiments?</button>
+          <button class="example-btn" onclick="useExample(this)">What were the main results and findings?</button>
+        </div>
+      </div>
+
+      <!-- Message list -->
+      <div id="messages" class="hidden max-w-3xl mx-auto px-4 py-6 space-y-6 pb-8">
+        <!-- injected by JS -->
+      </div>
+
+    </div><!-- end messages-scroll -->
+
+    <!-- Input bar -->
+    <div class="flex-none bg-white border-t border-slate-200 px-4 pt-3 pb-4">
+      <div class="max-w-3xl mx-auto">
+
+        <!-- Scope selector row -->
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wide select-none">Scope</span>
+          <select id="paper-select" class="scope-select" onchange="updatePaperFilter()">
+            <option value="">All papers</option>
+          </select>
+        </div>
+
+        <!-- Textarea + send -->
+        <div class="flex gap-3 items-end">
+          <textarea id="query-input"
+            placeholder="Ask a question about your research papers…"
+            rows="1"
+            class="flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50
+                   px-4 py-3 text-sm text-slate-900 placeholder-slate-400
+                   focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
+                   min-h-[48px] max-h-[160px] overflow-y-auto transition-shadow"
+            onkeydown="handleKeyDown(event)"
+            oninput="autoResize(this)"></textarea>
+          <button id="send-btn" onclick="sendMessage()"
+            class="w-12 h-12 rounded-full bg-brand-600 hover:bg-brand-700 active:bg-brand-700
+                   text-white flex items-center justify-center flex-shrink-0
+                   transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Send (Enter)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-2 text-center">
+          Enter to send &nbsp;·&nbsp; Shift+Enter for new line
+        </p>
+      </div>
+    </div>
+
+  </div><!-- end chat column -->
+
+  <!-- ── Resize handle (shown only when pdf panel is open) ── -->
+  <div id="pdf-resize-handle"></div>
+
+  <!-- ── Right: PDF side panel ── -->
+  <div id="pdf-panel">
+    <!-- Panel header -->
+    <div class="flex-none flex items-center gap-2 px-4 py-3
+                border-b border-slate-200 bg-white">
+      <!-- Title + meta -->
+      <div class="min-w-0 flex-1">
+        <p class="text-xs font-semibold text-slate-800">PDF Viewer</p>
+        <p id="pdf-panel-meta"
+           class="text-[11px] text-slate-400 mt-0.5 leading-snug" style="word-break:break-word;"></p>
+      </div>
+      <!-- Zoom controls -->
+      <div class="flex items-center gap-0.5 flex-shrink-0 bg-slate-100 rounded-lg px-1 py-1">
+        <button id="zoom-out-btn" onclick="zoomOut()" title="Zoom out (Ctrl −)"
+          class="w-7 h-7 flex items-center justify-center rounded-md
+                 text-slate-600 hover:bg-white hover:shadow-sm transition-all
+                 disabled:opacity-30 disabled:cursor-not-allowed text-lg leading-none font-medium">
+          −
+        </button>
+        <!-- Shows current %; click → 100% natural size; right-click → fit panel -->
+        <button onclick="resetZoom()" oncontextmenu="fitZoom();event.preventDefault()"
+                title="100% = natural size  |  Right-click = fit to panel"
+                id="zoom-display"
+                class="h-7 px-2 rounded-md text-[11px] font-mono font-semibold text-slate-600
+                       hover:bg-white hover:shadow-sm transition-all min-w-[46px] text-center">
+          100%
+        </button>
+        <button id="zoom-in-btn" onclick="zoomIn()" title="Zoom in (Ctrl +)"
+          class="w-7 h-7 flex items-center justify-center rounded-md
+                 text-slate-600 hover:bg-white hover:shadow-sm transition-all
+                 disabled:opacity-30 disabled:cursor-not-allowed text-lg leading-none font-medium">
+          +
+        </button>
+        <button onclick="fitZoom()" title="Fit to panel width"
+          class="h-7 px-1.5 rounded-md text-[10px] font-semibold text-slate-500
+                 hover:bg-white hover:shadow-sm transition-all ml-0.5">
+          Fit
+        </button>
+      </div>
+      <!-- Close -->
+      <button onclick="closePdfPanel()"
+        class="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <!-- Panel body -->
+    <div id="pdf-panel-body">
+      <!-- Loading spinner -->
+      <div id="pdf-loading"
+           class="flex flex-col items-center justify-center py-20 gap-3">
+        <div class="w-9 h-9 rounded-full border-2 border-slate-200 border-t-brand-600
+                    animate-spin"></div>
+        <p class="text-sm text-slate-500">Rendering page…</p>
+      </div>
+      <img id="pdf-image" src="" alt="PDF page" class="hidden">
+      <p id="pdf-error"
+         class="hidden text-red-500 text-sm text-center py-10"></p>
+    </div>
+  </div><!-- end pdf-panel -->
+
+</div><!-- end view-chat -->
+
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW: PAPERS
+════════════════════════════════════════════════════ -->
+<div id="view-papers" class="view hidden flex-1 overflow-y-auto">
+  <div class="max-w-5xl mx-auto px-6 py-10">
+    <h1 class="text-2xl font-semibold text-slate-900 mb-1">Papers</h1>
+    <p class="text-slate-500 text-sm mb-8">Upload PDFs to ingest them into the knowledge base, or remove existing ones.</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Upload card -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col gap-4">
+        <h2 class="font-semibold text-slate-800">Add Papers</h2>
+        <div id="dropzone"
+          class="border-2 border-dashed border-slate-200 rounded-xl p-10 text-center
+                 cursor-pointer hover:border-brand-400 hover:bg-brand-50/40 transition-colors"
+          onclick="document.getElementById('file-input').click()"
+          ondragover="handleDragOver(event)"
+          ondragleave="handleDragLeave(event)"
+          ondrop="handleDrop(event)">
+          <div class="text-3xl mb-2">📎</div>
+          <p class="text-sm font-medium text-slate-700">Click to select PDFs</p>
+          <p class="text-xs text-slate-400 mt-1">or drag and drop</p>
+        </div>
+        <input type="file" id="file-input" multiple accept=".pdf" class="hidden"
+               onchange="handleFileSelect(event)">
+        <div id="file-list" class="hidden flex flex-col gap-2"></div>
+        <button id="ingest-btn" onclick="ingestFiles()"
+          class="hidden w-full bg-brand-600 hover:bg-brand-700 text-white rounded-xl
+                 py-2.5 text-sm font-medium transition-colors disabled:opacity-50">
+          Ingest Selected Files
+        </button>
+        <div id="upload-status" class="hidden text-sm space-y-1"></div>
+      </div>
+
+      <!-- Stored papers card -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-semibold text-slate-800">Stored Papers</h2>
+          <button id="select-all-btn" onclick="toggleSelectAll()"
+            class="hidden text-xs text-brand-600 hover:text-brand-700 font-medium">
+            Select all
+          </button>
+        </div>
+        <p class="text-xs text-slate-400 -mt-2">
+          Tick one or more papers, then click Remove.
+        </p>
+        <div id="papers-list" class="flex flex-col gap-1 flex-1"></div>
+        <div id="papers-empty" class="hidden flex flex-col items-center justify-center py-10 gap-2">
+          <div class="text-3xl">📂</div>
+          <p class="text-sm text-slate-400">No papers ingested yet</p>
+        </div>
+        <button id="remove-btn" onclick="removeSelected()"
+          class="hidden w-full text-red-600 border border-red-200 bg-red-50/40
+                 hover:bg-red-50 rounded-xl py-2.5 text-sm font-medium transition-colors">
+          Remove Selected
+        </button>
+        <div id="remove-status" class="hidden text-xs"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW: SETTINGS
+════════════════════════════════════════════════════ -->
+<div id="view-settings" class="view hidden flex-1 overflow-y-auto">
+  <div class="max-w-2xl mx-auto px-6 py-10">
+    <h1 class="text-2xl font-semibold text-slate-900 mb-1">Settings</h1>
+    <p class="text-slate-500 text-sm mb-8">
+      These settings apply to every query. Changes take effect immediately.
+    </p>
+    <div class="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
+
+      <div class="flex items-start gap-6 p-6">
+        <div class="flex-1">
+          <p class="font-medium text-slate-900 text-sm">Deep Scan</p>
+          <p class="text-slate-500 text-xs mt-1 leading-relaxed">
+            Reads every chunk in the detected section using map-reduce.
+            More exhaustive but significantly slower.
+          </p>
+        </div>
+        <label class="toggle-wrap mt-0.5">
+          <input type="checkbox" id="deep-scan-toggle" onchange="saveSettings()">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <div class="flex items-start gap-6 p-6">
+        <div class="flex-1">
+          <p class="font-medium text-slate-900 text-sm">Use Reranker</p>
+          <p class="text-slate-500 text-xs mt-1 leading-relaxed">
+            Cross-encoder reranks candidate chunks for higher precision. Adds a small latency cost.
+          </p>
+        </div>
+        <label class="toggle-wrap mt-0.5">
+          <input type="checkbox" id="reranker-toggle" checked onchange="saveSettings()">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-1">
+          <p class="font-medium text-slate-900 text-sm">Top-K Chunks</p>
+          <span id="topk-display"
+            class="text-xs font-semibold font-mono text-brand-600 bg-brand-50 px-2.5 py-1 rounded-lg">5</span>
+        </div>
+        <p class="text-slate-500 text-xs mb-4 leading-relaxed">
+          Maximum number of chunks retrieved per quick search query.
+        </p>
+        <input type="range" id="topk-slider" min="1" max="20" value="5" step="1"
+               oninput="updateTopKDisplay(this.value)" onchange="saveSettings()">
+        <div class="flex justify-between text-[10px] text-slate-400 mt-1.5 px-0.5 select-none">
+          <span>1</span><span>5</span><span>10</span><span>15</span><span>20</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     APPLICATION SCRIPT
+════════════════════════════════════════════════════ -->
+<script>
+marked.use({ breaks: true, gfm: true });
+
+// ── Zoom ───────────────────────────────────────────────────────────────────
+// 100% = image displayed at its natural rendered pixel width (1 PNG px = 1 CSS px).
+// This is the most intuitive reference: at 100% text is as sharp as the renderer made it.
+// Zooming in (>100%) magnifies beyond natural; zooming out (<100%) shrinks to fit the panel.
+const ZOOM_MIN = 0.1, ZOOM_MAX = 8.0, ZOOM_STEP = 0.5;
+let _zoom       = 1.0;   // current zoom (1.0 = natural image size)
+let _imgNatW    = 0;     // natural pixel width of the currently loaded image
+let _fitZoom    = 1.0;   // zoom that fits the panel width (used by "Fit" reset)
+
+function _bodyContentW() {
+  const b = document.getElementById('pdf-panel-body');
+  const s = getComputedStyle(b);
+  return b.clientWidth - parseFloat(s.paddingLeft || 0) - parseFloat(s.paddingRight || 0);
+}
+
+function _applyImgW() {
+  if (_imgNatW === 0) return;   // no image loaded yet
+  // Do NOT guard on 'hidden' — we set width before unhiding so the browser
+  // lays the element out at the correct size the moment it becomes visible.
+  document.getElementById('pdf-image').style.width = Math.round(_imgNatW * _zoom) + 'px';
+}
+
+function applyZoom() {
+  _applyImgW();
+  document.getElementById('zoom-display').textContent = Math.round(_zoom * 100) + '%';
+  document.getElementById('zoom-out-btn').disabled = _zoom <= ZOOM_MIN;
+  document.getElementById('zoom-in-btn').disabled  = _zoom >= ZOOM_MAX;
+}
+function zoomIn()    { _zoom = Math.min(ZOOM_MAX, +(_zoom + ZOOM_STEP).toFixed(2)); applyZoom(); }
+function zoomOut()   { _zoom = Math.max(ZOOM_MIN, +(_zoom - ZOOM_STEP).toFixed(2)); applyZoom(); }
+// Reset → natural size (100%); double-click reset label to fit-to-panel instead
+function resetZoom() {
+  _zoom = 1.0;
+  applyZoom();
+  const b = document.getElementById('pdf-panel-body');
+  b.scrollTop = b.scrollLeft = 0;
+}
+function fitZoom() {
+  _zoom = _fitZoom;
+  applyZoom();
+  const b = document.getElementById('pdf-panel-body');
+  b.scrollTop = b.scrollLeft = 0;
+}
+
+// Ctrl/Cmd + scroll wheel to zoom, and drag-to-pan
+document.addEventListener('DOMContentLoaded', () => {
+  const pdfBody = document.getElementById('pdf-panel-body');
+
+  // ── Ctrl+scroll zoom ────────────────────────────────────────────────────
+  pdfBody.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      if (e.deltaY < 0) zoomIn(); else zoomOut();
+    }
+  }, { passive: false });
+
+  // ── Drag-to-pan ─────────────────────────────────────────────────────────
+  let panning = false;
+  let panOrigin = { x: 0, y: 0, sl: 0, st: 0 };
+
+  pdfBody.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;        // left button only
+    panning   = true;
+    panOrigin = { x: e.clientX, y: e.clientY,
+                  sl: pdfBody.scrollLeft, st: pdfBody.scrollTop };
+    pdfBody.style.cursor    = 'grabbing';
+    pdfBody.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  // Listen on window so a fast drag that leaves the panel still works
+  window.addEventListener('mousemove', (e) => {
+    if (!panning) return;
+    pdfBody.scrollLeft = panOrigin.sl - (e.clientX - panOrigin.x);
+    pdfBody.scrollTop  = panOrigin.st - (e.clientY - panOrigin.y);
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!panning) return;
+    panning = false;
+    pdfBody.style.cursor     = 'grab';
+    pdfBody.style.userSelect = '';
+  });
+
+  // ── Panel resize drag ────────────────────────────────────────────────────
+  const resizeHandle = document.getElementById('pdf-resize-handle');
+  let resizing = false, resizeStartX = 0, resizeStartW = 0;
+
+  resizeHandle.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    resizing     = true;
+    resizeStartX = e.clientX;
+    resizeStartW = document.getElementById('pdf-panel').offsetWidth;
+    resizeHandle.classList.add('resizing');
+    document.body.style.cursor     = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!resizing) return;
+    // handle is left of the panel; dragging left widens it, right narrows it
+    _setPanelWidth(resizeStartW + (resizeStartX - e.clientX));
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!resizing) return;
+    resizing = false;
+    resizeHandle.classList.remove('resizing');
+    document.body.style.cursor     = '';
+    document.body.style.userSelect = '';
+  });
+});
+
+// ── Panel width (persisted across open/close) ──────────────────────────────
+let _panelW = 480;
+
+function _showResizeHandle() {
+  const h = document.getElementById('pdf-resize-handle');
+  h.style.display = 'block';
+}
+function _hideResizeHandle() {
+  document.getElementById('pdf-resize-handle').style.display = 'none';
+}
+function _setPanelWidth(w) {
+  _panelW = Math.max(280, Math.min(w, window.innerWidth * 0.78));
+  document.getElementById('pdf-panel').style.width = _panelW + 'px';
+  if (_imgNatW > 0) _fitZoom = _bodyContentW() / _imgNatW;
+}
+
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  view: 'chat',
+  papers: [],
+  pendingFiles: [],
+  loading: false,
+  chunks: [],
+  selectedPaper: '',      // '' = all papers
+  activePdfIdx: null,     // index of the chunk whose PDF is currently shown
+  settings: { deepScan: false, useReranker: true, topK: 5 },
+};
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+(async function init() {
+  loadSettings();
+  await refreshPapers();
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Navigation
+// ═══════════════════════════════════════════════════════════════════════════
+function switchView(v) {
+  state.view = v;
+  document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
+  document.getElementById('view-' + v).classList.remove('hidden');
+  document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + v).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Chat
+// ═══════════════════════════════════════════════════════════════════════════
+function newChat() {
+  state.chunks = [];
+  state.activePdfIdx = null;
+  closePdfPanel();
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('messages').classList.add('hidden');
+  document.getElementById('empty-state').classList.remove('hidden');
+  switchView('chat');
+}
+
+function useExample(btn) {
+  const input = document.getElementById('query-input');
+  input.value = btn.textContent.trim();
+  autoResize(input);
+  input.focus();
+}
+
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+async function sendMessage() {
+  const input = document.getElementById('query-input');
+  const query = input.value.trim();
+  if (!query || state.loading) return;
+
+  switchView('chat');
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('messages').classList.remove('hidden');
+
+  appendUserMessage(query);
+  input.value = '';
+  input.style.height = 'auto';
+
+  const loadingEl = appendLoading();
+  setLoading(true);
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query,
+        deep_scan:     state.settings.deepScan,
+        use_reranker:  state.settings.useReranker,
+        top_k:         state.settings.topK,
+        source_filter: state.selectedPaper || null,
+      }),
+    });
+    const data = await res.json();
+    loadingEl.remove();
+
+    if (!data.ok) {
+      appendError(data.error || 'Unknown error occurred.');
+    } else {
+      state.chunks = data.papers.flatMap(p => p.chunks);
+      appendAssistantMessage(data);
+    }
+  } catch (err) {
+    loadingEl.remove();
+    appendError('Network error: ' + err.message);
+  } finally {
+    setLoading(false);
+    scrollBottom();
+  }
+}
+
+function setLoading(on) {
+  state.loading = on;
+  document.getElementById('send-btn').disabled = on;
+}
+
+function scrollBottom() {
+  const scroll = document.getElementById('messages-scroll');
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Message rendering
+// ═══════════════════════════════════════════════════════════════════════════
+function appendUserMessage(text) {
+  const el = mkEl('div', 'flex justify-end');
+  el.innerHTML = `
+    <div class="max-w-[80%] bg-brand-600 text-white rounded-2xl rounded-tr-sm
+                px-4 py-3 text-sm leading-relaxed">
+      ${esc(text).replace(/\n/g, '<br>')}
+    </div>`;
+  document.getElementById('messages').appendChild(el);
+  scrollBottom();
+}
+
+function appendLoading() {
+  const el = mkEl('div', 'flex gap-3 items-start');
+  el.innerHTML = `
+    <div class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center
+                text-base flex-shrink-0">📚</div>
+    <div class="bg-white border border-slate-100 rounded-2xl rounded-tl-sm
+                px-4 py-3 shadow-sm flex items-center gap-1.5 h-10">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>`;
+  document.getElementById('messages').appendChild(el);
+  scrollBottom();
+  return el;
+}
+
+function appendError(msg) {
+  const el = mkEl('div', 'flex gap-3 items-start');
+  el.innerHTML = `
+    <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center
+                text-base flex-shrink-0">⚠️</div>
+    <div class="bg-red-50 border border-red-100 text-red-700 rounded-2xl
+                rounded-tl-sm px-4 py-3 text-sm">${esc(msg)}</div>`;
+  document.getElementById('messages').appendChild(el);
+}
+
+function appendAssistantMessage(data) {
+  const el = mkEl('div', 'flex gap-3 items-start');
+
+  const modeBadge = data.mode === 'deep_scan'
+    ? '<span class="badge badge-indigo">🔬 Deep Scan</span>'
+    : '<span class="badge badge-slate">⚡ Quick Search</span>';
+
+  let chunkOffset = 0;
+  const papersHtml = data.papers.map((paper, pi) => {
+    const sections = paper.sections_used.join(', ') || 'auto-detected';
+    const metaLine = `${paper.chunks_used} chunk(s) · sections: ${esc(sections)}`;
+
+    const chunksHtml = paper.chunks.map((chunk, ci) => {
+      const idx     = chunkOffset + ci;
+      const stype   = chunk.section_name || chunk.section_type || '—';
+      const pages   = chunk.page_numbers || '?';
+      const dist    = chunk.distance != null ? (+chunk.distance).toFixed(3) : '—';
+      const preview = esc((chunk.text || '').slice(0, 300))
+                    + (chunk.text.length > 300 ? '…' : '');
+      return `
+        <div class="chunk-card">
+          <div class="flex flex-wrap gap-2 items-center mb-2">
+            <span class="tag">${esc(stype)}</span>
+            <span class="text-xs text-slate-400 truncate max-w-[220px]"
+                  title="${esc(chunk.heading)}">${esc(chunk.heading || '')}</span>
+            <span class="ml-auto font-mono text-[11px] text-slate-400 whitespace-nowrap">
+              pp.&nbsp;${pages}&ensp;·&ensp;dist:&nbsp;${dist}
+            </span>
+          </div>
+          <p class="text-[13px] text-slate-600 leading-relaxed mb-3">${preview}</p>
+          <button class="view-pdf-btn" id="pdf-btn-${idx}" onclick="viewPDF(${idx}, this)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            View in PDF
+          </button>
+        </div>`;
+    }).join('');
+    chunkOffset += paper.chunks.length;
+
+    const passageHtml = (paper.map_summaries || []).length
+      ? `<details class="mt-3">
+           <summary class="flex items-center gap-1.5 text-xs text-slate-400
+                           cursor-pointer hover:text-slate-600 select-none w-fit">
+             <svg class="chevron" width="11" height="11" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2.5">
+               <path d="M9 18l6-6-6-6"/>
+             </svg>
+             Passage details (deep scan)
+           </summary>
+           <div class="mt-2 space-y-2">
+             ${paper.map_summaries.map((s, i) => `
+               <div class="text-xs bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-slate-500">
+                 <span class="font-medium text-slate-600">Passage ${i+1}:</span>
+                 ${esc(s)}
+               </div>`).join('')}
+           </div>
+         </details>`
+      : '';
+
+    const chunkToggle = paper.chunks.length
+      ? `<details class="mt-4">
+           <summary class="flex items-center gap-1.5 text-xs font-medium text-slate-500
+                           cursor-pointer hover:text-slate-700 select-none w-fit">
+             <svg class="chevron" width="11" height="11" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2.5">
+               <path d="M9 18l6-6-6-6"/>
+             </svg>
+             Source chunks (${paper.chunks.length})
+           </summary>
+           <div class="mt-3 space-y-3">${chunksHtml}</div>
+         </details>`
+      : '';
+
+    const divider = pi > 0 ? '<hr class="border-slate-100 my-5">' : '';
+
+    return `${divider}
+      <div>
+        <div class="flex items-start gap-2 flex-wrap mb-1">
+          <span class="text-sm font-semibold text-slate-900">📄 ${esc(paper.source)}</span>
+          ${modeBadge}
+        </div>
+        <p class="text-[11px] text-slate-400 mb-3">${metaLine}</p>
+        <div class="prose">${marked.parse(paper.summary)}</div>
+        ${passageHtml}
+        ${chunkToggle}
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center
+                text-base flex-shrink-0 mt-0.5">📚</div>
+    <div class="flex-1 min-w-0 bg-white border border-slate-100 rounded-2xl
+                rounded-tl-sm px-5 py-4 shadow-sm">
+      ${papersHtml}
+    </div>`;
+
+  document.getElementById('messages').appendChild(el);
+  scrollBottom();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PDF side panel
+// ═══════════════════════════════════════════════════════════════════════════
+async function viewPDF(idx, btn) {
+  const chunk = state.chunks[idx];
+  if (!chunk) return;
+
+  const panel = document.getElementById('pdf-panel');
+  const img   = document.getElementById('pdf-image');
+  const load  = document.getElementById('pdf-loading');
+  const err   = document.getElementById('pdf-error');
+  const meta  = document.getElementById('pdf-panel-meta');
+
+  // Toggle: clicking the same chunk again closes the panel
+  if (state.activePdfIdx === idx && panel.classList.contains('open')) {
+    closePdfPanel();
+    return;
+  }
+
+  // Mark active button, clear previous
+  document.querySelectorAll('.view-pdf-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  state.activePdfIdx = idx;
+
+  // Show panel + reset state while loading
+  panel.classList.add('open');
+  panel.style.width = _panelW + 'px';
+  _showResizeHandle();
+  img.classList.add('hidden');
+  img.style.width = '';
+  err.classList.add('hidden');
+  load.classList.remove('hidden');
+  _imgNatW = 0;
+  document.getElementById('zoom-display').textContent = '…';
+  document.getElementById('zoom-out-btn').disabled = false;
+  document.getElementById('zoom-in-btn').disabled  = false;
+
+  meta.textContent = [
+    chunk.heading,
+    chunk.section_name,
+    chunk.page_numbers ? 'pp. ' + chunk.page_numbers : null,
+  ].filter(Boolean).join('  ·  ');
+
+  try {
+    const res  = await fetch('/api/render-chunk', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        source_path:  chunk.source_path,
+        page_numbers: chunk.page_numbers,
+        text:         chunk.text,
+      }),
+    });
+    const data = await res.json();
+
+    if (data.image) {
+      // Use onload so naturalWidth is available to compute the fit zoom.
+      img.onload = () => {
+        _imgNatW = img.naturalWidth;
+        _fitZoom = _bodyContentW() / _imgNatW;   // zoom that fits page in panel
+        _zoom    = 1.0;                           // start at natural resolution (100%)
+        _applyImgW();                             // sets px width BEFORE unhiding
+        load.classList.add('hidden');
+        img.classList.remove('hidden');           // now visible at the correct size
+        applyZoom();                              // update % label + button states
+        const b = document.getElementById('pdf-panel-body');
+        b.scrollTop  = b.scrollLeft = 0;
+        b.style.cursor = 'grab';                 // signal that drag-to-pan is available
+      };
+      img.src = data.image;
+    } else {
+      load.classList.add('hidden');
+      err.textContent = data.detail || 'Could not render page.';
+      err.classList.remove('hidden');
+    }
+  } catch (e) {
+    load.classList.add('hidden');
+    err.textContent = 'Error: ' + e.message;
+    err.classList.remove('hidden');
+  }
+}
+
+function closePdfPanel() {
+  document.getElementById('pdf-panel').classList.remove('open');
+  _hideResizeHandle();
+  document.querySelectorAll('.view-pdf-btn').forEach(b => b.classList.remove('active'));
+  state.activePdfIdx = null;
+  _zoom    = 1.0;
+  _imgNatW = 0;
+  document.getElementById('pdf-panel-body').style.cursor = 'default';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Paper scope selector
+// ═══════════════════════════════════════════════════════════════════════════
+function updatePaperFilter() {
+  const sel = document.getElementById('paper-select');
+  state.selectedPaper = sel.value;
+  sel.classList.toggle('scoped', !!sel.value);
+}
+
+function renderPaperSelector() {
+  const sel     = document.getElementById('paper-select');
+  const current = sel.value;
+  sel.innerHTML  = '<option value="">All papers</option>' +
+    state.papers.map(name =>
+      `<option value="${esc(name)}"${name === current ? ' selected' : ''}>${esc(name)}</option>`
+    ).join('');
+  // Keep current selection or reset if it no longer exists
+  if (!state.papers.includes(current)) {
+    sel.value = '';
+    state.selectedPaper = '';
+  }
+  sel.classList.toggle('scoped', !!sel.value);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Papers management
+// ═══════════════════════════════════════════════════════════════════════════
+async function refreshPapers() {
+  try {
+    const data  = await fetch('/api/papers').then(r => r.json());
+    state.papers = data.papers || [];
+  } catch { state.papers = []; }
+  renderPapers();
+  renderPaperSelector();
+}
+
+function renderPapers() {
+  const list   = document.getElementById('papers-list');
+  const empty  = document.getElementById('papers-empty');
+  const selAll = document.getElementById('select-all-btn');
+  const remBtn = document.getElementById('remove-btn');
+
+  if (!state.papers.length) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    selAll.classList.add('hidden');
+    remBtn.classList.add('hidden');
+    return;
+  }
+
+  empty.classList.add('hidden');
+  selAll.classList.remove('hidden');
+
+  list.innerHTML = state.papers.map(name => `
+    <label class="flex items-center gap-3 px-3 py-2.5 rounded-xl
+                  hover:bg-slate-50 cursor-pointer transition-colors select-none">
+      <input type="checkbox" value="${esc(name)}" onchange="syncRemoveBtn()"
+        class="w-4 h-4 rounded border-slate-300 text-brand-600
+               focus:ring-2 focus:ring-brand-500 cursor-pointer">
+      <span class="text-sm text-slate-700 flex-1 truncate" title="${esc(name)}">
+        📄 ${esc(name)}
+      </span>
+    </label>`).join('');
+
+  syncRemoveBtn();
+}
+
+function syncRemoveBtn() {
+  const n      = document.querySelectorAll('#papers-list input:checked').length;
+  const btn    = document.getElementById('remove-btn');
+  const selAll = document.getElementById('select-all-btn');
+  const all    = document.querySelectorAll('#papers-list input');
+
+  btn.textContent = n ? `Remove ${n} paper${n > 1 ? 's' : ''}` : 'Remove Selected';
+  btn.classList.toggle('hidden', n === 0);
+
+  const allChecked = Array.from(all).every(cb => cb.checked);
+  selAll.textContent = allChecked ? 'Deselect all' : 'Select all';
+}
+
+function toggleSelectAll() {
+  const all        = document.querySelectorAll('#papers-list input');
+  const anyUnchecked = Array.from(all).some(cb => !cb.checked);
+  all.forEach(cb => cb.checked = anyUnchecked);
+  syncRemoveBtn();
+}
+
+async function removeSelected() {
+  const names = Array.from(
+    document.querySelectorAll('#papers-list input:checked')
+  ).map(cb => cb.value);
+  if (!names.length) return;
+
+  const status = document.getElementById('remove-status');
+  status.textContent = 'Removing…';
+  status.className   = 'text-xs text-slate-500';
+  status.classList.remove('hidden');
+
+  let ok = 0, fail = 0;
+  for (const name of names) {
+    try {
+      const data = await fetch('/api/papers/' + encodeURIComponent(name),
+                               { method: 'DELETE' }).then(r => r.json());
+      state.papers = data.papers || state.papers.filter(p => p !== name);
+      ok++;
+    } catch { fail++; }
+  }
+
+  renderPapers();
+  renderPaperSelector();
+  status.textContent = fail
+    ? `Removed ${ok}, failed ${fail}.`
+    : `Removed ${ok} paper${ok > 1 ? 's' : ''}.`;
+  status.className = 'text-xs ' + (fail ? 'text-red-500' : 'text-emerald-600');
+}
+
+// ── File upload ────────────────────────────────────────────────────────────
+function handleFileSelect(e) {
+  state.pendingFiles = Array.from(e.target.files);
+  renderFileList();
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.add('dropzone-active');
+}
+
+function handleDragLeave() {
+  document.getElementById('dropzone').classList.remove('dropzone-active');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('dropzone-active');
+  state.pendingFiles = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.pdf'));
+  renderFileList();
+}
+
+function removeFile(i) {
+  state.pendingFiles.splice(i, 1);
+  renderFileList();
+}
+
+function renderFileList() {
+  const list = document.getElementById('file-list');
+  const btn  = document.getElementById('ingest-btn');
+
+  if (!state.pendingFiles.length) {
+    list.classList.add('hidden');
+    btn.classList.add('hidden');
+    return;
+  }
+
+  list.innerHTML = state.pendingFiles.map((f, i) => `
+    <div class="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2 text-sm">
+      <span class="text-base">📄</span>
+      <span class="flex-1 truncate text-slate-700">${esc(f.name)}</span>
+      <span class="text-[11px] text-slate-400 whitespace-nowrap">${fmtBytes(f.size)}</span>
+      <button onclick="removeFile(${i})"
+        class="text-slate-300 hover:text-red-400 transition-colors text-base leading-none">×</button>
+    </div>`).join('');
+
+  list.classList.remove('hidden');
+  btn.classList.remove('hidden');
+  document.getElementById('upload-status').classList.add('hidden');
+}
+
+async function ingestFiles() {
+  if (!state.pendingFiles.length) return;
+
+  const btn    = document.getElementById('ingest-btn');
+  const status = document.getElementById('upload-status');
+
+  btn.disabled    = true;
+  btn.textContent = 'Ingesting…';
+  status.innerHTML = '<p class="text-slate-500">Processing — this may take a minute per PDF…</p>';
+  status.classList.remove('hidden');
+
+  const fd = new FormData();
+  state.pendingFiles.forEach(f => fd.append('files', f));
+
+  try {
+    const data = await fetch('/api/papers', { method: 'POST', body: fd }).then(r => r.json());
+    state.papers = data.papers || [];
+
+    status.innerHTML = data.results.map(r => `
+      <p class="${r.status === 'ok' ? 'text-emerald-600' : 'text-red-500'}">
+        ${r.status === 'ok' ? '✓' : '✗'} ${esc(r.name)}: ${esc(r.message)}
+      </p>`).join('');
+
+    state.pendingFiles = [];
+    document.getElementById('file-list').classList.add('hidden');
+    document.getElementById('file-input').value = '';
+    renderFileList();
+    renderPapers();
+    renderPaperSelector();
+  } catch (e) {
+    status.innerHTML = `<p class="text-red-500">Error: ${esc(e.message)}</p>`;
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'Ingest Selected Files';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Settings (persisted to localStorage)
+// ═══════════════════════════════════════════════════════════════════════════
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('rag-settings') || '{}');
+    if (s.deepScan    !== undefined) document.getElementById('deep-scan-toggle').checked = s.deepScan;
+    if (s.useReranker !== undefined) document.getElementById('reranker-toggle').checked  = s.useReranker;
+    if (s.topK        !== undefined) {
+      document.getElementById('topk-slider').value   = s.topK;
+      document.getElementById('topk-display').textContent = s.topK;
+    }
+  } catch {}
+  readSettings();
+}
+
+function readSettings() {
+  state.settings = {
+    deepScan:    document.getElementById('deep-scan-toggle').checked,
+    useReranker: document.getElementById('reranker-toggle').checked,
+    topK:        +document.getElementById('topk-slider').value,
+  };
+}
+
+function saveSettings() {
+  readSettings();
+  localStorage.setItem('rag-settings', JSON.stringify(state.settings));
+}
+
+function updateTopKDisplay(val) {
+  document.getElementById('topk-display').textContent = val;
+  saveSettings();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Utilities
+// ═══════════════════════════════════════════════════════════════════════════
+function mkEl(tag, cls) {
+  const el = document.createElement(tag);
+  if (cls) el.className = cls;
+  return el;
+}
+
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function fmtBytes(b) {
+  if (b < 1024)       return b + ' B';
+  if (b < 1024*1024)  return (b/1024).toFixed(1) + ' KB';
+  return (b/1024/1024).toFixed(1) + ' MB';
+}
+</script>
+</body>
+</html>
