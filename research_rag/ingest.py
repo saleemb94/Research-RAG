@@ -561,7 +561,19 @@ def ingest_pdf(
     store: VectorStore,
     skip_existing: bool = True,
     model: str = OLLAMA_MODEL,
+    fast: bool = False,
 ) -> int:
+    """
+    Convert, chunk, classify, embed and store one PDF.
+
+    `fast=True` skips both LLM passes - the multi-stage section-type
+    classification and the per-section summaries - and keeps only the instant
+    keyword classifier. That is the difference between roughly six seconds and
+    a couple of minutes, which is what makes "upload and start asking" viable.
+    Section-aware routing is weaker for such a document, but a single-document
+    conversation is already scoped to one paper, so it leans on plain semantic
+    search anyway.
+    """
     pdf_path = Path(pdf_path)
 
     if store.source_exists(pdf_path.name):
@@ -594,8 +606,16 @@ def ingest_pdf(
     if ieee_style:
         print("  → IEEE-style numbering detected (Roman L1 / letter L2)")
 
-    # Three-stage section_type map using corrected headings
-    section_type_map = _build_section_type_map(chunks, model, corrected_headings)
+    # Three-stage section_type map using corrected headings. The fast path keeps
+    # only stage 1, which needs no LLM at all.
+    if fast:
+        section_type_map = {
+            h.strip(): classify_heading(h)
+            for hs in corrected_headings for h in hs if h.strip()
+        }
+        print(f"  -> Fast path: keyword-only types for {len(section_type_map)} heading(s)")
+    else:
+        section_type_map = _build_section_type_map(chunks, model, corrected_headings)
 
     texts = [chunk.text for chunk in chunks]
     vectors = embedder.embed(texts)
@@ -664,11 +684,14 @@ def ingest_pdf(
 
     # One-line description of every section, used later to route a question to
     # the right section instead of guessing from the heading alone.
-    section_summaries = _summarise_sections(chunks_data, model)
-    for item in chunks_data:
-        props = item["properties"]
-        props["section_summary"] = section_summaries.get(props["section_name"], "")
-    print(f"  -> Summarised {len(section_summaries)} section(s)")
+    if fast:
+        section_summaries = {}
+    else:
+        section_summaries = _summarise_sections(chunks_data, model)
+        for item in chunks_data:
+            props = item["properties"]
+            props["section_summary"] = section_summaries.get(props["section_name"], "")
+        print(f"  -> Summarised {len(section_summaries)} section(s)")
 
     store.insert_chunks(chunks_data)
 

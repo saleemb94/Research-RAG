@@ -52,6 +52,12 @@ WEAVIATE_HOST = os.getenv("WEAVIATE_HOST", "localhost")
 WEAVIATE_PORT = _env_int("WEAVIATE_PORT", 8081)
 WEAVIATE_GRPC_PORT = _env_int("WEAVIATE_GRPC_PORT", 50052)
 WEAVIATE_COLLECTION = os.getenv("WEAVIATE_COLLECTION", "ResearchChunk")
+# Ad-hoc uploads live in their own collection rather than behind a flag on the
+# main one. Isolation is then structural: nothing you drop in to ask one
+# question can leak into a corpus-wide answer, and cleanup is a drop.
+WEAVIATE_SCRATCH_COLLECTION = os.getenv(
+    "WEAVIATE_SCRATCH_COLLECTION", "ResearchChunkScratch"
+)
 
 # Upper bound for full-collection scans (listing sections, map-reduce fetches).
 # Must stay <= the QUERY_MAXIMUM_RESULTS set on the Weaviate container.

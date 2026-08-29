@@ -91,6 +91,11 @@ class FakeStore:
     def get_section_summary(self, source_filter=None):
         return {n: [] for n in self.get_unique_section_names(source_filter)}
 
+    def get_section_descriptions(self, source_filter=None):
+        # Sections indexed before summaries existed have none; the router must
+        # degrade to heading names rather than break.
+        return {}
+
     def get_section_type_map(self, source_filter=None):
         return {h.properties["section_name"]: h.properties["section_type"]
                 for h in self._scoped(source_filter)}
@@ -112,7 +117,7 @@ class _Stub:
     def __enter__(self):
         self._real = (S.classify_query, S.match_headings_to_target, S._llm)
 
-        def match(target, headings, model, section_summary=None):
+        def match(target, headings, model, section_summary=None, descriptions=None):
             self.match_calls += 1
             return [h for h in self.matched_headings if h in headings]
 
