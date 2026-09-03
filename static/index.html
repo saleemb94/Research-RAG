@@ -34,7 +34,12 @@
   --ink-700: #333741;
   --ink-600: #4a4f5a;
   --ink-500: #646a77;
-  --ink-400: #8a909c;
+  /* 4.69:1 on white. The obvious lighter grey for metadata measured 3.21:1,
+     which fails AA for text - and here it carried eyebrows, page numbers and
+     "not cited" at 11px, all of which a reader is meant to be able to read.
+     Icons use this too: ink-300 measured 1.95:1, which fails even the 3:1
+     threshold that applies to non-text. */
+  --ink-400: #6e7480;
   --ink-300: #b4bac4;
   --ink-200: #d7dbe2;
   --ink-100: #e8eaef;
