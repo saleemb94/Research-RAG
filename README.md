@@ -486,7 +486,7 @@ Four tabs:
 | **Ask** | One synthesised answer across the whole library, every claim carrying a `[n]` citation you can click |
 | **Paper** | A conversation scoped to one selected paper, with follow-ups resolved against the history |
 | **Scratch** | Drop in a PDF, ask about it, throw it away — stored separately and never visible to the other tabs |
-| **Library** | What is ingested, with per-paper delete |
+| **Library** | What is ingested; select any number of papers to remove at once, with a progress bar for both adding and removing |
 
 Clicking any citation opens the source panel and renders that passage on its original
 PDF page.

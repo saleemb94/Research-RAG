@@ -40,6 +40,13 @@
   .spin { width:1rem;height:1rem;border:2px solid #c7d2fe;border-top-color:#4338ca;
           border-radius:9999px;animation:sp .7s linear infinite; }
   @keyframes sp { to { transform: rotate(360deg); } }
+  .bar { height:.375rem; background:#e2e8f0; border-radius:9999px; overflow:hidden; }
+  .bar > i { display:block; height:100%; width:0; border-radius:9999px;
+             background:#4f46e5; transition:width .25s ease; }
+  /* While a paper is being parsed the server reports nothing, so the bar
+     slides instead of inventing a percentage. */
+  .bar.indet > i { width:35%; animation:slide 1.2s ease-in-out infinite; }
+  @keyframes slide { 0% { margin-left:-35%; } 100% { margin-left:100%; } }
   .drop { border:2px dashed #cbd5e1; transition:border-color .15s, background .15s; }
   .drop.hot { border-color:#6366f1; background:#eef2ff; }
 </style>
@@ -161,7 +168,19 @@
           </div>
           <div class="bg-white border border-slate-200 rounded-xl p-4">
             <h2 class="font-semibold text-sm mb-2">Stored papers <span id="lib-count" class="text-slate-400 font-normal"></span></h2>
+            <div id="lib-tools" class="hidden items-center gap-3 pb-2 border-b border-slate-200">
+              <label class="flex items-center gap-2 text-xs text-slate-500 cursor-pointer select-none">
+                <input type="checkbox" id="lib-all" class="accent-brand-600">Select all
+              </label>
+              <span id="lib-sel" class="text-xs text-slate-400"></span>
+              <button id="lib-remove" disabled
+                      class="ml-auto text-xs font-medium text-red-600 hover:underline
+                             disabled:text-slate-300 disabled:no-underline disabled:cursor-default">
+                Remove selected
+              </button>
+            </div>
             <div id="lib-list" class="divide-y divide-slate-100"></div>
+            <div id="lib-del-status" class="mt-3 space-y-2 empty:mt-0"></div>
           </div>
         </div>
       </section>
@@ -204,6 +223,9 @@ const state = {
   ask:     { history: [], busy: false },
   paper:   { history: [], busy: false, paper: '' },
   scratch: { history: [], busy: false, paper: '' },
+  // Library selection, kept out here so it survives the list re-rendering
+  // after each delete.
+  papers: [], selected: new Set(),
 };
 
 // ── tabs ──────────────────────────────────────────────────────────────────
@@ -455,51 +477,145 @@ function dropZone(zoneId, onFiles) {
   z.addEventListener('drop', e => onFiles([...e.dataTransfer.files].filter(f => f.type === 'application/pdf')));
 }
 
+/*
+ * One request per file, rather than one request for the batch.
+ *
+ * The obvious progress bar - bytes sent - is useless here: on localhost the
+ * transfer is over in milliseconds while ingestion takes a minute or two per
+ * paper, so the bar would hit 100% immediately and then sit there for the
+ * entire actual wait. Sending files one at a time makes the honest unit of
+ * progress "papers finished". It also means each result appears as it lands
+ * instead of after several minutes of silence, and one unreadable PDF no
+ * longer takes the rest of the batch down with it.
+ */
+function uploadOne(url, file, onSend) {
+  return new Promise((resolve, reject) => {
+    const fd = new FormData();
+    fd.append('files', file);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    if (onSend) xhr.upload.onprogress = e => {
+      if (e.lengthComputable) onSend(e.loaded / e.total);
+    };
+    xhr.onload = () => {
+      try { resolve(JSON.parse(xhr.responseText)); }
+      catch { reject(new Error('unreadable response (HTTP ' + xhr.status + ')')); }
+    };
+    xhr.onerror = () => reject(new Error('network error'));
+    xhr.send(fd);
+  });
+}
+
+/* A progress row: one bar across the whole batch, plus a line per finished file. */
+function progressPanel(box, total) {
+  const wrap = document.createElement('div');
+  wrap.className = 'space-y-2';
+  wrap.innerHTML =
+    `<div class="flex items-center gap-2 text-sm text-slate-600">
+       <div class="spin" data-role="spin"></div>
+       <span data-role="label" class="flex-1 min-w-0 truncate"></span>
+       <span data-role="count" class="text-xs text-slate-400 shrink-0"></span>
+     </div>
+     <div class="bar"><i></i></div>
+     <div data-role="done" class="space-y-1"></div>`;
+  box.prepend(wrap);
+
+  const q = r => wrap.querySelector(`[data-role=${r}]`);
+  const bar = wrap.querySelector('.bar');
+  const fill = wrap.querySelector('.bar > i');
+  const pct = f => { fill.style.width = Math.round(Math.min(f, 1) * 100) + '%'; };
+
+  return {
+    // Bytes only account for a sliver of each file's slot; the rest of the
+    // slot belongs to ingestion, which is where the time actually goes.
+    sending(i, frac, name) {
+      q('label').textContent = 'Uploading ' + short(name);
+      q('count').textContent = `${i} of ${total} done`;
+      bar.classList.remove('indet');
+      pct((i + frac * 0.12) / total);
+    },
+    // No server-side signal during either a parse or a delete, so the bar
+    // goes indeterminate and the label says what is being waited on.
+    busy(i, text) {
+      q('label').textContent = text;
+      q('count').textContent = `${i} of ${total} done`;
+      bar.classList.add('indet');
+    },
+    ingesting(i, name) {
+      this.busy(i, 'Reading ' + short(name) + ' — a minute or two');
+    },
+    finish(i, ok, name, message) {
+      bar.classList.remove('indet');
+      pct((i + 1) / total);
+      q('count').textContent = `${i + 1} of ${total} done`;
+      const line = document.createElement('div');
+      line.className = 'text-sm text-slate-600 flex items-start gap-1.5';
+      const badge = document.createElement('span');
+      badge.className = 'badge ' + (ok ? 'badge-indigo' : 'badge-amber');
+      badge.textContent = ok ? 'ready' : 'failed';
+      const text = document.createElement('span');
+      text.textContent = short(name) + ' — ' + message;
+      line.append(badge, text);
+      q('done').appendChild(line);
+    },
+    end(message) {
+      const spin = q('spin');
+      if (spin) spin.remove();
+      bar.classList.remove('indet');
+      pct(1);
+      q('label').textContent = message;
+      q('count').textContent = '';
+    },
+  };
+}
+
+async function uploadBatch(url, files, box, onEach) {
+  const p = progressPanel(box, files.length);
+  let ok = 0;
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    let sent = false;
+    p.sending(i, 0, f.name);
+    try {
+      const d = await uploadOne(url, f, frac => {
+        p.sending(i, frac, f.name);
+        if (frac >= 1 && !sent) { sent = true; p.ingesting(i, f.name); }
+      });
+      const r = (d.results || [])[0] || { status: 'error', message: 'no result' };
+      const good = r.status === 'ok';
+      p.finish(i, good, r.name || f.name, r.message || '');
+      if (good) { ok++; if (onEach) onEach(r); }
+    } catch (e) {
+      p.finish(i, false, f.name, String((e && e.message) || e));
+    }
+  }
+  p.end(files.length === 1
+    ? (ok ? 'Done.' : 'Nothing was added.')
+    : `${ok} of ${files.length} papers added.`);
+  refreshHealth();
+  return ok;
+}
+
 async function uploadScratch(files) {
   if (!files.length) return;
-  const list = $('scratch-list');
-  const row = document.createElement('div');
-  row.className = 'flex items-center gap-2 text-sm text-slate-600';
-  row.innerHTML = `<div class="spin"></div> Preparing ${esc(files[0].name)}…`;
-  list.prepend(row);
-
-  const fd = new FormData();
-  files.forEach(f => fd.append('files', f));
-  try {
-    const d = await fetch('/api/scratch', { method: 'POST', body: fd }).then(r => r.json());
-    const ok = d.results.filter(r => r.status === 'ok');
-    row.innerHTML = d.results.map(r => r.status === 'ok'
-      ? `<span class="badge badge-indigo">ready</span> <span class="ml-1">${esc(r.name)} — ${r.chunks} chunks in ${r.seconds}s</span>`
-      : `<span class="badge badge-amber">failed</span> <span class="ml-1">${esc(r.name)}: ${esc(r.message)}</span>`
-    ).join('<br>');
-    if (ok.length) {
-      state.scratch.paper = ok[0].name;
-      state.scratch.history = [];
-      $('scratch-thread').innerHTML = '';
-      $('scratch-input').disabled = false;
-      $('scratch-input').placeholder = 'Ask about ' + short(ok[0].name);
-      $('scratch-input').focus();
-    }
-  } catch (e) { row.innerHTML = `<span class="badge badge-amber">failed</span> ${esc(String(e))}`; }
-  refreshHealth();
+  let first = '';
+  await uploadBatch('/api/scratch', files, $('scratch-list'), r => {
+    if (!first) first = r.name;
+  });
+  if (first) {
+    state.scratch.paper = first;
+    state.scratch.history = [];
+    $('scratch-thread').innerHTML = '';
+    $('scratch-input').disabled = false;
+    $('scratch-input').placeholder = 'Ask about ' + short(first);
+    $('scratch-input').focus();
+  }
 }
 
 async function uploadLibrary(files) {
   if (!files.length) return;
-  const box = $('lib-status');
-  const row = document.createElement('div');
-  row.className = 'flex items-center gap-2 text-sm text-slate-600';
-  row.innerHTML = `<div class="spin"></div> Ingesting ${files.length} paper(s) — this takes a minute or two each…`;
-  box.prepend(row);
-  const fd = new FormData();
-  files.forEach(f => fd.append('files', f));
-  try {
-    const d = await fetch('/api/papers', { method: 'POST', body: fd }).then(r => r.json());
-    row.innerHTML = d.results.map(r =>
-      `<span class="badge ${r.status === 'ok' ? 'badge-indigo' : 'badge-amber'}">${r.status}</span>` +
-      ` <span class="ml-1">${esc(r.name)} — ${esc(r.message)}</span>`).join('<br>');
-    loadPapers();
-  } catch (e) { row.innerHTML = `<span class="badge badge-amber">failed</span> ${esc(String(e))}`; }
+  await uploadBatch('/api/papers', files, $('lib-status'));
+  loadPapers();
 }
 
 dropZone('scratch-drop', uploadScratch);
@@ -508,8 +624,28 @@ $('scratch-file').onchange = e => uploadScratch([...e.target.files]);
 $('lib-file').onchange     = e => uploadLibrary([...e.target.files]);
 
 // ── library ───────────────────────────────────────────────────────────────
+function syncLibTools() {
+  const n = state.selected.size, total = state.papers.length;
+  const tools = $('lib-tools');
+  tools.classList.toggle('hidden', total === 0);
+  tools.classList.toggle('flex', total > 0);
+  $('lib-sel').textContent = n ? `${n} selected` : '';
+  const btn = $('lib-remove');
+  btn.disabled = n === 0;
+  btn.textContent = n === 0 ? 'Remove selected'
+                  : n === 1 ? 'Remove 1 paper'
+                            : `Remove ${n} papers`;
+  const all = $('lib-all');
+  all.checked = n > 0 && n === total;
+  all.indeterminate = n > 0 && n < total;
+}
+
 async function loadPapers() {
   const { papers } = await fetch('/api/papers').then(r => r.json());
+  state.papers = papers;
+  // A paper deleted elsewhere must not stay selected, or the count lies and
+  // the next bulk remove sends a DELETE for something already gone.
+  state.selected = new Set([...state.selected].filter(x => papers.includes(x)));
 
   const sel = $('paper-select');
   const keep = sel.value;
@@ -526,20 +662,81 @@ async function loadPapers() {
   papers.forEach(p => {
     const row = document.createElement('div');
     row.className = 'flex items-center gap-3 py-2';
-    row.innerHTML = `<span class="text-sm text-slate-700 flex-1 min-w-0 truncate">${esc(short(p))}</span>`;
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'accent-brand-600 shrink-0 cursor-pointer';
+    cb.checked = state.selected.has(p);
+    cb.onchange = () => {
+      if (cb.checked) state.selected.add(p); else state.selected.delete(p);
+      syncLibTools();
+    };
+
+    const name = document.createElement('label');
+    name.className = 'text-sm text-slate-700 flex-1 min-w-0 truncate cursor-pointer';
+    name.textContent = short(p);
+    name.onclick = () => { cb.checked = !cb.checked; cb.onchange(); };
+
     const del = document.createElement('button');
-    del.className = 'text-xs text-slate-400 hover:text-red-600';
+    del.className = 'text-xs text-slate-400 hover:text-red-600 shrink-0';
     del.textContent = 'Remove';
     del.onclick = async () => {
       if (!confirm('Remove "' + short(p) + '" from the library?')) return;
       await fetch('/api/papers/' + encodeURIComponent(p), { method: 'DELETE' });
+      state.selected.delete(p);
       loadPapers(); refreshHealth();
     };
-    row.appendChild(del);
+
+    row.append(cb, name, del);
     list.appendChild(row);
   });
+  syncLibTools();
   refreshHealth();
 }
+
+$('lib-all').onchange = e => {
+  const on = e.target.checked;
+  state.selected = on ? new Set(state.papers) : new Set();
+  // Tick the rows in place. Re-fetching the list just to redraw checkboxes
+  // made a purely local toggle wait on a round trip before anything moved.
+  document.querySelectorAll('#lib-list input[type=checkbox]')
+    .forEach(cb => { cb.checked = on; });
+  syncLibTools();
+};
+
+$('lib-remove').onclick = async () => {
+  const picked = [...state.selected];
+  if (!picked.length) return;
+  const msg = picked.length === 1
+    ? `Remove "${short(picked[0])}" from the library?`
+    : [`Remove these ${picked.length} papers from the library?`, '']
+        .concat(picked.map(p => '• ' + short(p)))
+        .join('\n');
+  if (!confirm(msg)) return;
+
+  const btn = $('lib-remove');
+  btn.disabled = true;
+  const box = $('lib-del-status');
+  box.innerHTML = '';
+  const p = progressPanel(box, picked.length);
+  // One at a time: each delete has to clear three collections, and doing them
+  // in parallel would make a partial failure hard to read.
+  for (let i = 0; i < picked.length; i++) {
+    const name = picked[i];
+    p.busy(i, 'Removing ' + short(name));
+    try {
+      const r = await fetch('/api/papers/' + encodeURIComponent(name),
+                            { method: 'DELETE' });
+      p.finish(i, r.ok, name, r.ok ? 'removed' : 'HTTP ' + r.status);
+      if (r.ok) state.selected.delete(name);
+    } catch (e) {
+      p.finish(i, false, name, String((e && e.message) || e));
+    }
+  }
+  p.end(picked.length === 1 ? 'Removed.' : `Removed ${picked.length} papers.`);
+  await loadPapers();
+  refreshHealth();
+};
 
 async function refreshHealth() {
   try {
