@@ -40,32 +40,63 @@ print("Loading embedding model...")
 embedder = Embedder()
 print("Loading reranker model...")
 reranker_model = Reranker()
-print("Connecting to Weaviate...")
-try:
-    store = VectorStore()
-except WeaviateUnavailableError as exc:
-    print(f"\n{exc}\n", file=sys.stderr)
-    raise SystemExit(1)
-# Ad-hoc uploads go to their own collection, so nothing dropped in to ask a
-# single question can surface in a corpus-wide answer, and cleanup is a delete.
-scratch_store = VectorStore(collection=WEAVIATE_SCRATCH_COLLECTION)
-# One structured card per paper. Small enough to hold in memory and to put
-# in a single prompt, so corpus-level questions do not need retrieval.
-card_store = PaperCardStore()
-# Section summaries as a searchable second retrieval channel.
-section_index = open_section_index()
-print("All services ready.\n")
+# The Weaviate-backed stores are owned by the app's lifespan, not by import.
+#
+# They used to be opened at import and closed on shutdown, which meant they
+# could only ever be closed once. Any second TestClient context - which an
+# eval script opens per section as a matter of course - closed them on exit,
+# and every request after that failed instantly with a closed-client error.
+# It scored zero and looked like a catastrophic regression; the giveaway, both
+# times it happened, was 0.1s per question. Tying the stores to startup and
+# shutdown makes repeated contexts work.
+#
+# The models stay at module scope: they hold no connections and cost seconds to
+# build, so rebuilding them per context would be waste for no gain.
+store = None
+scratch_store = None
+card_store = None
+section_index = None
+
+
+def _open_stores():
+    global store, scratch_store, card_store, section_index
+    try:
+        store = VectorStore()
+    except WeaviateUnavailableError as exc:
+        print(f"\n{exc}\n", file=sys.stderr)
+        raise SystemExit(1)
+    # Ad-hoc uploads go to their own collection, so nothing dropped in to ask a
+    # single question can surface in a corpus-wide answer, and cleanup is a
+    # delete.
+    scratch_store = VectorStore(collection=WEAVIATE_SCRATCH_COLLECTION)
+    # One structured card per paper. Small enough to hold in memory and to put
+    # in a single prompt, so corpus-level questions do not need retrieval.
+    card_store = PaperCardStore()
+    # Section summaries as a searchable second retrieval channel.
+    section_index = open_section_index()
+
+
+def _close_stores():
+    global store, scratch_store, card_store, section_index
+    for closable in (store, scratch_store, card_store, section_index):
+        if closable is not None:
+            try:
+                closable.close()
+            except Exception:
+                pass
+    store = scratch_store = card_store = section_index = None
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    if store is None:
+        print("Connecting to Weaviate...")
+        _open_stores()
+        print("All services ready.\n")
     yield
     # Weaviate's client holds an HTTP session and a gRPC channel; close them
     # so shutdown is clean rather than leaving warnings on exit.
-    store.close()
-    scratch_store.close()
-    card_store.close()
-    section_index.close()
+    _close_stores()
 
 
 app = FastAPI(title="Research RAG", lifespan=lifespan)
@@ -98,7 +129,23 @@ def favicon():
 
 @app.get("/api/papers")
 def list_papers():
-    return {"papers": store.list_sources()}
+    """
+    The library, plus what each paper is actually called.
+
+    `papers` stays a plain list of filenames because that is the key everything
+    else - filters, deletes, citations - is addressed by. Titles ride alongside
+    as a map so the interface can show a paper's name while still speaking
+    filenames to the API.
+    """
+    titles = {}
+    try:
+        titles = {c.source_file: c.title
+                  for c in card_store.all_cards() if c.title}
+    except Exception:
+        # A missing or half-built card store must not stop the library listing;
+        # the interface falls back to filenames on its own.
+        pass
+    return {"papers": store.list_sources(), "titles": titles}
 
 
 def _refresh_section_index(source_file: str):

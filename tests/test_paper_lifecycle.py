@@ -137,6 +137,25 @@ def main() -> int:
               "a deleted paper must not stay citable")
         check("the PDF is removed from papers/", not dest.exists())
     finally:
+        client.close()
+
+    # -- the app must survive being started more than once ----------------
+    # The stores were opened at import and closed on shutdown, so they could
+    # only be closed once: a second client context left every request failing
+    # with a closed-client error. It scored zero and read as a total
+    # regression. This has cost two debugging sessions, so it is pinned.
+    try:
+        with TestClient(appmod.app) as c1:
+            first = c1.get("/api/health").json().get("ok")
+        with TestClient(appmod.app) as c2:
+            second = c2.get("/api/health").json().get("ok")
+        check("a second app context still serves requests",
+              bool(first) and bool(second), f"first={first} second={second}")
+    except Exception as exc:
+        check("a second app context still serves requests", False,
+              f"{type(exc).__name__}: {str(exc).splitlines()[0][:70]}")
+
+    if True:
         client.delete(f"/api/papers/{NAME}")
         client.close()
         for f in (probe, other):

@@ -65,6 +65,54 @@ def load_items(limit: int | None, mode: str = "single") -> list[dict]:
     return items[:limit] if limit else items
 
 
+def prune_expected_papers(syn_items, verbose=False) -> int:
+    """
+    Drop expected papers that are no longer indexed.
+
+    The "expected papers cited" metric asks whether the answer cited the papers
+    that ought to have contributed. Leaving a removed paper in that list makes
+    the metric unwinnable and reads as a citation failure, when in fact the
+    answer could not have cited a document that is not there. Facts are not
+    attributed per paper, so a fact whose only source was removed still counts
+    against the facts metric - which is why that number needs reading with the
+    absent list in hand.
+    """
+    from research_rag.vector_store import VectorStore
+
+    with VectorStore() as store:
+        present = set(store.list_sources())
+    dropped = 0
+    for it in syn_items:
+        want = it.get("expected_papers") or []
+        keep = [p for p in want if p in present]
+        if len(keep) != len(want):
+            dropped += len(want) - len(keep)
+            if verbose:
+                for p in want:
+                    if p not in present:
+                        print(f"    {it['id']}: dropped absent {p}")
+            it["expected_papers"] = keep
+    return dropped
+
+
+def split_by_presence(items) -> tuple[list[dict], list[dict], set[str]]:
+    """
+    Separate questions whose paper is still in the index from those whose is not.
+
+    A library is curated over time, and scoring a question whose source document
+    has been removed measures nothing: it reports 0% and reads as a collapse in
+    retrieval quality when the only thing that changed is which papers are on
+    the shelf. Reported as absent rather than silently averaged in.
+    """
+    from research_rag.vector_store import VectorStore
+
+    with VectorStore() as store:
+        present = set(store.list_sources())
+    here = [i for i in items if not i.get("paper") or i["paper"] in present]
+    gone = [i for i in items if i.get("paper") and i["paper"] not in present]
+    return here, gone, {i["paper"] for i in gone}
+
+
 # ── coverage: are the facts in the index at all? ───────────────────────────
 
 def run_coverage(items, verbose):
@@ -358,6 +406,9 @@ def main():
                     help="Score the questions the corpus cannot answer")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--include-missing", action="store_true",
+                    help="Score questions whose paper is no longer indexed "
+                         "(they can only fail; off by default)")
     ap.add_argument("--repeat", type=int, default=1,
                     help="Run N times and report mean and spread. Answers vary "
                          "between identical runs by several points, so a single "
@@ -374,7 +425,29 @@ def main():
                  "--generation / --synthesis / --all")
 
     items = load_items(a.limit, "single")
+    items, absent, absent_papers = split_by_presence(items)
+    if absent:
+        print()
+        print(f"NOTE: {len(absent)} question(s) skipped - "
+              f"{len(absent_papers)} of their papers are no longer in the index:")
+        for p in sorted(absent_papers):
+            print(f"    {p}")
+        print("  Re-add them, or prune the golden set. Scoring a question whose")
+        print("  paper was removed measures the library, not the system.")
+        if a.include_missing:
+            items = items + absent
+            print("  --include-missing given: scoring them anyway.")
+        print()
     syn_items = load_items(a.limit, "synthesis")
+    if syn_items:
+        dropped = prune_expected_papers(syn_items, a.verbose)
+        if dropped:
+            print(f"NOTE: {dropped} expected-paper reference(s) dropped from the "
+                  f"synthesis set - those papers are no longer indexed, so no "
+                  f"answer could cite them.")
+            print("  The facts metric still counts facts that only those papers "
+                  "stated, so read it alongside the absent list above.")
+            print()
     neg_items = load_items(a.limit, "negative")
     print(f"Golden set: {len(items)} single-paper question(s) over "
           f"{len({i['paper'] for i in items})} paper(s) "
