@@ -94,6 +94,11 @@ def run(page, base_url):
     health = page.inner_text("#health")
     check("header reports the corpus", "paper" in health and "chunks" in health, health)
 
+    # Browsers request this on every page load whether the page asks or not,
+    # so a missing route logged a 404 for every single visit.
+    fav = page.context.request.get(base_url + "favicon.ico")
+    check("favicon is served", fav.status == 200, f"HTTP {fav.status}")
+
     # -- tabs switch, and only one view is visible ---------------------------
     for tab in ["paper", "scratch", "library", "ask"]:
         page.click(f'.tab-btn[data-tab="{tab}"]')

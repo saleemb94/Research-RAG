@@ -7,7 +7,9 @@ from pathlib import Path
 from typing import List
 
 import uvicorn
-from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
+from fastapi import (
+    BackgroundTasks, FastAPI, File, HTTPException, Response, UploadFile,
+)
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -73,6 +75,19 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/")
 def root():
     return FileResponse("static/index.html")
+
+
+ICON = Path("docs/icon.ico")
+
+
+@app.get("/favicon.ico")
+def favicon():
+    """The same icon the desktop shortcut uses. Browsers request this on every
+    page load whether or not the page asks for it, so without a route the log
+    fills with 404s that hide anything real."""
+    if ICON.exists():
+        return FileResponse(str(ICON), media_type="image/x-icon")
+    return Response(status_code=204)
 
 
 @app.get("/api/papers")
@@ -347,9 +362,32 @@ def health():
     }
 
 
-if __name__ == "__main__":
-    import threading, webbrowser
+def _open_browser_when_ready(url: str):
+    """
+    Wait for the server to answer, then open the browser.
 
-    url = f"http://{'localhost' if APP_HOST in ('0.0.0.0', '127.0.0.1') else APP_HOST}:{APP_PORT}"
-    threading.Timer(1.5, lambda: webbrowser.open(url)).start()
+    This used to be a flat 1.5s timer, but the embedding and reranker models
+    load before uvicorn starts listening - tens of seconds on a cold start -
+    so the browser opened onto a refused connection and the user got an error
+    page for their trouble.
+    """
+    import urllib.request
+    import webbrowser
+
+    for _ in range(150):
+        try:
+            with urllib.request.urlopen(f"{url}/api/health", timeout=2):
+                webbrowser.open(url)
+                return
+        except Exception:
+            time.sleep(2)
+
+
+if __name__ == "__main__":
+    import threading
+
+    host = "localhost" if APP_HOST in ("0.0.0.0", "127.0.0.1") else APP_HOST
+    url = f"http://{host}:{APP_PORT}"
+    threading.Thread(target=_open_browser_when_ready, args=(url,),
+                     daemon=True).start()
     uvicorn.run(app, host=APP_HOST, port=APP_PORT)

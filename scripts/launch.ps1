@@ -140,20 +140,11 @@ if (-not (Test-Endpoint $ollama)) {
     Write-Host "  Ollama is ready." -ForegroundColor Green
 }
 
-# -- open the browser once the app answers, then hand the console to the app -
+# -- hand the console to the app --------------------------------------------
+# app.py opens the browser itself once it answers, so there is deliberately no
+# second opener here - having both is what made two tabs open.
 Write-Host ""
 Write-Host "  Starting the app (first run loads the embedding models)..." -ForegroundColor Cyan
-Start-Job -ScriptBlock {
-    param($url)
-    for ($i = 0; $i -lt 150; $i++) {
-        try {
-            Invoke-WebRequest -Uri "$url/api/health" -TimeoutSec 2 -UseBasicParsing | Out-Null
-            Start-Process $url
-            return
-        } catch { Start-Sleep -Seconds 2 }
-    }
-} -ArgumentList $appUrl | Out-Null
-
 Write-Host "  $appUrl   (close this window to stop)" -ForegroundColor Green
 Write-Host ""
 & $python "app.py"
