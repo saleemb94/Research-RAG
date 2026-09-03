@@ -241,6 +241,16 @@ def library_checks(page):
     check("uploaded papers appear in the library",
           page.eval_on_selector_all("#lib-list > div", "d => d.length") == before + 2)
 
+    # A paper is shown by what it is called, not by what the file is called.
+    shown = page.eval_on_selector_all(
+        "#lib-list > div",
+        "rows => rows.filter(r => (r.querySelector('label')?.title || '')"
+        "                          .startsWith('zz_ui_probe'))"
+        "            .map(r => r.querySelector('label')?.textContent || '')")
+    check("papers are listed by their resolved title",
+          bool(shown) and all("zz_ui_probe" not in t for t in shown),
+          str(shown[:2]))
+
     # -- the filter, which is the only way through a library this size -----
     page.fill("#lib-filter", "zz ui probe")
     page.wait_for_function(
@@ -276,10 +286,12 @@ def library_checks(page):
         """rows => {
              let n = 0;
              for (const r of rows) {
-               const t = r.querySelector('label')?.textContent || '';
-               if (t.startsWith('zz ui probe')) {
-                 const cb = r.querySelector('input[type=checkbox]');
-                 cb.click(); n++;
+               // The visible text is the paper's real title now; the filename
+               // lives on the label's title attribute and is what identifies
+               // a row unambiguously.
+               const f = r.querySelector('label')?.title || '';
+               if (f.startsWith('zz_ui_probe')) {
+                 r.querySelector('input[type=checkbox]').click(); n++;
                }
              }
              return n;
@@ -296,8 +308,11 @@ def library_checks(page):
     page.wait_for_function("n => document.querySelectorAll('#lib-list > div').length === n",
                            arg=before, timeout=120_000)
     check("bulk remove deletes every selected paper", True, f"back to {before}")
-    remaining = page.inner_text("#lib-list")
-    check("no probe survives the bulk remove", "zz ui probe" not in remaining)
+    left = page.eval_on_selector_all(
+        "#lib-list > div",
+        "rows => rows.map(r => r.querySelector('label')?.title || '')"
+        "          .filter(f => f.startsWith('zz_ui_probe'))")
+    check("no probe survives the bulk remove", left == [], str(left))
     check("the toolbar resets after removal",
           page.get_attribute("#lib-remove", "disabled") is not None)
 

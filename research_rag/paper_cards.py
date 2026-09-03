@@ -124,6 +124,9 @@ Answer:"""
 @dataclass
 class PaperCard:
     source_file: str
+    # What the paper is actually called. Resolved once at ingest; empty when no
+    # source produced anything plausible, and the filename is used instead.
+    title: str = ""
     summary: str = ""
     discipline: str = ""
     datasets: list[str] = field(default_factory=list)
@@ -135,8 +138,8 @@ class PaperCard:
     limitations: list[str] = field(default_factory=list)
 
     def as_properties(self) -> dict:
-        d = {"source_file": self.source_file, "summary": self.summary,
-             "discipline": self.discipline}
+        d = {"source_file": self.source_file, "title": self.title,
+             "summary": self.summary, "discipline": self.discipline}
         for f in _LIST_FIELDS:
             d[f] = [str(x)[:120] for x in getattr(self, f) if str(x).strip()][:12]
         return d
@@ -238,6 +241,10 @@ class PaperCardStore:
                     col.config.add_property(
                         Property(name=f, data_type=DataType.TEXT_ARRAY)
                     )
+            if "title" not in have:
+                col.config.add_property(
+                    Property(name="title", data_type=DataType.TEXT)
+                )
             return
         self._client.collections.create(
             name=self._name,
@@ -250,6 +257,7 @@ class PaperCardStore:
             properties=[
                 Property(name="source_file", data_type=DataType.TEXT,
                          tokenization=Tokenization.FIELD),
+                Property(name="title", data_type=DataType.TEXT),
                 Property(name="summary", data_type=DataType.TEXT),
                 Property(name="discipline", data_type=DataType.TEXT),
                 *[Property(name=f, data_type=DataType.TEXT_ARRAY) for f in _LIST_FIELDS],
@@ -274,6 +282,7 @@ class PaperCardStore:
             p = obj.properties
             out.append(PaperCard(
                 source_file=p.get("source_file") or "",
+                title=p.get("title") or "",
                 summary=p.get("summary") or "",
                 discipline=p.get("discipline") or "",
                 **{f: list(p.get(f) or []) for f in _LIST_FIELDS},

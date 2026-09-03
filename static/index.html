@@ -811,6 +811,11 @@ const RX_ARXIV = /^(?:arxiv[_-]?)?(\d{4}\.\d{4,5}(?:v\d+)?)$/i;
  * form. Descriptive filenames still read as titles.
  */
 function paperLabel(file) {
+  // A real title always wins. These are resolved once at ingest from the PDF's
+  // own metadata or its first-page typography, so most papers have one.
+  const known = state.titles[file];
+  if (known) return { text: known, id: false };
+
   const base = (file ?? '').replace(/\.pdf$/i, '');
   const m = base.match(RX_ARXIV);
   if (m) return { text: 'arXiv:' + m[1], id: true };
@@ -853,7 +858,7 @@ const state = {
   scratch: { history: [], busy: false, paper: '' },
   // Library selection, kept out here so it survives the list re-rendering
   // after each delete.
-  papers: [], shown: [], selected: new Set(),
+  papers: [], shown: [], selected: new Set(), titles: {},
 };
 
 // ── navigation ────────────────────────────────────────────────────────────
@@ -1509,9 +1514,16 @@ function syncLibTools() {
 /** Draw the rows for whatever the filter currently admits. */
 function renderPaperRows() {
   const q = $('lib-filter').value.trim().toLowerCase();
+  const pool = [...state.papers].sort(
+    (a, b) => short(a).localeCompare(short(b), undefined, { sensitivity: 'base' }));
+  // Match the title and the filename, with separators flattened so typing
+  // "hate speech" finds Hate_Speech_Detection.pdf. Someone searching a library
+  // does not know, or care, which of the two they are typing.
+  const flat = t => t.toLowerCase().replace(/[_\-]+/g, ' ');
+  const needle = flat(q);
   state.shown = q
-    ? state.papers.filter(p => (paperLabel(p).text + ' ' + p).toLowerCase().includes(q))
-    : state.papers.slice();
+    ? pool.filter(p => flat(paperLabel(p).text + ' ' + p).includes(needle))
+    : pool;
 
   const list = $('lib-list');
   list.innerHTML = '';
@@ -1569,16 +1581,20 @@ function renderPaperRows() {
 }
 
 async function loadPapers() {
-  const { papers } = await fetch('/api/papers').then(r => r.json());
+  const data = await fetch('/api/papers').then(r => r.json());
+  const papers = data.papers;
   state.papers = papers;
+  state.titles = data.titles || {};
   // A paper deleted elsewhere must not stay selected, or the count lies and
   // the next bulk remove sends a DELETE for something already gone.
   state.selected = new Set([...state.selected].filter(x => papers.includes(x)));
 
   const sel = $('paper-select');
   const keep = sel.value;
+  const byLabel = [...papers].sort(
+    (a, b) => short(a).localeCompare(short(b), undefined, { sensitivity: 'base' }));
   sel.innerHTML = '<option value="">Select a paper…</option>' +
-    papers.map(p => `<option value="${esc(p)}">${esc(short(p))}</option>`).join('');
+    byLabel.map(p => `<option value="${esc(p)}">${esc(short(p))}</option>`).join('');
   if (papers.includes(keep)) sel.value = keep;
 
   $('lib-count').textContent = papers.length || '';

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 from collections import Counter
 from pathlib import Path
 
@@ -555,6 +556,32 @@ def _summarise_sections(
 # Main ingestion
 # ---------------------------------------------------------------------------
 
+class _Clock:
+    """
+    Optional stage timer.
+
+    `ingest_pdf(..., timings={})` fills the dict with seconds per stage. When
+    no dict is passed every call is a no-op, so the instrumentation costs
+    nothing on the normal path.
+    """
+
+    __slots__ = ("into", "_open")
+
+    def __init__(self, into: dict | None):
+        self.into = into
+        self._open: dict = {}
+
+    def start(self, stage: str):
+        if self.into is not None:
+            self._open[stage] = time.perf_counter()
+
+    def stop(self, stage: str):
+        if self.into is not None and stage in self._open:
+            self.into[stage] = self.into.get(stage, 0.0) + (
+                time.perf_counter() - self._open.pop(stage)
+            )
+
+
 def ingest_pdf(
     pdf_path: str,
     embedder: Embedder,
@@ -563,6 +590,7 @@ def ingest_pdf(
     model: str = OLLAMA_MODEL,
     fast: bool = False,
     card_store=None,
+    timings: dict | None = None,
 ) -> int:
     """
     Convert, chunk, classify, embed and store one PDF.
@@ -576,6 +604,7 @@ def ingest_pdf(
     search anyway.
     """
     pdf_path = Path(pdf_path)
+    clock = _Clock(timings)
 
     if store.source_exists(pdf_path.name):
         if skip_existing:
@@ -588,11 +617,13 @@ def ingest_pdf(
         store.delete_source(pdf_path.name)
 
     print(f"Converting: {pdf_path.name}")
+    clock.start("parse")
     converter = DocumentConverter()
     result = converter.convert(str(pdf_path))
 
     chunker = HierarchicalChunker()
     chunks = list(chunker.chunk(result.document))
+    clock.stop("parse")
     print(f"  → {len(chunks)} chunks extracted")
 
     # ── Orphan recovery: detect convention, build parent maps, fix headings ─
@@ -609,6 +640,7 @@ def ingest_pdf(
 
     # Three-stage section_type map using corrected headings. The fast path keeps
     # only stage 1, which needs no LLM at all.
+    clock.start("classify")
     if fast:
         section_type_map = {
             h.strip(): classify_heading(h)
@@ -617,9 +649,12 @@ def ingest_pdf(
         print(f"  -> Fast path: keyword-only types for {len(section_type_map)} heading(s)")
     else:
         section_type_map = _build_section_type_map(chunks, model, corrected_headings)
+    clock.stop("classify")
 
+    clock.start("embed")
     texts = [chunk.text for chunk in chunks]
     vectors = embedder.embed(texts)
+    clock.stop("embed")
     print(f"  → Embeddings computed")
 
     chunks_data = []
@@ -688,23 +723,35 @@ def ingest_pdf(
     if fast:
         section_summaries = {}
     else:
+        clock.start("summarise")
         section_summaries = _summarise_sections(chunks_data, model)
+        clock.stop("summarise")
         for item in chunks_data:
             props = item["properties"]
             props["section_summary"] = section_summaries.get(props["section_name"], "")
         print(f"  -> Summarised {len(section_summaries)} section(s)")
 
+    clock.start("write")
     store.insert_chunks(chunks_data)
+    clock.stop("write")
 
     # A structured card for the paper as a whole. Chunks answer questions whose
     # answer sits in a passage; the card answers questions about the paper, which
     # no passage states. Skipped on the fast path along with the other LLM work.
     if card_store is not None and not fast:
         from .paper_cards import build_card
+        from .titles import extract_title
+        clock.start("card")
         lead = [c["properties"]["text"] for c in chunks_data[:14]]
         card = build_card(pdf_path.name, lead, model)
+        # What the paper is called, so the interface can stop showing whatever
+        # the publisher named the file. Usually free: most PDFs declare it.
+        card.title, how = extract_title(str(pdf_path), model)
         card_store.upsert(card, embedder.embed_one(card.embedding_text() or pdf_path.name))
         print(f"  -> Card: {card.discipline or 'unclassified'}")
+        clock.stop("card")
+        if card.title:
+            print(f"  -> Title ({how}): {card.title[:70]}")
 
     dist = Counter(c["properties"]["section_name"] for c in chunks_data)
     print(f"  ✓ Stored {len(chunks_data)} chunks  (skipped {skipped} from boilerplate sections)")
