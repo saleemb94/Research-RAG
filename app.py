@@ -22,7 +22,9 @@ from research_rag.config import (
 from research_rag.config import PAPERS_DIR as PAPERS_DIR_SETTING
 from research_rag.paper_cards import PaperCardStore, build_card
 from research_rag.pdf_viewer import render_chunk as _render_chunk
-from research_rag.section_index import open_section_index
+from research_rag.section_index import (
+    build_entries, index_entries, open_section_index,
+)
 from research_rag.synthesize import MAX_SOURCES
 from research_rag.vector_store import WeaviateUnavailableError
 
@@ -78,16 +80,46 @@ def list_papers():
     return {"papers": store.list_sources()}
 
 
+def _refresh_section_index(source_file: str):
+    """
+    Rebuild the section-summary entries for one paper.
+
+    The summaries live in their own collection, so nothing else keeps them in
+    step with the chunks. Miss this and the second retrieval channel either
+    never sees a new paper or keeps citing a deleted one.
+    """
+    section_index.delete_source(source_file)
+    entries = build_entries(store, source_filter=source_file)
+    if entries:
+        index_entries(section_index, entries, embedder)
+
+
 @app.post("/api/papers")
 def upload_papers(files: List[UploadFile] = File(...)):
     results = []
     for f in files:
         name = Path(f.filename or "unnamed.pdf").name
         dest = PAPERS_DIR / name
+
+        # Check before writing. Dedup is by filename, so uploading different
+        # content under a name already in the index used to replace the PDF on
+        # disk while leaving the old chunks in place - the index then describes
+        # one document and the citation viewer renders pages from another.
+        # Refusing keeps the two in step; delete the paper first to replace it.
+        if store.source_exists(name):
+            results.append({
+                "name": name,
+                "status": "ok",
+                "message": "already ingested - delete it first to replace it",
+            })
+            continue
+
         with open(dest, "wb") as fh:
             fh.write(f.file.read())
         try:
             n = ingest_pdf(str(dest), embedder, store, card_store=card_store)
+            if n:
+                _refresh_section_index(name)
             results.append({
                 "name": name,
                 "status": "ok",
@@ -102,6 +134,7 @@ def upload_papers(files: List[UploadFile] = File(...)):
 def remove_paper(filename: str):
     store.delete_source(filename)
     card_store.delete(filename)
+    section_index.delete_source(filename)
     path = PAPERS_DIR / filename
     if path.exists():
         path.unlink()

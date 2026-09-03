@@ -538,6 +538,7 @@ tests/
   test_section_classifier.py       cross-discipline classification tests (no LLM needed)
   test_retrieval_filters.py        section-filter regression tests (no LLM needed)
   test_synthesis.py                citation and diversification tests (no LLM needed)
+  test_paper_lifecycle.py          add/remove keeps all three collections in step
   test_ui.py                       browser tests: citations, source panel, tabs
   golden_conversations.json        26 multi-turn turns for the conversational tabs
   golden_qa.json                   85 graded questions, 210 fact groups, 17 papers
@@ -579,6 +580,14 @@ vectorizer module is enabled on the server):
 Object UUIDs are a deterministic `uuid5` of `source_file::chunk_index`, so re-ingesting
 a paper overwrites its chunks instead of duplicating them.
 
+A paper actually lives in three collections — its chunks, its card, and its section
+summaries — and nothing but the API keeps them in step, so adding and removing one is
+covered by [`tests/test_paper_lifecycle.py`](tests/test_paper_lifecycle.py). Uploading
+a filename that is already indexed is refused rather than merged, and the stored PDF is
+left untouched: replacing the file while keeping the old chunks would leave the index
+describing one document and the citation viewer rendering pages from another. Delete the
+paper first to replace it.
+
 ---
 
 ## Migrating from ChromaDB
@@ -614,6 +623,12 @@ safe to re-run. Once verified, `chroma_data/` can be deleted.
   estimator — in its own methods line. Both models classify the paper by topic
   rather than by what it lists. Editing that one card would pass the question and
   teach the system nothing, so it stands as a known limitation.
+
+- **Duplicate detection is by filename, not by content.** The same paper added as
+  `smith2024.pdf` and `smith_2024_final.pdf` is ingested twice, and corpus-level
+  questions will then count it twice. Comparing content hashes would catch byte-identical
+  copies but not the same paper from two publishers, which is the case that actually
+  turns up, so the check would buy less than it appears to.
 
 - **Not a general PDF chatbot.** It assumes academic papers with recognisable section
   headings. Slide decks, scanned documents without OCR, and reports with no headings
