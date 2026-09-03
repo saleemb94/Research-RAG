@@ -167,11 +167,17 @@ def run(page, base_url):
     check("scratch composer disabled before upload",
           page.get_attribute("#scratch-input", "disabled") is not None)
 
-    # -- clearing a thread empties it ---------------------------------------
+    # -- clearing a thread returns it to its empty state ---------------------
+    # Not "leaves it blank": an empty thread now offers the starting guidance
+    # and example questions, which is what a first-time visitor sees too.
     page.click('.tab-btn[data-tab="ask"]')
     page.click("#ask-clear")
-    check("clear empties the thread",
-          page.eval_on_selector("#ask-thread", "t => t.children.length") == 0)
+    check("clear removes every turn",
+          page.eval_on_selector_all("#ask-thread .turn", "t => t.length") == 0)
+    check("clear restores the empty state",
+          page.eval_on_selector_all("#ask-thread .empty", "e => e.length") == 1)
+    check("the empty state offers example questions",
+          page.eval_on_selector_all("#ask-thread .exq", "e => e.length") > 0)
 
     library_checks(page)
 
@@ -234,6 +240,21 @@ def library_checks(page):
                            arg=before + 2, timeout=30_000)
     check("uploaded papers appear in the library",
           page.eval_on_selector_all("#lib-list > div", "d => d.length") == before + 2)
+
+    # -- the filter, which is the only way through a library this size -----
+    page.fill("#lib-filter", "zz ui probe")
+    page.wait_for_function(
+        "() => document.querySelectorAll('#lib-list > div').length === 2",
+        timeout=5_000)
+    check("the filter narrows the list to matches", True, "2 of many")
+    page.fill("#lib-filter", "zzzz-no-such-paper")
+    page.wait_for_timeout(150)
+    check("an unmatched filter says so",
+          "No paper matches" in page.inner_text("#lib-list"))
+    page.fill("#lib-filter", "")
+    page.wait_for_function("n => document.querySelectorAll('#lib-list > div').length === n",
+                           arg=before + 2, timeout=5_000)
+    check("clearing the filter restores every row", True)
 
     # -- multi-select -----------------------------------------------------
     check("the remove button starts disabled",

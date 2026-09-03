@@ -5,218 +5,840 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Research RAG</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    theme: { extend: {
-      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-      colors: { brand: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',500:'#6366f1',600:'#4f46e5',700:'#4338ca' } }
-    } }
-  }
-</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  html, body { height: 100%; }
-  body { font-family: Inter, system-ui, sans-serif; }
-  .view { display: none; }
-  .view.active { display: flex; }
-  .tab-btn { padding: .5rem .9rem; border-radius: .5rem; font-size: .875rem; font-weight: 500; color: #475569; }
-  .tab-btn:hover { background: #f1f5f9; }
-  .tab-btn.active { background: #eef2ff; color: #4338ca; }
-  .badge { display:inline-flex; align-items:center; gap:.25rem; padding:.1rem .45rem;
-           border-radius:9999px; font-size:.7rem; font-weight:600; }
-  .badge-indigo { background:#eef2ff; color:#4338ca; }
-  .badge-slate  { background:#f1f5f9; color:#475569; }
-  .badge-amber  { background:#fef3c7; color:#92400e; }
-  /* Inline citation marker inside an answer. */
-  .cite { display:inline-flex; align-items:center; justify-content:center;
-          min-width:1.15rem; height:1.15rem; padding:0 .25rem; margin:0 .05rem;
-          border-radius:.3rem; background:#e0e7ff; color:#4338ca;
-          font-size:.68rem; font-weight:700; vertical-align:super; line-height:1;
-          cursor:pointer; transition:background .12s; }
-  .cite:hover { background:#c7d2fe; }
-  .cite.on { background:#4338ca; color:#fff; }
-  .answer { line-height: 1.7; white-space: pre-wrap; }
-  .spin { width:1rem;height:1rem;border:2px solid #c7d2fe;border-top-color:#4338ca;
-          border-radius:9999px;animation:sp .7s linear infinite; }
-  @keyframes sp { to { transform: rotate(360deg); } }
-  .bar { height:.375rem; background:#e2e8f0; border-radius:9999px; overflow:hidden; }
-  .bar > i { display:block; height:100%; width:0; border-radius:9999px;
-             background:#4f46e5; transition:width .25s ease; }
-  /* While a paper is being parsed the server reports nothing, so the bar
-     slides instead of inventing a percentage. */
-  .bar.indet > i { width:35%; animation:slide 1.2s ease-in-out infinite; }
-  @keyframes slide { 0% { margin-left:-35%; } 100% { margin-left:100%; } }
-  .drop { border:2px dashed #cbd5e1; transition:border-color .15s, background .15s; }
-  .drop.hot { border-color:#6366f1; background:#eef2ff; }
+/* ═══════════════════════════════════════════════════════════════════════════
+   Research RAG — design system
+
+   Self-contained: no CDN, no webfonts. The product claims to run fully
+   offline, and a page that fetches a stylesheet and two font files on every
+   load quietly contradicts that. System faces also mean no flash of unstyled
+   text, which matters more here than a marginally nicer letterform.
+
+   Two colour roles carry the whole interface:
+
+     ink     near-black neutrals. Text, borders, surfaces, primary actions.
+     accent  a single amber, reserved for one meaning: evidence. Citation
+             markers, the open source, retrieved passages. It is the same
+             family the PDF renderer highlights with, so a citation and the
+             highlight it points at are visibly the same thing.
+
+   Amber therefore never means "warning" here - that would break the one
+   association the palette is built on. Failures use the semantic red.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── neutrals ─────────────────────────────────────────────────────────── */
+  --ink-950: #0c0d10;
+  --ink-900: #14161a;
+  --ink-800: #1f2228;
+  --ink-700: #333741;
+  --ink-600: #4a4f5a;
+  --ink-500: #646a77;
+  --ink-400: #8a909c;
+  --ink-300: #b4bac4;
+  --ink-200: #d7dbe2;
+  --ink-100: #e8eaef;
+  --ink-75:  #f0f2f5;
+  --ink-50:  #f7f8fa;
+
+  --canvas:  #f7f8fa;   /* app background */
+  --surface: #ffffff;   /* raised content */
+  --rule:    #e8eaef;   /* structural divider */
+  --hairline:#f0f2f5;   /* the quietest divider */
+
+  /* ── accent: evidence ─────────────────────────────────────────────────── */
+  --accent-800: #6f4309;
+  --accent-700: #8a5309;
+  --accent-600: #a4650f;
+  --accent-500: #c1801f;
+  --accent-300: #e8cd97;
+  --accent-200: #f2e0bb;
+  --accent-100: #faf0d9;
+  --accent-50:  #fdf9f0;
+
+  /* ── semantic ─────────────────────────────────────────────────────────── */
+  --danger-700: #8f1d23;
+  --danger-600: #b02a30;
+  --danger-200: #f0cdcf;
+  --danger-50:  #fdf3f3;
+  --ok-600:     #1c7a52;
+  --ok-200:     #bfe0cf;
+  --ok-50:      #f0f8f4;
+
+  /* ── type ─────────────────────────────────────────────────────────────── */
+  --sans: system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI",
+          Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* The answer is set in a serif on purpose: it is the one place the product
+     shows sustained prose, and a serif reads as a document rather than a
+     message. */
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Charter,
+           Georgia, "Times New Roman", serif;
+  --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+
+  --t-eyebrow: 0.6875rem;  /* 11px  section labels, all-caps */
+  --t-xs:      0.75rem;    /* 12px  metadata */
+  --t-sm:      0.8125rem;  /* 13px  interface default */
+  --t-md:      0.875rem;   /* 14px  emphasis in UI */
+  --t-lg:      1rem;       /* 16px  view titles */
+  --t-read:    1.0625rem;  /* 17px  answer prose */
+
+  /* ── spacing (4px base) ───────────────────────────────────────────────── */
+  --s-1: 0.25rem; --s-2: 0.5rem;  --s-3: 0.75rem; --s-4: 1rem;
+  --s-5: 1.25rem; --s-6: 1.5rem;  --s-8: 2rem;    --s-10: 2.5rem;
+  --s-12: 3rem;   --s-16: 4rem;
+
+  /* ── shape ────────────────────────────────────────────────────────────── */
+  /* Tight radii read as precise. Nothing here is a pill except the relevance
+     meter, which is a meter. */
+  --r-sm: 3px; --r-md: 5px; --r-lg: 7px;
+
+  /* Exactly two shadows, both for genuinely floating surfaces. */
+  --shadow-sm: 0 1px 2px rgba(12,13,16,.05);
+  --shadow-panel: -1px 0 0 var(--rule), -12px 0 32px -18px rgba(12,13,16,.18);
+
+  --ring: 0 0 0 3px rgba(20,22,26,.09);
+  --ring-accent: 0 0 0 3px rgba(164,101,15,.16);
+
+  --ease: 130ms cubic-bezier(.2,.6,.3,1);
+}
+
+/* ═══ reset ════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink-900);
+  font: 400 var(--t-sm)/1.5 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3, p, ol, ul { margin: 0; }
+ol, ul { padding: 0; list-style: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; }
+img { max-width: 100%; display: block; }
+.hidden { display: none !important; }
+
+::selection { background: var(--accent-200); color: var(--accent-800); }
+
+:focus-visible { outline: none; box-shadow: var(--ring); border-radius: var(--r-sm); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ═══ shell ════════════════════════════════════════════════════════════════ */
+.app { display: flex; height: 100%; }
+
+/* ── navigation rail ──────────────────────────────────────────────────────
+   A rail rather than top tabs: it names the workspace, gives each destination
+   a stable home, and leaves the top of the content area free for the view's
+   own context and controls. Four destinations, all of which exist. */
+.rail {
+  width: 15rem; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  background: var(--canvas);
+  border-right: 1px solid var(--rule);
+}
+.brand {
+  display: flex; align-items: center; gap: var(--s-2);
+  padding: var(--s-5) var(--s-5) var(--s-6);
+}
+.brand-mark {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border-radius: var(--r-sm);
+  background: var(--ink-900); color: #fff;
+  display: grid; place-items: center;
+}
+.brand-name {
+  font-size: var(--t-md); font-weight: 600;
+  letter-spacing: -0.012em; color: var(--ink-900);
+}
+.rail-group { padding: 0 var(--s-3); }
+.rail-label {
+  font-size: var(--t-eyebrow); font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-400);
+  padding: 0 var(--s-2) var(--s-2);
+}
+.tab-btn {
+  width: 100%; display: flex; align-items: center; gap: var(--s-3);
+  padding: 0 var(--s-2); height: 32px;
+  border-radius: var(--r-md);
+  font-size: var(--t-sm); font-weight: 450; color: var(--ink-600);
+  text-align: left;
+  transition: background var(--ease), color var(--ease);
+}
+.tab-btn svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--ink-400); transition: color var(--ease); }
+.tab-btn:hover { background: var(--ink-75); color: var(--ink-900); }
+.tab-btn:hover svg { color: var(--ink-600); }
+.tab-btn.active { background: var(--ink-100); color: var(--ink-900); font-weight: 550; }
+.tab-btn.active svg { color: var(--ink-800); }
+
+.rail-foot {
+  margin-top: auto; padding: var(--s-4) var(--s-5);
+  border-top: 1px solid var(--rule);
+  display: flex; align-items: center; gap: var(--s-2);
+  font-size: var(--t-xs); color: var(--ink-500);
+}
+.dot { width: 6px; height: 6px; border-radius: 999px; background: var(--ok-600); flex-shrink: 0; }
+.dot.off { background: var(--danger-600); }
+
+/* ── stage ────────────────────────────────────────────────────────────────── */
+.stage { flex: 1; min-width: 0; display: flex; background: var(--surface); border-left: 1px solid transparent; }
+.view { display: none; flex: 1; min-width: 0; flex-direction: column; }
+.view.active { display: flex; }
+.view.scrolls { overflow-y: auto; }
+
+.viewhead {
+  display: flex; align-items: center; gap: var(--s-4);
+  padding: var(--s-4) var(--s-8);
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+.viewhead h1 {
+  font-size: var(--t-lg); font-weight: 600; letter-spacing: -0.015em;
+  color: var(--ink-900);
+}
+.viewhead p { font-size: var(--t-xs); color: var(--ink-500); margin-top: 1px; }
+.viewhead-aside { margin-left: auto; display: flex; align-items: center; gap: var(--s-3); }
+
+/* ═══ controls ═════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  height: 34px; padding: 0 var(--s-4);
+  border-radius: var(--r-md);
+  font-size: var(--t-sm); font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--ease), border-color var(--ease), color var(--ease);
+}
+/* One primary treatment, near-black. Colour is not needed to say "primary" -
+   contrast does it, and it leaves the accent free to mean evidence. */
+.btn-primary { background: var(--ink-900); color: #fff; }
+.btn-primary:hover { background: var(--ink-800); }
+.btn-primary:active { background: var(--ink-950); }
+.btn-primary:disabled { background: var(--ink-200); color: var(--ink-400); cursor: default; }
+
+.btn-quiet { color: var(--ink-600); }
+.btn-quiet:hover { background: var(--ink-75); color: var(--ink-900); }
+
+.btn-danger { color: var(--danger-600); font-weight: 500; }
+.btn-danger:hover { background: var(--danger-50); }
+.btn-danger:disabled { color: var(--ink-300); background: none; cursor: default; }
+
+.btn-sm { height: 28px; padding: 0 var(--s-3); font-size: var(--t-xs); }
+
+.field {
+  width: 100%; height: 38px; padding: 0 var(--s-3);
+  background: var(--surface);
+  border: 1px solid var(--ink-200); border-radius: var(--r-md);
+  font-size: var(--t-md); color: var(--ink-900);
+  transition: border-color var(--ease), box-shadow var(--ease);
+}
+.field::placeholder { color: var(--ink-400); }
+.field:hover { border-color: var(--ink-300); }
+.field:focus { outline: none; border-color: var(--ink-500); box-shadow: var(--ring); }
+.field:disabled { background: var(--ink-50); color: var(--ink-400); cursor: not-allowed; }
+
+select.field { height: 32px; padding-right: var(--s-6); font-size: var(--t-sm); cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238a909c' stroke-width='1.6'%3E%3Cpath d='M4 6.5 8 10.5 12 6.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right var(--s-2) center; background-size: 14px;
+}
+
+/* Native checkboxes, restrained to the palette. */
+input[type=checkbox] {
+  appearance: none; width: 15px; height: 15px; flex-shrink: 0;
+  border: 1px solid var(--ink-300); border-radius: var(--r-sm);
+  background: var(--surface); cursor: pointer;
+  transition: background var(--ease), border-color var(--ease);
+  position: relative;
+}
+input[type=checkbox]:hover { border-color: var(--ink-400); }
+input[type=checkbox]:checked { background: var(--ink-900); border-color: var(--ink-900); }
+input[type=checkbox]:checked::after {
+  content: ""; position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5 6.5 11.5 12.5 5'/%3E%3C/svg%3E") center/13px no-repeat;
+}
+input[type=checkbox]:indeterminate { background: var(--ink-900); border-color: var(--ink-900); }
+input[type=checkbox]:indeterminate::after {
+  content: ""; position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.1' stroke-linecap='round'%3E%3Cpath d='M4 8h8'/%3E%3C/svg%3E") center/13px no-repeat;
+}
+.check {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  font-size: var(--t-xs); color: var(--ink-600); cursor: pointer; user-select: none;
+}
+
+.eyebrow {
+  font-size: var(--t-eyebrow); font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-400);
+}
+
+/* The number chip. Amber when the answer actually cited it, neutral when it
+   was retrieved but unused - a distinction the old UI made with two badge
+   colours that meant nothing to a reader. */
+.badge {
+  display: inline-grid; place-items: center;
+  min-width: 18px; height: 18px; padding: 0 4px;
+  border-radius: var(--r-sm);
+  font-size: var(--t-eyebrow); font-weight: 600; font-variant-numeric: tabular-nums;
+  background: var(--ink-100); color: var(--ink-600);
+}
+.badge-cited { background: var(--accent-100); color: var(--accent-700); }
+
+/* ═══ thread ═══════════════════════════════════════════════════════════════
+   No bubbles. A question and its answer are one document-like unit; turns are
+   separated by a rule and a lot of air, the way sections of a report are. */
+.thread { flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+  padding: var(--s-8) var(--s-8) var(--s-16); }
+/* Centred while the stage is the whole width, anchored left once the source
+   panel claims the right side - which keeps the reading column balanced in
+   both states instead of stranding 40% of the window. */
+.turn, .empty, .composer form { max-width: 44rem; margin-inline: auto; width: 100%; }
+.with-panel .turn, .with-panel .empty, .with-panel .composer form { margin-inline: 0; }
+.turn { flex-shrink: 0; }
+.turn + .turn { margin-top: var(--s-10); padding-top: var(--s-10); border-top: 1px solid var(--rule); }
+
+.turn-q { margin-bottom: var(--s-5); }
+.turn-q .eyebrow { display: block; margin-bottom: var(--s-2); }
+.turn-q h2 {
+  font-size: var(--t-read); font-weight: 500; line-height: 1.45;
+  letter-spacing: -0.012em; color: var(--ink-900);
+  max-width: 36em;
+}
+
+/* The centrepiece. Serif, 17px, 1.75 leading, measure capped near 70
+   characters - long-form reading settings, not chat settings. */
+.answer {
+  font-family: var(--serif);
+  font-size: var(--t-read); line-height: 1.75;
+  color: var(--ink-800);
+  /* ~68 characters. The evidence list below is allowed the full column
+     width - it is a list of titles, not prose. */
+  max-width: 34em;
+}
+.answer > * + * { margin-top: var(--s-4); }
+.answer ul, .answer ol { padding-left: 1.35em; }
+.answer ul > li { list-style: disc; }
+.answer ol > li { list-style: decimal; }
+.answer li + li { margin-top: var(--s-2); }
+.answer li::marker { color: var(--ink-400); }
+
+/* Citation marker. Small, superscript, amber - it is a link into evidence,
+   not decoration, and it is the same hue as the highlight it opens. */
+.cite {
+  display: inline-block;
+  min-width: 1.05em; padding: 0 .28em; margin: 0 .12em;
+  border-radius: var(--r-sm);
+  background: var(--accent-100); color: var(--accent-700);
+  font-family: var(--sans); font-size: .625em; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6; vertical-align: .42em; text-align: center;
+  transition: background var(--ease), color var(--ease);
+}
+.cite:hover { background: var(--accent-200); color: var(--accent-800); }
+.cite.on { background: var(--accent-600); color: #fff; }
+.cite:focus-visible { box-shadow: var(--ring-accent); }
+
+.warn {
+  margin-top: var(--s-4); max-width: 38em;
+  padding: var(--s-2) var(--s-3);
+  border-left: 2px solid var(--danger-200);
+  background: var(--danger-50);
+  font-size: var(--t-xs); color: var(--danger-700);
+}
+.errorbox {
+  max-width: 38em; padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--danger-200); border-radius: var(--r-md);
+  background: var(--danger-50); color: var(--danger-700); font-size: var(--t-sm);
+}
+
+/* ═══ evidence ═════════════════════════════════════════════════════════════
+   The answer's provenance, deliberately placed after the conclusion and
+   visually subordinate to it, so the reading order matches the question a
+   reader actually asks: what did it conclude, then why, then show me.
+
+   Rows, not cards. Each carries the passage itself, so "why" is answerable
+   without opening anything. */
+.evidence { margin-top: var(--s-8); max-width: 44rem; }
+.evidence-head {
+  display: flex; align-items: baseline; gap: var(--s-3);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--rule);
+}
+.evidence-meta { font-size: var(--t-xs); color: var(--ink-400); margin-left: auto; font-variant-numeric: tabular-nums; }
+
+.ev {
+  width: 100%; display: flex; gap: var(--s-3); align-items: flex-start;
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-2);
+  border-bottom: 1px solid var(--hairline);
+  border-left: 2px solid transparent;
+  text-align: left;
+  transition: background var(--ease), border-color var(--ease);
+}
+.ev:hover { background: var(--ink-50); }
+.ev.on { background: var(--accent-50); border-left-color: var(--accent-500); }
+.ev-body { min-width: 0; flex: 1; }
+.ev-title {
+  display: block; font-size: var(--t-sm); font-weight: 500; color: var(--ink-800);
+  line-height: 1.4;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.ev-title.id { font-family: var(--mono); font-size: var(--t-xs); letter-spacing: -0.01em; }
+.ev-meta {
+  display: flex; align-items: center; gap: var(--s-2);
+  margin-top: 3px;
+  font-size: var(--t-xs); color: var(--ink-500);
+}
+.ev-sec { text-transform: lowercase; font-variant: small-caps; letter-spacing: .02em; }
+/* When the section is the row's identity rather than a subtitle. */
+.ev-meta.lead { margin-top: 0; font-size: var(--t-sm); color: var(--ink-700); }
+.ev-meta.lead .ev-sec { font-weight: 600; color: var(--ink-800); }
+.ev-dim { color: var(--ink-400); }
+/* The passage. A serif at small size, quoted - it is source material, and it
+   should not read as UI copy. */
+.ev-quote {
+  display: block; margin-top: var(--s-2);
+  font-family: var(--serif); font-size: var(--t-xs); line-height: 1.6;
+  color: var(--ink-600);
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.ev.on .ev-quote { color: var(--accent-800); }
+
+/* Relevance. A coarse three-step read of the retrieval distance, with the
+   real number in the tooltip. Absent entirely when the channel did not
+   produce one, rather than implying a score that does not exist. */
+.rel { display: inline-flex; gap: 2px; align-items: flex-end; height: 9px; }
+.rel i { width: 3px; border-radius: 999px; background: var(--ink-200); }
+.rel i:nth-child(1) { height: 4px; } .rel i:nth-child(2) { height: 6.5px; } .rel i:nth-child(3) { height: 9px; }
+.rel[data-level="1"] i:nth-child(-n+1),
+.rel[data-level="2"] i:nth-child(-n+2),
+.rel[data-level="3"] i:nth-child(-n+3) { background: var(--ink-400); }
+
+.uncited { font-size: var(--t-eyebrow); color: var(--ink-400); letter-spacing: .02em; }
+
+/* ═══ composer ═════════════════════════════════════════════════════════════ */
+.composer { flex-shrink: 0; border-top: 1px solid var(--rule); padding: var(--s-4) var(--s-8); background: var(--surface); }
+.composer form { display: flex; gap: var(--s-2); max-width: 44rem; }
+.composer .field { flex: 1; }
+
+/* ═══ working / empty states ═══════════════════════════════════════════════ */
+.working { display: flex; align-items: center; gap: var(--s-3); font-size: var(--t-sm); color: var(--ink-500); }
+.spin {
+  width: 13px; height: 13px; flex-shrink: 0;
+  border: 1.5px solid var(--ink-200); border-top-color: var(--ink-600);
+  border-radius: 999px; animation: sp .75s linear infinite;
+}
+@keyframes sp { to { transform: rotate(360deg); } }
+.elapsed { font-variant-numeric: tabular-nums; color: var(--ink-400); font-size: var(--t-xs); }
+
+/* An empty thread centres its guidance in the space it has. Pinned to the
+   top it read as unfinished, with the composer 700px below it. */
+.empty { margin-block: auto; padding: var(--s-12) 0; }
+.empty > * { max-width: 34rem; }
+.empty h2 { font-size: var(--t-lg); font-weight: 550; letter-spacing: -0.012em; color: var(--ink-800); margin-bottom: var(--s-2); }
+.empty p { font-size: var(--t-sm); color: var(--ink-500); line-height: 1.6; }
+.empty .eyebrow { display: block; margin-bottom: var(--s-3); }
+.examples { margin-top: var(--s-6); display: flex; flex-direction: column; gap: 1px; }
+.examples .eyebrow { margin-bottom: var(--s-2); }
+.exq {
+  display: block; width: 100%; text-align: left;
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--t-sm); color: var(--ink-700);
+  transition: color var(--ease), padding-left var(--ease);
+}
+.exq:hover { color: var(--ink-950); padding-left: var(--s-2); }
+.exq:last-child { border-bottom: 0; }
+.exq::after { content: "  →"; color: var(--ink-300); }
+
+/* ═══ documents: drop area, progress, lists ════════════════════════════════ */
+/* Wider than the reading column on purpose: this is a list of titles, so
+   the prose measure does not apply and truncating them helps nobody. */
+.stack { padding: var(--s-8); max-width: 58rem; }
+.section + .section { margin-top: var(--s-12); }
+.section-head {
+  display: flex; align-items: baseline; gap: var(--s-3);
+  padding-bottom: var(--s-3); margin-bottom: var(--s-1);
+}
+.section-head .eyebrow { flex-shrink: 0; }
+.section-note { font-size: var(--t-xs); color: var(--ink-400); }
+.section-head .right { margin-left: auto; }
+
+.drop {
+  border: 1px dashed var(--ink-200); border-radius: var(--r-lg);
+  padding: var(--s-6) var(--s-5);
+  text-align: center; background: var(--ink-50);
+  transition: border-color var(--ease), background var(--ease);
+}
+.drop p { font-size: var(--t-sm); color: var(--ink-600); }
+.drop .hint { font-size: var(--t-xs); color: var(--ink-400); margin-top: var(--s-2); }
+.drop.hot { border-color: var(--ink-500); background: var(--ink-75); }
+.linkish { color: var(--ink-900); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--ink-300); cursor: pointer; }
+.linkish:hover { text-decoration-color: var(--ink-900); }
+
+.progress { margin-top: var(--s-4); }
+.progress-row { display: flex; align-items: center; gap: var(--s-3); font-size: var(--t-sm); color: var(--ink-600); }
+.progress-row .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.progress-row .count { font-size: var(--t-xs); color: var(--ink-400); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.bar { height: 3px; margin-top: var(--s-3); background: var(--ink-100); border-radius: 999px; overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--ink-800); border-radius: 999px; transition: width 240ms cubic-bezier(.2,.6,.3,1); }
+/* Parsing gives the server nothing to report, so the bar slides rather than
+   inventing a percentage it cannot know. */
+.bar.indet > i { width: 30%; animation: slide 1.25s ease-in-out infinite; }
+@keyframes slide { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
+.results { margin-top: var(--s-3); display: flex; flex-direction: column; gap: var(--s-2); }
+.result { display: flex; align-items: flex-start; gap: var(--s-2); font-size: var(--t-xs); color: var(--ink-600); }
+.tag {
+  flex-shrink: 0; padding: 1px var(--s-2); border-radius: var(--r-sm);
+  font-size: var(--t-eyebrow); font-weight: 600; letter-spacing: .02em;
+  background: var(--ink-100); color: var(--ink-600);
+}
+.tag-ok { background: var(--ok-50); color: var(--ok-600); box-shadow: inset 0 0 0 1px var(--ok-200); }
+.tag-bad { background: var(--danger-50); color: var(--danger-600); box-shadow: inset 0 0 0 1px var(--danger-200); }
+
+.toolbar {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding-bottom: var(--s-2); border-bottom: 1px solid var(--rule);
+}
+.toolbar .right { margin-left: auto; }
+.paper-row {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-2) var(--s-2);
+  border-bottom: 1px solid var(--hairline);
+  transition: background var(--ease);
+}
+.paper-row:hover { background: var(--ink-50); }
+.paper-row label {
+  flex: 1; min-width: 0; font-size: var(--t-sm); color: var(--ink-800);
+  cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.paper-row label.id { font-family: var(--mono); font-size: var(--t-xs); color: var(--ink-600); }
+.paper-row .remove { opacity: 0; transition: opacity var(--ease); }
+.paper-row:hover .remove, .paper-row:focus-within .remove { opacity: 1; }
+.rowlist .muted { font-size: var(--t-sm); color: var(--ink-400); padding: var(--s-5) var(--s-2); }
+
+/* ═══ source panel ═════════════════════════════════════════════════════════ */
+.srcpanel {
+  width: 34rem; max-width: 46vw; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+.srchead {
+  display: flex; align-items: flex-start; gap: var(--s-3);
+  padding: var(--s-4) var(--s-4) var(--s-3);
+  border-bottom: 1px solid var(--rule);
+}
+.srchead .badge { margin-top: 1px; }
+#src-title { font-size: var(--t-sm); font-weight: 550; color: var(--ink-900); line-height: 1.4;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+#src-meta { font-size: var(--t-xs); color: var(--ink-500); margin-top: 2px; }
+#src-meta .ev-sec { font-variant: small-caps; letter-spacing: .02em; }
+.zoom {
+  display: flex; align-items: center; flex-shrink: 0;
+  border: 1px solid var(--ink-200); border-radius: var(--r-md); overflow: hidden;
+}
+.zoom button { width: 26px; height: 26px; display: grid; place-items: center; color: var(--ink-600); font-size: var(--t-md); line-height: 1; }
+.zoom button:hover { background: var(--ink-75); color: var(--ink-900); }
+.zoom span { min-width: 40px; text-align: center; font-size: var(--t-xs); color: var(--ink-500);
+  font-variant-numeric: tabular-nums; border-inline: 1px solid var(--ink-200); height: 26px; line-height: 26px; }
+.iconbtn { width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--r-md); color: var(--ink-400); flex-shrink: 0; }
+.iconbtn:hover { background: var(--ink-75); color: var(--ink-900); }
+.srcbody { flex: 1; overflow: auto; background: var(--ink-75); padding: var(--s-4); }
+#src-img { border: 1px solid var(--ink-200); border-radius: var(--r-sm); background: #fff; box-shadow: var(--shadow-sm); }
+#src-text {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-md);
+  padding: var(--s-4); font-family: var(--serif); font-size: var(--t-xs);
+  line-height: 1.7; color: var(--ink-700); white-space: pre-wrap;
+}
+/* The passage as selectable text, under the page image. The image proves
+   provenance; this makes it quotable. */
+.srcquote { margin-top: var(--s-4); }
+.srcquote .eyebrow { display: block; margin-bottom: var(--s-2); }
+.srcquote blockquote {
+  margin: 0; padding-left: var(--s-3);
+  border-left: 2px solid var(--accent-300);
+  font-family: var(--serif); font-size: var(--t-xs); line-height: 1.7; color: var(--ink-600);
+}
+
+/* ═══ breakdown (per-paper fan-out) ════════════════════════════════════════ */
+.breakdown { margin-top: var(--s-8); max-width: 44rem; }
+.bd-item { border-bottom: 1px solid var(--hairline); }
+.bd-item summary {
+  display: flex; align-items: center; gap: var(--s-2);
+  padding: var(--s-3) var(--s-2); cursor: pointer;
+  font-size: var(--t-sm); font-weight: 500; color: var(--ink-700);
+  list-style: none;
+}
+.bd-item summary::-webkit-details-marker { display: none; }
+.bd-item summary::before {
+  content: ""; width: 12px; height: 12px; flex-shrink: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238a909c' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M6 4l4 4-4 4'/%3E%3C/svg%3E") center/12px no-repeat;
+  transition: transform var(--ease);
+}
+.bd-item[open] summary::before { transform: rotate(90deg); }
+.bd-item summary:hover { color: var(--ink-950); }
+.bd-body { padding: 0 var(--s-2) var(--s-4) var(--s-6); font-family: var(--serif); font-size: var(--t-xs); line-height: 1.7; color: var(--ink-600); white-space: pre-wrap; }
+
+/* ═══ narrow viewports ═════════════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .srcpanel { position: fixed; inset: 0 0 0 auto; width: min(34rem, 92vw); max-width: none; z-index: 20; }
+}
+@media (max-width: 860px) {
+  .rail { width: 3.5rem; }
+  .brand-name, .rail-label, .tab-btn span, .rail-foot span { display: none; }
+  .brand { justify-content: center; padding: var(--s-4) 0; }
+  .tab-btn { justify-content: center; padding: 0; }
+  .rail-foot { justify-content: center; }
+  .viewhead, .composer { padding-inline: var(--s-5); }
+  .thread, .stack { padding-inline: var(--s-5); }
+}
 </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
-<div class="flex flex-col h-full">
+<body>
 
-  <!-- ── header ─────────────────────────────────────────────────────────── -->
-  <header class="bg-white border-b border-slate-200 px-5 py-2.5 flex items-center gap-4 shrink-0">
-    <div class="font-semibold text-slate-900">Research&nbsp;RAG</div>
-    <nav class="flex gap-1">
-      <button class="tab-btn active" data-tab="ask">Ask the library</button>
-      <button class="tab-btn" data-tab="paper">Chat with a paper</button>
-      <button class="tab-btn" data-tab="scratch">Quick upload</button>
-      <button class="tab-btn" data-tab="library">Library</button>
-    </nav>
-    <div class="ml-auto text-xs text-slate-500" id="health">&nbsp;</div>
-  </header>
+<div class="app">
 
-  <div class="flex flex-row flex-1 min-h-0">
-    <main class="flex-1 min-w-0 flex flex-col">
+  <!-- ══ navigation rail ═══════════════════════════════════════════════════ -->
+  <aside class="rail">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 2.5h6.5L13 6v7.5H3z"/><path d="M9.25 2.6V6H13"/><path d="M5.5 8.75h5M5.5 11h3.5"/>
+        </svg>
+      </span>
+      <span class="brand-name">Research&nbsp;RAG</span>
+    </div>
 
-      <!-- ── TAB 1 : corpus-wide synthesis ──────────────────────────────── -->
-      <section id="tab-ask" class="view active flex-col flex-1 min-h-0">
-        <div class="px-5 py-3 border-b border-slate-200 bg-white flex items-center gap-3">
-          <div>
-            <h1 class="font-semibold">Ask across every paper</h1>
-            <p class="text-xs text-slate-500">One answer, drawn from the whole library, with citations you can open.</p>
-          </div>
-          <label class="ml-auto flex items-center gap-2 text-xs text-slate-600">
-            <input type="checkbox" id="ask-breakdown" class="rounded">
-            Also show a per-paper breakdown
-          </label>
+    <div class="rail-group">
+      <div class="rail-label">Workspace</div>
+      <nav>
+        <button class="tab-btn active" data-tab="ask">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4.25"/><path d="M10.2 10.2 14 14"/></svg>
+          <span>Ask the library</span>
+        </button>
+        <button class="tab-btn" data-tab="paper">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 2.5h5.5L12.5 6v7.5h-9z"/><path d="M8.9 2.6V6h3.6"/></svg>
+          <span>Single paper</span>
+        </button>
+        <button class="tab-btn" data-tab="scratch">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V3.5"/><path d="M5 6.2 8 3.2l3 3"/><path d="M2.75 10.5v2.25h10.5V10.5"/></svg>
+          <span>Scratchpad</span>
+        </button>
+        <button class="tab-btn" data-tab="library">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg>
+          <span>Library</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="rail-foot">
+      <span class="dot" id="health-dot"></span>
+      <span id="health">&nbsp;</span>
+    </div>
+  </aside>
+
+  <!-- ══ stage ═════════════════════════════════════════════════════════════ -->
+  <main class="stage">
+
+    <!-- ── ask the library ────────────────────────────────────────────────── -->
+    <section id="tab-ask" class="view active">
+      <div class="viewhead">
+        <div>
+          <h1>Ask the library</h1>
+          <p>One answer across every paper, with the passages it rests on.</p>
         </div>
-        <div id="ask-thread" class="flex-1 overflow-y-auto px-5 py-4 space-y-5"></div>
-        <div class="border-t border-slate-200 bg-white px-5 py-3">
-          <form id="ask-form" class="flex gap-2">
-            <input id="ask-input" autocomplete="off"
-                   class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                   placeholder="e.g. Which datasets have been used for Arabic offensive language detection?">
-            <button class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 rounded-lg">Ask</button>
-            <button type="button" id="ask-clear" class="text-slate-500 hover:text-slate-800 text-sm px-2">Clear</button>
-          </form>
+        <div class="viewhead-aside">
+          <label class="check"><input type="checkbox" id="ask-breakdown">Per-paper breakdown</label>
         </div>
-      </section>
+      </div>
+      <div id="ask-thread" class="thread"></div>
+      <div class="composer">
+        <form id="ask-form">
+          <input id="ask-input" class="field" autocomplete="off"
+                 placeholder="Ask a question about the whole library…">
+          <button type="submit" class="btn btn-primary">Ask</button>
+          <button type="button" id="ask-clear" class="btn btn-quiet">Clear</button>
+        </form>
+      </div>
+    </section>
 
-      <!-- ── TAB 2 : single paper ───────────────────────────────────────── -->
-      <section id="tab-paper" class="view flex-col flex-1 min-h-0">
-        <div class="px-5 py-3 border-b border-slate-200 bg-white flex items-center gap-3">
-          <div class="min-w-0">
-            <h1 class="font-semibold">Chat with one paper</h1>
-            <p class="text-xs text-slate-500">Everything stays scoped to the paper you pick.</p>
-          </div>
-          <select id="paper-select"
-                  class="ml-auto max-w-md border border-slate-300 rounded-lg px-2 py-1.5 text-sm">
+    <!-- ── single paper ───────────────────────────────────────────────────── -->
+    <section id="tab-paper" class="view">
+      <div class="viewhead">
+        <div>
+          <h1>Single paper</h1>
+          <p>Scoped to one document; follow-ups understand the conversation.</p>
+        </div>
+        <div class="viewhead-aside">
+          <select id="paper-select" class="field" style="max-width:22rem">
             <option value="">Select a paper…</option>
           </select>
         </div>
-        <div id="paper-thread" class="flex-1 overflow-y-auto px-5 py-4 space-y-5"></div>
-        <div class="border-t border-slate-200 bg-white px-5 py-3">
-          <form id="paper-form" class="flex gap-2">
-            <input id="paper-input" autocomplete="off"
-                   class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                   placeholder="Ask about this paper — follow-ups understand the conversation">
-            <button class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 rounded-lg">Send</button>
-            <button type="button" id="paper-clear" class="text-slate-500 hover:text-slate-800 text-sm px-2">Clear</button>
-          </form>
-        </div>
-      </section>
-
-      <!-- ── TAB 3 : ad-hoc upload ──────────────────────────────────────── -->
-      <section id="tab-scratch" class="view flex-col flex-1 min-h-0">
-        <div class="px-5 py-3 border-b border-slate-200 bg-white">
-          <h1 class="font-semibold">Upload a PDF and start asking</h1>
-          <p class="text-xs text-slate-500">
-            Kept separate from your library — it never appears in library-wide answers, and you can drop it when you're done.
-          </p>
-        </div>
-        <div class="px-5 pt-4">
-          <div id="scratch-drop" class="drop rounded-xl px-5 py-6 text-center bg-white">
-            <p class="text-sm text-slate-600">Drop a PDF here, or
-              <label class="text-brand-600 font-medium cursor-pointer hover:underline">browse
-                <input type="file" id="scratch-file" accept="application/pdf" class="hidden" multiple>
-              </label>
-            </p>
-            <p class="text-xs text-slate-400 mt-1">Ready in seconds; full section analysis continues in the background.</p>
-          </div>
-          <div id="scratch-list" class="mt-3 space-y-1.5"></div>
-        </div>
-        <div id="scratch-thread" class="flex-1 overflow-y-auto px-5 py-4 space-y-5"></div>
-        <div class="border-t border-slate-200 bg-white px-5 py-3">
-          <form id="scratch-form" class="flex gap-2">
-            <input id="scratch-input" autocomplete="off" disabled
-                   class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                   placeholder="Upload a PDF first…">
-            <button class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 rounded-lg">Send</button>
-          </form>
-        </div>
-      </section>
-
-      <!-- ── TAB 4 : library ────────────────────────────────────────────── -->
-      <section id="tab-library" class="view flex-col flex-1 min-h-0 overflow-y-auto">
-        <div class="px-5 py-3 border-b border-slate-200 bg-white">
-          <h1 class="font-semibold">Library</h1>
-          <p class="text-xs text-slate-500">Papers added here are searched by the “Ask the library” tab.</p>
-        </div>
-        <div class="p-5 space-y-5 max-w-3xl">
-          <div class="bg-white border border-slate-200 rounded-xl p-4">
-            <h2 class="font-semibold text-sm mb-2">Add papers</h2>
-            <div id="lib-drop" class="drop rounded-lg px-4 py-5 text-center">
-              <p class="text-sm text-slate-600">Drop PDFs here, or
-                <label class="text-brand-600 font-medium cursor-pointer hover:underline">browse
-                  <input type="file" id="lib-file" accept="application/pdf" class="hidden" multiple>
-                </label>
-              </p>
-              <p class="text-xs text-slate-400 mt-1">Full ingestion: layout parsing, section classification and summaries. A minute or two per paper.</p>
-            </div>
-            <div id="lib-status" class="mt-3 space-y-1.5"></div>
-          </div>
-          <div class="bg-white border border-slate-200 rounded-xl p-4">
-            <h2 class="font-semibold text-sm mb-2">Stored papers <span id="lib-count" class="text-slate-400 font-normal"></span></h2>
-            <div id="lib-tools" class="hidden items-center gap-3 pb-2 border-b border-slate-200">
-              <label class="flex items-center gap-2 text-xs text-slate-500 cursor-pointer select-none">
-                <input type="checkbox" id="lib-all" class="accent-brand-600">Select all
-              </label>
-              <span id="lib-sel" class="text-xs text-slate-400"></span>
-              <button id="lib-remove" disabled
-                      class="ml-auto text-xs font-medium text-red-600 hover:underline
-                             disabled:text-slate-300 disabled:no-underline disabled:cursor-default">
-                Remove selected
-              </button>
-            </div>
-            <div id="lib-list" class="divide-y divide-slate-100"></div>
-            <div id="lib-del-status" class="mt-3 space-y-2 empty:mt-0"></div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <!-- ── source panel ─────────────────────────────────────────────────── -->
-    <aside id="src-panel" class="hidden w-[38rem] max-w-[46vw] border-l border-slate-200 bg-white flex-col shrink-0">
-      <div class="px-4 py-2.5 border-b border-slate-200 flex items-center gap-2">
-        <span class="badge badge-indigo" id="src-num">1</span>
-        <div class="min-w-0 flex-1">
-          <div class="text-sm font-medium truncate" id="src-title"></div>
-          <div class="text-xs text-slate-500 truncate" id="src-meta"></div>
-        </div>
-        <button id="src-zoom-out" class="text-slate-500 hover:text-slate-900 px-1.5 text-lg leading-none">−</button>
-        <span class="text-xs text-slate-500 w-10 text-center" id="src-zoom">100%</span>
-        <button id="src-zoom-in" class="text-slate-500 hover:text-slate-900 px-1.5 text-lg leading-none">+</button>
-        <button id="src-close" class="text-slate-400 hover:text-slate-900 pl-2">✕</button>
       </div>
-      <div id="src-body" class="flex-1 overflow-auto bg-slate-100 p-3">
-        <div id="src-loading" class="hidden items-center gap-2 text-sm text-slate-500 p-4">
-          <div class="spin"></div> Rendering page…
-        </div>
-        <img id="src-img" class="hidden shadow rounded bg-white" alt="Source page">
-        <div id="src-text" class="hidden text-xs leading-relaxed text-slate-700 bg-white p-3 rounded border border-slate-200 whitespace-pre-wrap"></div>
+      <div id="paper-thread" class="thread"></div>
+      <div class="composer">
+        <form id="paper-form">
+          <input id="paper-input" class="field" autocomplete="off"
+                 placeholder="Select a paper first…">
+          <button type="submit" class="btn btn-primary">Send</button>
+          <button type="button" id="paper-clear" class="btn btn-quiet">Clear</button>
+        </form>
       </div>
-    </aside>
-  </div>
+    </section>
+
+    <!-- ── scratchpad ─────────────────────────────────────────────────────── -->
+    <section id="tab-scratch" class="view">
+      <div class="viewhead">
+        <div>
+          <h1>Scratchpad</h1>
+          <p>Ask about a document without adding it to the library.</p>
+        </div>
+      </div>
+      <div style="padding:var(--s-8) var(--s-8) 0;max-width:46rem">
+        <div id="scratch-drop" class="drop">
+          <p>Drop a PDF here, or <label class="linkish">browse<input type="file" id="scratch-file" accept="application/pdf" class="hidden" multiple></label></p>
+          <p class="hint">Ready in seconds. It never appears in library-wide answers, and it is discarded when you are done.</p>
+        </div>
+        <div id="scratch-list"></div>
+      </div>
+      <div id="scratch-thread" class="thread"></div>
+      <div class="composer">
+        <form id="scratch-form">
+          <input id="scratch-input" class="field" autocomplete="off" disabled
+                 placeholder="Upload a PDF first…">
+          <button type="submit" class="btn btn-primary">Send</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── library ────────────────────────────────────────────────────────── -->
+    <section id="tab-library" class="view scrolls">
+      <div class="viewhead">
+        <div>
+          <h1>Library</h1>
+          <p>Everything here is searched by “Ask the library”.</p>
+        </div>
+      </div>
+      <div class="stack">
+
+        <div class="section">
+          <div class="section-head">
+            <span class="eyebrow">Add papers</span>
+            <span class="section-note">Layout parsing, section classification and summaries — a minute or two each</span>
+          </div>
+          <div id="lib-drop" class="drop">
+            <p>Drop PDFs here, or <label class="linkish">browse<input type="file" id="lib-file" accept="application/pdf" class="hidden" multiple></label></p>
+            <p class="hint">Several at once is fine — they are ingested one after another.</p>
+          </div>
+          <div id="lib-status"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <span class="eyebrow">Papers</span>
+            <span class="section-note" id="lib-count"></span>
+            <input id="lib-filter" class="field right" type="search"
+                   placeholder="Filter by title…"
+                   style="width:14rem;height:28px;font-size:var(--t-xs)">
+          </div>
+          <div id="lib-tools" class="toolbar hidden">
+            <label class="check"><input type="checkbox" id="lib-all">Select all</label>
+            <span class="section-note" id="lib-sel"></span>
+            <button id="lib-remove" class="btn btn-sm btn-danger right" disabled>Remove selected</button>
+          </div>
+          <div id="lib-list" class="rowlist"></div>
+          <div id="lib-del-status"></div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- ══ source panel ════════════════════════════════════════════════════════
+       Opened from a citation or an evidence row. Shows the passage on its own
+       page in the original PDF, highlighted, plus the text for quoting. -->
+  <aside id="src-panel" class="srcpanel hidden">
+    <div class="srchead">
+      <span class="badge badge-cited" id="src-num">1</span>
+      <div style="min-width:0;flex:1">
+        <div id="src-title"></div>
+        <div id="src-meta"></div>
+      </div>
+      <div class="zoom">
+        <button id="src-zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
+        <span id="src-zoom">100%</span>
+        <button id="src-zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+      </div>
+      <button id="src-close" class="iconbtn" title="Close" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <div id="src-body" class="srcbody">
+      <div id="src-loading" class="working hidden"><span class="spin"></span> Rendering the page…</div>
+      <img id="src-img" class="hidden" alt="The cited passage on its page in the source PDF">
+      <div id="src-text" class="hidden"></div>
+      <div id="src-quote" class="srcquote hidden">
+        <span class="eyebrow">Cited passage</span>
+        <blockquote id="src-quote-text"></blockquote>
+      </div>
+    </div>
+  </aside>
 </div>
 
 <script>
-// ── tiny helpers ──────────────────────────────────────────────────────────
-const $  = id => document.getElementById(id);
+// ── helpers ───────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
 const esc = s => (s ?? '').replace(/[&<>"']/g, c =>
   ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-const short = s => (s ?? '').replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ');
+
+const RX_ARXIV = /^(?:arxiv[_-]?)?(\d{4}\.\d{4,5}(?:v\d+)?)$/i;
+
+/**
+ * How a paper is named in the interface.
+ *
+ * Filenames were being title-cased blindly, which turned identifiers into
+ * nonsense - "1 s2.0 S277244252300045X main", "arxiv 2304.00913". A name that
+ * is mostly punctuation and digits is an identifier, so it is set in mono and
+ * left alone rather than dressed up as a title; arXiv ids get their canonical
+ * form. Descriptive filenames still read as titles.
+ */
+function paperLabel(file) {
+  const base = (file ?? '').replace(/\.pdf$/i, '');
+  const m = base.match(RX_ARXIV);
+  if (m) return { text: 'arXiv:' + m[1], id: true };
+  const letters = base.replace(/[^A-Za-z]/g, '').length;
+  if (base && letters < base.length * 0.45) return { text: base, id: true };
+  return { text: base.replace(/[_-]+/g, ' ').trim(), id: false };
+}
+const short = f => paperLabel(f).text;
+
+/* Section names come from the papers themselves, so they arrive in whatever
+   case the author used - "RELATED WORK" beside "Introduction". Normalising to
+   lower case and letting small-caps style them keeps the list even. */
+const sectionLabel = s => (s || '').trim().toLowerCase() || '—';
+
+const pageLabel = p => {
+  if (!p) return '';
+  return (String(p).includes(',') ? 'pp. ' : 'p. ') + p;
+};
+
+/* Cosine distance, where smaller is closer. Rendered as three coarse steps
+   with the real figure in the tooltip; channels that report no distance get
+   no indicator rather than an invented one. */
+function relevance(distance) {
+  if (distance === null || distance === undefined) return null;
+  const level = distance < 0.18 ? 3 : distance < 0.24 ? 2 : 1;
+  const el = document.createElement('span');
+  el.className = 'rel';
+  el.dataset.level = level;
+  el.title = `Retrieval distance ${distance.toFixed(3)} — lower is closer`;
+  el.setAttribute('aria-label', el.title);
+  for (let i = 0; i < 3; i++) el.appendChild(document.createElement('i'));
+  return el;
+}
 
 // Conversation state, one thread per tab. `sources` is kept per assistant
 // message so a citation clicked long after the fact still resolves.
@@ -226,10 +848,10 @@ const state = {
   scratch: { history: [], busy: false, paper: '' },
   // Library selection, kept out here so it survives the list re-rendering
   // after each delete.
-  papers: [], selected: new Set(),
+  papers: [], shown: [], selected: new Set(),
 };
 
-// ── tabs ──────────────────────────────────────────────────────────────────
+// ── navigation ────────────────────────────────────────────────────────────
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
@@ -250,27 +872,38 @@ function applyZoom() {
 $('src-zoom-in').onclick  = () => { _zoom = Math.min(_zoom * 1.25, 5);   applyZoom(); };
 $('src-zoom-out').onclick = () => { _zoom = Math.max(_zoom / 1.25, 0.2); applyZoom(); };
 $('src-close').onclick    = closeSource;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSource(); });
 
 function closeSource() {
   $('src-panel').classList.add('hidden');
-  $('src-panel').classList.remove('flex');
-  document.querySelectorAll('.cite.on').forEach(c => c.classList.remove('on'));
+  document.querySelector('.app').classList.remove('with-panel');
+  document.querySelectorAll('.cite.on, .ev.on').forEach(c => c.classList.remove('on'));
 }
 
 async function openSource(src, marker) {
-  document.querySelectorAll('.cite.on').forEach(c => c.classList.remove('on'));
+  document.querySelectorAll('.cite.on, .ev.on').forEach(c => c.classList.remove('on'));
   if (marker) marker.classList.add('on');
 
-  const panel = $('src-panel');
-  panel.classList.remove('hidden');
-  panel.classList.add('flex');
+  $('src-panel').classList.remove('hidden');
+  document.querySelector('.app').classList.add('with-panel');
+  const label = paperLabel(src.source);
   $('src-num').textContent   = src.number ?? '•';
-  $('src-title').textContent = short(src.source);
-  $('src-meta').textContent  = [src.section_name, src.page_numbers ? 'pp. ' + src.page_numbers : null]
-                                 .filter(Boolean).join('  ·  ');
-  const img = $('src-img'), load = $('src-loading'), txt = $('src-text');
-  img.classList.add('hidden'); txt.classList.add('hidden');
-  load.classList.remove('hidden'); load.classList.add('flex');
+  $('src-title').textContent = label.text;
+  $('src-title').classList.toggle('id', label.id);
+  const meta = $('src-meta');
+  meta.textContent = '';
+  const sec = document.createElement('span');
+  sec.className = 'ev-sec';
+  sec.textContent = sectionLabel(src.section_name);
+  meta.appendChild(sec);
+  if (src.page_numbers) {
+    meta.appendChild(document.createTextNode('  ·  ' + pageLabel(src.page_numbers)));
+  }
+
+  const img = $('src-img'), load = $('src-loading'), txt = $('src-text'),
+        quote = $('src-quote');
+  img.classList.add('hidden'); txt.classList.add('hidden'); quote.classList.add('hidden');
+  load.classList.remove('hidden');
 
   try {
     const data = await fetch('/api/render-chunk', {
@@ -280,125 +913,333 @@ async function openSource(src, marker) {
 
     img.onload = () => {
       _natW = img.naturalWidth;
-      _zoom = Math.min(1, ($('src-body').clientWidth - 24) / _natW);
+      _zoom = Math.min(1, ($('src-body').clientWidth - 32) / _natW);
       applyZoom();
-      load.classList.add('hidden'); load.classList.remove('flex');
+      load.classList.add('hidden');
       img.classList.remove('hidden');
+      // The image proves provenance; the text makes it quotable.
+      if (src.text) {
+        $('src-quote-text').textContent = src.text;
+        quote.classList.remove('hidden');
+      }
     };
     img.src = data.image;
   } catch {
     // A scratch upload or a moved file may not render; the text is still useful.
-    load.classList.add('hidden'); load.classList.remove('flex');
-    txt.textContent = src.text || 'Could not render this page.';
+    load.classList.add('hidden');
+    txt.textContent = src.text || 'This page could not be rendered.';
     txt.classList.remove('hidden');
   }
 }
 
-// ── rendering a thread ────────────────────────────────────────────────────
-function bubbleUser(text) {
-  const d = document.createElement('div');
-  d.className = 'flex justify-end';
-  d.innerHTML = `<div class="bg-brand-600 text-white text-sm rounded-2xl rounded-br-sm px-3.5 py-2 max-w-[80%]">${esc(text)}</div>`;
-  return d;
-}
-
-/** Turn [3] markers into clickable chips bound to that answer's own sources. */
-function renderAnswer(answer, sources) {
-  const wrap = document.createElement('div');
-  wrap.className = 'answer text-sm text-slate-800';
-  const byNum = new Map((sources || []).map(s => [s.number, s]));
-  // Split on the markers and build nodes directly. createTextNode escapes on
-  // its own, so the answer is never turned into HTML at any point.
-  for (const part of (answer || '').split(/(\[\d+\])/g)) {
+// ── the answer ────────────────────────────────────────────────────────────
+/**
+ * Citation markers become chips bound to that answer's own sources.
+ *
+ * Everything is built as DOM nodes and text - the model's output is never
+ * handed to innerHTML at any point, at any depth.
+ */
+function appendInline(parent, text, byNum) {
+  for (const part of (text || '').split(/(\[\d+\])/g)) {
     const m = part.match(/^\[(\d+)\]$/);
     if (m && byNum.has(+m[1])) {
       const src = byNum.get(+m[1]);
       const b = document.createElement('button');
       b.className = 'cite';
       b.textContent = m[1];
-      b.title = short(src.source);
+      b.title = `${short(src.source)} — ${sectionLabel(src.section_name)}`;
       b.onclick = () => openSource(src, b);
-      wrap.appendChild(b);
+      parent.appendChild(b);
     } else if (part) {
-      wrap.appendChild(document.createTextNode(part));
+      parent.appendChild(document.createTextNode(part));
     }
   }
+}
+
+const RX_BULLET = /^\s*[-*•]\s+/;
+const RX_NUMBER = /^\s*\d+[.)]\s+/;
+
+/** Blocks separated by blank lines become paragraphs; runs of bullet or
+ *  numbered lines become real lists. Answers are usually one paragraph, but
+ *  when the model does structure one it should read as structure. */
+function renderAnswer(answer, sources) {
+  const wrap = document.createElement('div');
+  wrap.className = 'answer';
+  const byNum = new Map((sources || []).map(s => [s.number, s]));
+
+  for (const block of (answer || '').trim().split(/\n\s*\n/)) {
+    const lines = block.split('\n').filter(l => l.trim());
+    if (!lines.length) continue;
+
+    const bullets = lines.filter(l => RX_BULLET.test(l)).length;
+    const numbers = lines.filter(l => RX_NUMBER.test(l)).length;
+
+    if (bullets === lines.length || numbers === lines.length) {
+      const list = document.createElement(bullets === lines.length ? 'ul' : 'ol');
+      for (const line of lines) {
+        const li = document.createElement('li');
+        appendInline(li, line.replace(bullets ? RX_BULLET : RX_NUMBER, ''), byNum);
+        list.appendChild(li);
+      }
+      wrap.appendChild(list);
+    } else {
+      const p = document.createElement('p');
+      appendInline(p, lines.join(' '), byNum);
+      wrap.appendChild(p);
+    }
+  }
+  if (!wrap.childElementCount) appendInline(wrap, answer, byNum);
   return wrap;
 }
 
-function sourceList(sources, cited) {
-  const box = document.createElement('div');
-  box.className = 'mt-3 border-t border-slate-100 pt-2';
+// ── evidence ──────────────────────────────────────────────────────────────
+/**
+ * The passages behind the answer.
+ *
+ * Rows rather than cards, each carrying the passage itself so "why did it say
+ * that" is answerable without opening anything. Sources the answer did not
+ * cite stay in the list - they are what retrieval actually returned, and
+ * hiding them would overstate how tidy the process was - but they are marked
+ * and their number chip is neutral rather than accented.
+ */
+function evidenceBlock(sources, cited, scoped) {
   const used = new Set(cited || []);
+  const box = document.createElement('section');
+  box.className = 'evidence';
+
   const head = document.createElement('div');
-  head.className = 'text-xs font-semibold text-slate-500 mb-1.5';
-  head.textContent = `Sources (${sources.length})`;
+  head.className = 'evidence-head';
+  const eyebrow = document.createElement('span');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = 'Evidence';
+  const meta = document.createElement('span');
+  meta.className = 'evidence-meta';
+  const nCited = sources.filter(s => used.has(s.number)).length;
+  meta.textContent = `${sources.length} passage${sources.length === 1 ? '' : 's'}` +
+                     (used.size ? ` · ${nCited} cited` : '');
+  head.append(eyebrow, meta);
   box.appendChild(head);
+
+  const list = document.createElement('ol');
+  list.className = 'evidence-list';
+
   sources.forEach(s => {
+    const li = document.createElement('li');
     const row = document.createElement('button');
-    row.className = 'w-full text-left flex gap-2 items-start px-2 py-1.5 rounded-lg hover:bg-slate-50';
-    row.innerHTML =
-      `<span class="badge ${used.has(s.number) ? 'badge-indigo' : 'badge-slate'} mt-0.5">${s.number}</span>` +
-      `<span class="min-w-0"><span class="block text-xs font-medium text-slate-700 truncate">${esc(short(s.source))}</span>` +
-      `<span class="block text-[11px] text-slate-500 truncate">${esc(s.section_name || '—')}` +
-      `${s.page_numbers ? ' · pp. ' + esc(s.page_numbers) : ''}</span></span>`;
-    row.onclick = () => openSource(s, null);
-    box.appendChild(row);
+    row.className = 'ev';
+    row.type = 'button';
+
+    const num = document.createElement('span');
+    num.className = 'badge' + (used.has(s.number) ? ' badge-cited' : '');
+    num.textContent = s.number;
+
+    const body = document.createElement('span');
+    body.className = 'ev-body';
+
+    // In a thread scoped to one document the title is already in the header;
+    // repeating it on all eight rows says nothing and buries what differs.
+    // The section becomes the row's identity instead.
+    if (!scoped) {
+      const label = paperLabel(s.source);
+      const title = document.createElement('span');
+      title.className = 'ev-title' + (label.id ? ' id' : '');
+      title.textContent = label.text;
+      body.appendChild(title);
+    }
+
+    const metaRow = document.createElement('span');
+    metaRow.className = 'ev-meta' + (scoped ? ' lead' : '');
+    const sec = document.createElement('span');
+    sec.className = 'ev-sec';
+    sec.textContent = sectionLabel(s.section_name);
+    metaRow.appendChild(sec);
+    if (s.page_numbers) {
+      const pg = document.createElement('span');
+      pg.className = 'ev-dim';
+      pg.textContent = pageLabel(s.page_numbers);
+      metaRow.append(document.createTextNode('·'), pg);
+    }
+    const rel = relevance(s.distance);
+    if (rel) metaRow.appendChild(rel);
+    if (!used.has(s.number)) {
+      const u = document.createElement('span');
+      u.className = 'uncited';
+      u.textContent = 'not cited';
+      metaRow.append(document.createTextNode('·'), u);
+    }
+
+    body.appendChild(metaRow);
+
+    if (s.text) {
+      const quote = document.createElement('span');
+      quote.className = 'ev-quote';
+      quote.textContent = '“' + s.text.replace(/\s+/g, ' ').trim() + '”';
+      body.appendChild(quote);
+    }
+
+    row.append(num, body);
+    row.onclick = () => openSource(s, row);
+    li.appendChild(row);
+    list.appendChild(li);
   });
+
+  box.appendChild(list);
   return box;
 }
 
-function bubbleAnswer(data, extra) {
-  const d = document.createElement('div');
-  d.className = 'bg-white border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[95%]';
-  d.appendChild(renderAnswer(data.answer, data.sources));
+// ── a turn: question, answer, evidence ────────────────────────────────────
+function turnBlock(question) {
+  const art = document.createElement('article');
+  art.className = 'turn';
+  const q = document.createElement('div');
+  q.className = 'turn-q';
+  const eyebrow = document.createElement('span');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = 'Question';
+  const h = document.createElement('h2');
+  h.textContent = question;
+  q.append(eyebrow, h);
+  art.appendChild(q);
+  return art;
+}
+
+function fillTurn(art, data, extra, scoped) {
+  art.appendChild(renderAnswer(data.answer, data.sources));
   if (data.dropped_citations && data.dropped_citations.length) {
     const w = document.createElement('div');
-    w.className = 'mt-2 text-[11px] text-amber-700';
-    w.textContent = `Removed ${data.dropped_citations.length} citation(s) that pointed to no source.`;
-    d.appendChild(w);
+    w.className = 'warn';
+    w.textContent = `${data.dropped_citations.length} citation(s) pointed at no source and were removed.`;
+    art.appendChild(w);
   }
-  if (data.sources && data.sources.length) d.appendChild(sourceList(data.sources, data.cited));
-  if (extra) d.appendChild(extra);
+  if (data.sources && data.sources.length) art.appendChild(evidenceBlock(data.sources, data.cited, scoped));
+  if (extra) art.appendChild(extra);
+}
+
+/* Answers take tens of seconds. An elapsed count is honest about the wait
+   without pretending to know the stage it has reached. */
+function working(parent, label) {
+  const d = document.createElement('div');
+  d.className = 'working';
+  const spin = document.createElement('span');
+  spin.className = 'spin';
+  const text = document.createElement('span');
+  text.textContent = label;
+  const secs = document.createElement('span');
+  secs.className = 'elapsed';
+  const t0 = Date.now();
+  const tick = setInterval(() => {
+    secs.textContent = Math.round((Date.now() - t0) / 1000) + 's';
+  }, 1000);
+  d.append(spin, text, secs);
+  d.stop = () => clearInterval(tick);
+  parent.appendChild(d);
   return d;
 }
 
-function pending(thread) {
+function errorBlock(msg) {
   const d = document.createElement('div');
-  d.className = 'flex items-center gap-2 text-sm text-slate-500';
-  d.innerHTML = '<div class="spin"></div> Searching and writing an answer…';
-  thread.appendChild(d);
-  thread.scrollTop = thread.scrollHeight;
-  return d;
-}
-
-function errorBubble(msg) {
-  const d = document.createElement('div');
-  d.className = 'bg-red-50 border border-red-200 text-red-800 text-sm rounded-xl px-3.5 py-2';
+  d.className = 'errorbox';
   d.textContent = msg;
   return d;
 }
 
+// ── empty states ──────────────────────────────────────────────────────────
+const EXAMPLES = [
+  'Which datasets are used across these papers?',
+  'What evaluation metrics do the authors report?',
+  'Which limitations do the authors acknowledge?',
+];
+
+function askEmptyState() {
+  const box = document.createElement('div');
+  box.className = 'empty';
+  const eyebrow = document.createElement('span');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = 'Ask the library';
+  const h = document.createElement('h2');
+  h.textContent = 'One answer, drawn from every paper you have added.';
+  const p = document.createElement('p');
+  p.textContent = 'Each claim carries a citation you can open to see the exact ' +
+                  'passage highlighted on its page in the original PDF.';
+  box.append(eyebrow, h, p);
+
+  const ex = document.createElement('div');
+  ex.className = 'examples';
+  const exLabel = document.createElement('span');
+  exLabel.className = 'eyebrow';
+  exLabel.textContent = 'Try';
+  ex.appendChild(exLabel);
+  EXAMPLES.forEach(q => {
+    const b = document.createElement('button');
+    b.className = 'exq';
+    b.type = 'button';
+    b.textContent = q;
+    b.onclick = () => { $('ask-input').value = q; $('ask-form').requestSubmit(); };
+    ex.appendChild(b);
+  });
+  box.appendChild(ex);
+  return box;
+}
+
+function simpleEmpty(thread, title, detail) {
+  const box = document.createElement('div');
+  box.className = 'empty';
+  const h = document.createElement('h2');
+  h.textContent = title;
+  const p = document.createElement('p');
+  p.textContent = detail;
+  box.append(h, p);
+  thread.appendChild(box);
+}
+
+function resetThread(tab) {
+  const thread = $(tab + '-thread');
+  thread.innerHTML = '';
+  if (tab === 'ask') thread.appendChild(askEmptyState());
+  else if (tab === 'paper') simpleEmpty(thread,
+    state.paper.paper ? 'Ask anything about this paper.' : 'Choose a paper to begin.',
+    'The conversation stays inside the document you pick, and follow-ups are ' +
+    'resolved against what you have already asked.');
+  else simpleEmpty(thread, 'Upload a document to begin.',
+    'It is kept apart from your library, and never appears in library-wide answers.');
+}
+
 // ── per-paper breakdown (the original fan-out, kept as a view) ────────────
 async function breakdown(query) {
-  const box = document.createElement('div');
-  box.className = 'mt-3 border-t border-slate-100 pt-2';
-  box.innerHTML = '<div class="text-xs text-slate-400">Loading per-paper breakdown…</div>';
+  const box = document.createElement('section');
+  box.className = 'breakdown';
+  const head = document.createElement('div');
+  head.className = 'evidence-head';
+  const eyebrow = document.createElement('span');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = 'Per-paper breakdown';
+  head.appendChild(eyebrow);
+  box.appendChild(head);
+  const wait = working(box, 'Reading each paper separately');
+
   try {
     const d = await fetch('/api/chat', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, deep_scan: false, use_reranker: true, top_k: 5 }),
     }).then(r => r.json());
-    box.innerHTML = `<div class="text-xs font-semibold text-slate-500 mb-1.5">Per-paper breakdown</div>`;
-    if (!d.ok) { box.innerHTML += `<div class="text-xs text-slate-400">${esc(d.error || 'none')}</div>`; return box; }
+    wait.stop(); wait.remove();
+    if (!d.ok) { box.appendChild(errorBlock(d.error || 'No breakdown available.')); return box; }
     d.papers.forEach(p => {
-      const el = document.createElement('details');
-      el.className = 'text-xs border border-slate-100 rounded-lg px-2.5 py-1.5 mb-1';
-      el.innerHTML = `<summary class="cursor-pointer font-medium text-slate-700">${esc(short(p.source))}</summary>` +
-                     `<div class="mt-1.5 text-slate-600 whitespace-pre-wrap">${esc(p.summary)}</div>`;
-      box.appendChild(el);
+      const item = document.createElement('details');
+      item.className = 'bd-item';
+      const sum = document.createElement('summary');
+      const label = paperLabel(p.source);
+      sum.textContent = label.text;
+      const body = document.createElement('div');
+      body.className = 'bd-body';
+      body.textContent = p.summary;
+      item.append(sum, body);
+      box.appendChild(item);
     });
-  } catch (e) { box.innerHTML = `<div class="text-xs text-red-600">${esc(String(e))}</div>`; }
+  } catch (e) {
+    wait.stop(); wait.remove();
+    box.appendChild(errorBlock(String(e)));
+  }
   return box;
 }
 
@@ -408,31 +1249,39 @@ async function ask(tab, threadEl, query, opts) {
   if (st.busy || !query.trim()) return;
   st.busy = true;
 
-  threadEl.appendChild(bubbleUser(query));
-  const wait = pending(threadEl);
+  threadEl.querySelector('.empty')?.remove();
+  const art = turnBlock(query);
+  threadEl.appendChild(art);
+  const wait = working(art, 'Searching the library and writing an answer');
+  // Bring the new question to the top of the view. Scrolling to the bottom of
+  // the thread - which is what this used to do - lands the reader at the end
+  // of the evidence list with the question and the answer's opening above the
+  // fold, which is precisely backwards for something meant to be read.
+  art.scrollIntoView({ block: 'start', behavior: 'smooth' });
 
   try {
     const data = await fetch('/api/ask', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, history: st.history, ...opts }),
     }).then(r => r.json());
-    wait.remove();
+    wait.stop(); wait.remove();
 
-    if (!data.ok) { threadEl.appendChild(errorBubble(data.error || 'Something went wrong.')); return; }
+    if (!data.ok) { art.appendChild(errorBlock(data.error || 'Something went wrong.')); return; }
 
     const extra = (tab === 'ask' && $('ask-breakdown').checked) ? await breakdown(data.query) : null;
-    threadEl.appendChild(bubbleAnswer(data, extra));
+    fillTurn(art, data, extra, !!(opts && opts.source_filter));
+
+    art.scrollIntoView({ block: 'start', behavior: 'smooth' });
 
     // Keep the rewritten question in history: it is what retrieval actually saw.
     st.history.push({ role: 'user', content: data.query });
     st.history.push({ role: 'assistant', content: (data.answer || '').slice(0, 600) });
     if (st.history.length > 8) st.history = st.history.slice(-8);
   } catch (e) {
-    wait.remove();
-    threadEl.appendChild(errorBubble(String(e)));
+    wait.stop(); wait.remove();
+    art.appendChild(errorBlock(String(e)));
   } finally {
     st.busy = false;
-    threadEl.scrollTop = threadEl.scrollHeight;
   }
 }
 
@@ -442,22 +1291,27 @@ $('ask-form').onsubmit = e => {
   const q = $('ask-input').value; $('ask-input').value = '';
   ask('ask', $('ask-thread'), q, {});
 };
-$('ask-clear').onclick = () => { state.ask.history = []; $('ask-thread').innerHTML = ''; closeSource(); };
+$('ask-clear').onclick = () => { state.ask.history = []; resetThread('ask'); closeSource(); };
 
 $('paper-select').onchange = e => {
   state.paper.paper = e.target.value;
   state.paper.history = [];
-  $('paper-thread').innerHTML = '';
+  resetThread('paper');
   $('paper-input').placeholder = e.target.value
     ? 'Ask about ' + short(e.target.value) : 'Select a paper first…';
 };
+
 $('paper-form').onsubmit = e => {
   e.preventDefault();
-  if (!state.paper.paper) { $('paper-thread').appendChild(errorBubble('Pick a paper first.')); return; }
+  if (!state.paper.paper) {
+    $('paper-thread').querySelector('.empty')?.remove();
+    $('paper-thread').appendChild(errorBlock('Choose a paper first.'));
+    return;
+  }
   const q = $('paper-input').value; $('paper-input').value = '';
   ask('paper', $('paper-thread'), q, { source_filter: state.paper.paper });
 };
-$('paper-clear').onclick = () => { state.paper.history = []; $('paper-thread').innerHTML = ''; closeSource(); };
+$('paper-clear').onclick = () => { state.paper.history = []; resetThread('paper'); closeSource(); };
 
 $('scratch-form').onsubmit = e => {
   e.preventDefault();
@@ -479,7 +1333,7 @@ function dropZone(zoneId, onFiles) {
 }
 
 /*
- * One request per file, rather than one request for the batch.
+ * One request per file, rather than one for the batch.
  *
  * The obvious progress bar - bytes sent - is useless here: on localhost the
  * transfer is over in milliseconds while ingestion takes a minute or two per
@@ -507,18 +1361,18 @@ function uploadOne(url, file, onSend) {
   });
 }
 
-/* A progress row: one bar across the whole batch, plus a line per finished file. */
+/* One bar across the batch, plus a line per finished file. */
 function progressPanel(box, total) {
   const wrap = document.createElement('div');
-  wrap.className = 'space-y-2';
+  wrap.className = 'progress';
   wrap.innerHTML =
-    `<div class="flex items-center gap-2 text-sm text-slate-600">
-       <div class="spin" data-role="spin"></div>
-       <span data-role="label" class="flex-1 min-w-0 truncate"></span>
-       <span data-role="count" class="text-xs text-slate-400 shrink-0"></span>
+    `<div class="progress-row">
+       <span class="spin" data-role="spin"></span>
+       <span class="label" data-role="label"></span>
+       <span class="count" data-role="count"></span>
      </div>
      <div class="bar"><i></i></div>
-     <div data-role="done" class="space-y-1"></div>`;
+     <div class="results" data-role="done"></div>`;
   box.prepend(wrap);
 
   const q = r => wrap.querySelector(`[data-role=${r}]`);
@@ -527,16 +1381,16 @@ function progressPanel(box, total) {
   const pct = f => { fill.style.width = Math.round(Math.min(f, 1) * 100) + '%'; };
 
   return {
-    // Bytes only account for a sliver of each file's slot; the rest of the
-    // slot belongs to ingestion, which is where the time actually goes.
+    // Bytes account for a sliver of each file's slot; the rest belongs to
+    // ingestion, which is where the time actually goes.
     sending(i, frac, name) {
       q('label').textContent = 'Uploading ' + short(name);
       q('count').textContent = `${i} of ${total} done`;
       bar.classList.remove('indet');
       pct((i + frac * 0.12) / total);
     },
-    // No server-side signal during either a parse or a delete, so the bar
-    // goes indeterminate and the label says what is being waited on.
+    // No server-side signal during either a parse or a delete, so the bar goes
+    // indeterminate and the label says what is being waited on.
     busy(i, text) {
       q('label').textContent = text;
       q('count').textContent = `${i} of ${total} done`;
@@ -550,18 +1404,17 @@ function progressPanel(box, total) {
       pct((i + 1) / total);
       q('count').textContent = `${i + 1} of ${total} done`;
       const line = document.createElement('div');
-      line.className = 'text-sm text-slate-600 flex items-start gap-1.5';
-      const badge = document.createElement('span');
-      badge.className = 'badge ' + (ok ? 'badge-indigo' : 'badge-amber');
-      badge.textContent = ok ? 'ready' : 'failed';
+      line.className = 'result';
+      const tag = document.createElement('span');
+      tag.className = 'tag ' + (ok ? 'tag-ok' : 'tag-bad');
+      tag.textContent = ok ? 'ready' : 'failed';
       const text = document.createElement('span');
-      text.textContent = short(name) + ' — ' + message;
-      line.append(badge, text);
+      text.textContent = short(name) + (message ? ' — ' + message : '');
+      line.append(tag, text);
       q('done').appendChild(line);
     },
     end(message) {
-      const spin = q('spin');
-      if (spin) spin.remove();
+      q('spin')?.remove();
       bar.classList.remove('indet');
       pct(1);
       q('label').textContent = message;
@@ -607,6 +1460,8 @@ async function uploadScratch(files) {
     state.scratch.paper = first;
     state.scratch.history = [];
     $('scratch-thread').innerHTML = '';
+    simpleEmpty($('scratch-thread'), 'Ready — ask anything about ' + short(first) + '.',
+      'Nothing here touches your library.');
     $('scratch-input').disabled = false;
     $('scratch-input').placeholder = 'Ask about ' + short(first);
     $('scratch-input').focus();
@@ -626,19 +1481,86 @@ $('lib-file').onchange     = e => uploadLibrary([...e.target.files]);
 
 // ── library ───────────────────────────────────────────────────────────────
 function syncLibTools() {
-  const n = state.selected.size, total = state.papers.length;
-  const tools = $('lib-tools');
-  tools.classList.toggle('hidden', total === 0);
-  tools.classList.toggle('flex', total > 0);
-  $('lib-sel').textContent = n ? `${n} selected` : '';
+  const picked = state.selected.size;
+  const shown = state.shown;
+  const shownPicked = shown.filter(x => state.selected.has(x)).length;
+
+  $('lib-tools').classList.toggle('hidden', state.papers.length === 0);
+  $('lib-sel').textContent = picked ? `${picked} selected` : '';
+
   const btn = $('lib-remove');
-  btn.disabled = n === 0;
-  btn.textContent = n === 0 ? 'Remove selected'
-                  : n === 1 ? 'Remove 1 paper'
-                            : `Remove ${n} papers`;
+  btn.disabled = picked === 0;
+  btn.textContent = picked === 0 ? 'Remove selected'
+                  : picked === 1 ? 'Remove 1 paper'
+                                 : `Remove ${picked} papers`;
+
+  // Select-all reflects what is on screen. With a filter applied it would
+  // otherwise claim to be unchecked while holding a selection you cannot see.
   const all = $('lib-all');
-  all.checked = n > 0 && n === total;
-  all.indeterminate = n > 0 && n < total;
+  all.checked = shownPicked > 0 && shownPicked === shown.length;
+  all.indeterminate = shownPicked > 0 && shownPicked < shown.length;
+}
+
+/** Draw the rows for whatever the filter currently admits. */
+function renderPaperRows() {
+  const q = $('lib-filter').value.trim().toLowerCase();
+  state.shown = q
+    ? state.papers.filter(p => (paperLabel(p).text + ' ' + p).toLowerCase().includes(q))
+    : state.papers.slice();
+
+  const list = $('lib-list');
+  list.innerHTML = '';
+
+  if (!state.papers.length) {
+    const empty = document.createElement('div');
+    empty.className = 'muted';
+    empty.textContent = 'Nothing yet — add a PDF above.';
+    list.appendChild(empty);
+    syncLibTools();
+    return;
+  }
+  if (!state.shown.length) {
+    const none = document.createElement('div');
+    none.className = 'muted';
+    none.textContent = `No paper matches “${q}”.`;
+    list.appendChild(none);
+    syncLibTools();
+    return;
+  }
+
+  state.shown.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'paper-row';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = state.selected.has(p);
+    cb.onchange = () => {
+      if (cb.checked) state.selected.add(p); else state.selected.delete(p);
+      syncLibTools();
+    };
+
+    const label = paperLabel(p);
+    const name = document.createElement('label');
+    name.className = label.id ? 'id' : '';
+    name.textContent = label.text;
+    name.title = p;
+    name.onclick = () => { cb.checked = !cb.checked; cb.onchange(); };
+
+    const del = document.createElement('button');
+    del.className = 'btn btn-sm btn-danger remove';
+    del.textContent = 'Remove';
+    del.onclick = async () => {
+      if (!confirm('Remove “' + label.text + '” from the library?')) return;
+      await fetch('/api/papers/' + encodeURIComponent(p), { method: 'DELETE' });
+      state.selected.delete(p);
+      loadPapers(); refreshHealth();
+    };
+
+    row.append(cb, name, del);
+    list.appendChild(row);
+  });
+  syncLibTools();
 }
 
 async function loadPapers() {
@@ -654,50 +1576,17 @@ async function loadPapers() {
     papers.map(p => `<option value="${esc(p)}">${esc(short(p))}</option>`).join('');
   if (papers.includes(keep)) sel.value = keep;
 
-  $('lib-count').textContent = `(${papers.length})`;
-  const list = $('lib-list');
-  list.innerHTML = '';
-  if (!papers.length) {
-    list.innerHTML = '<div class="text-sm text-slate-400 py-3">No papers yet — add some above.</div>';
-  }
-  papers.forEach(p => {
-    const row = document.createElement('div');
-    row.className = 'flex items-center gap-3 py-2';
-
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.className = 'accent-brand-600 shrink-0 cursor-pointer';
-    cb.checked = state.selected.has(p);
-    cb.onchange = () => {
-      if (cb.checked) state.selected.add(p); else state.selected.delete(p);
-      syncLibTools();
-    };
-
-    const name = document.createElement('label');
-    name.className = 'text-sm text-slate-700 flex-1 min-w-0 truncate cursor-pointer';
-    name.textContent = short(p);
-    name.onclick = () => { cb.checked = !cb.checked; cb.onchange(); };
-
-    const del = document.createElement('button');
-    del.className = 'text-xs text-slate-400 hover:text-red-600 shrink-0';
-    del.textContent = 'Remove';
-    del.onclick = async () => {
-      if (!confirm('Remove "' + short(p) + '" from the library?')) return;
-      await fetch('/api/papers/' + encodeURIComponent(p), { method: 'DELETE' });
-      state.selected.delete(p);
-      loadPapers(); refreshHealth();
-    };
-
-    row.append(cb, name, del);
-    list.appendChild(row);
-  });
-  syncLibTools();
+  $('lib-count').textContent = papers.length || '';
+  renderPaperRows();
   refreshHealth();
 }
 
+$('lib-filter').oninput = () => renderPaperRows();
+
 $('lib-all').onchange = e => {
   const on = e.target.checked;
-  state.selected = on ? new Set(state.papers) : new Set();
+  // Acts on the visible rows, so it means what it says when a filter is on.
+  state.shown.forEach(p => { if (on) state.selected.add(p); else state.selected.delete(p); });
   // Tick the rows in place. Re-fetching the list just to redraw checkboxes
   // made a purely local toggle wait on a round trip before anything moved.
   document.querySelectorAll('#lib-list input[type=checkbox]')
@@ -709,14 +1598,13 @@ $('lib-remove').onclick = async () => {
   const picked = [...state.selected];
   if (!picked.length) return;
   const msg = picked.length === 1
-    ? `Remove "${short(picked[0])}" from the library?`
+    ? `Remove “${short(picked[0])}” from the library?`
     : [`Remove these ${picked.length} papers from the library?`, '']
         .concat(picked.map(p => '• ' + short(p)))
         .join('\n');
   if (!confirm(msg)) return;
 
-  const btn = $('lib-remove');
-  btn.disabled = true;
+  $('lib-remove').disabled = true;
   const box = $('lib-del-status');
   box.innerHTML = '';
   const p = progressPanel(box, picked.length);
@@ -739,15 +1627,25 @@ $('lib-remove').onclick = async () => {
   refreshHealth();
 };
 
+// ── health ────────────────────────────────────────────────────────────────
+const fmt = n => n.toLocaleString('en-US');
+
 async function refreshHealth() {
   try {
     const h = await fetch('/api/health').then(r => r.json());
     $('health').textContent =
-      `${h.papers} paper${h.papers === 1 ? '' : 's'} · ${h.chunks} chunks` +
+      `${fmt(h.papers)} paper${h.papers === 1 ? '' : 's'} · ${fmt(h.chunks)} chunks` +
       (h.scratch_papers ? ` · ${h.scratch_papers} scratch` : '');
-  } catch { $('health').textContent = 'offline'; }
+    $('health-dot').classList.remove('off');
+  } catch {
+    $('health').textContent = 'Offline';
+    $('health-dot').classList.add('off');
+  }
 }
 
+resetThread('ask');
+resetThread('paper');
+resetThread('scratch');
 loadPapers();
 </script>
 </body>
