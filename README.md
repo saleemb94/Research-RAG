@@ -479,17 +479,41 @@ To put it on the desktop, make a shortcut to that command with
 `python scripts/make_icon.py`). Closing the window stops the app; Weaviate keeps
 running until `docker compose down`.
 
-Four tabs:
+Four views:
 
-| Tab | What it does |
+| View | What it does |
 | --- | --- |
-| **Ask** | One synthesised answer across the whole library, every claim carrying a `[n]` citation you can click |
-| **Paper** | A conversation scoped to one selected paper, with follow-ups resolved against the history |
-| **Scratch** | Drop in a PDF, ask about it, throw it away — stored separately and never visible to the other tabs |
-| **Library** | What is ingested; select any number of papers to remove at once, with a progress bar for both adding and removing |
+| **Ask the library** | One synthesised answer across every paper, each claim carrying a `[n]` citation you can open |
+| **Single paper** | A conversation scoped to one document, with follow-ups resolved against the history |
+| **Scratchpad** | Drop in a PDF, ask about it, discard it — stored separately and never visible to the other views |
+| **Library** | What is ingested: filter by title, select any number of papers to remove at once, progress reported for both adding and removing |
 
 Clicking any citation opens the source panel and renders that passage on its original
-PDF page.
+PDF page, highlighted.
+
+### Interface
+
+One file, no build step, no CDN: [`static/index.html`](static/index.html) carries
+its own design tokens. That last part is deliberate — a page fetching a
+stylesheet and two font files on every load would quietly contradict the offline
+claim above, so the type is a system stack and the CSS is local.
+
+Two colour roles do the work. Neutral ink for text, borders, surfaces and the
+primary action, since contrast is what marks a button primary — which leaves
+colour free to mean something. A single amber means exactly one thing:
+**evidence**. Citation markers, the open source, retrieved passages. It is the
+hue the PDF renderer highlights with, so a citation and the highlight it points
+at read as the same object. Amber therefore never signals a warning here;
+failures use the semantic red.
+
+The answer is set in a serif at a ~68-character measure, because it is the one
+place the product shows sustained prose and it should read as a document rather
+than a message. Its evidence sits below and subordinate to it, as rows rather
+than cards, each carrying the passage text inline — so *what did it conclude* →
+*on what* → *show me the page* runs in that order, the last step only if you
+want it. Every passage shows its section, its page, and a coarse three-step read
+of the retrieval distance, omitted rather than invented for the channels that
+report no distance.
 
 ---
 
@@ -539,7 +563,7 @@ research_rag/
   pdf_viewer.py          renders a chunk back onto its PDF page
   cli.py                 ingest / search / list / sections / delete
 app.py                   FastAPI server + JSON API
-static/index.html        single-page web UI
+static/index.html        the whole interface: markup, design tokens, behaviour
 scripts/
   migrate_chroma_to_weaviate.py    one-time import from a legacy ChromaDB index
   eval_models.py                   score models on the routing tasks
