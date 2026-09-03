@@ -74,7 +74,13 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 def root():
-    return FileResponse("static/index.html")
+    # Always revalidate. This one file is the entire UI, and served without a
+    # cache directive browsers kept it under heuristic caching - not even
+    # asking whether it had changed. Two shipped features were live and
+    # invisible until a hard reload, with no way for the user to tell why.
+    # The ETag still makes an unchanged page a cheap 304.
+    return FileResponse("static/index.html",
+                        headers={"Cache-Control": "no-cache"})
 
 
 ICON = Path("docs/icon.ico")

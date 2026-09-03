@@ -99,6 +99,14 @@ def run(page, base_url):
     fav = page.context.request.get(base_url + "favicon.ico")
     check("favicon is served", fav.status == 200, f"HTTP {fav.status}")
 
+    # The page is the whole UI. Served without a cache directive, browsers kept
+    # it under heuristic caching and never asked whether it had changed, so
+    # shipped features stayed invisible until a hard reload.
+    shell = page.context.request.get(base_url)
+    cc = shell.headers.get("cache-control") or ""
+    check("the page must be revalidated, not cached blindly",
+          "no-cache" in cc or "no-store" in cc, cc or "(no directive)")
+
     # -- tabs switch, and only one view is visible ---------------------------
     for tab in ["paper", "scratch", "library", "ask"]:
         page.click(f'.tab-btn[data-tab="{tab}"]')
