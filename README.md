@@ -465,6 +465,20 @@ python -m research_rag.cli search "What datasets were used?"
 python app.py                 # opens http://localhost:7860
 ```
 
+On Windows there is a launcher that does the whole start-up in one step —
+starting Docker Desktop if it is not running, bringing up Weaviate, waiting for
+both it and Ollama to actually answer, then starting the app and opening the
+browser:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\launch.ps1
+```
+
+To put it on the desktop, make a shortcut to that command with
+[`docs/icon.ico`](docs/icon.ico) as its icon (regenerate the icon with
+`python scripts/make_icon.py`). Closing the window stops the app; Weaviate keeps
+running until `docker compose down`.
+
 Four tabs:
 
 | Tab | What it does |
@@ -534,6 +548,8 @@ scripts/
   fetch_arxiv.py                   pull open-access papers by pinned arXiv id
   build_paper_cards.py             backfill paper cards without re-parsing PDFs
   screenshots.py                   regenerate the README screenshots from the app
+  launch.ps1                       one-step start-up on Windows, for a shortcut
+  make_icon.py                     draw docs/icon.ico
 tests/
   test_section_classifier.py       cross-discipline classification tests (no LLM needed)
   test_retrieval_filters.py        section-filter regression tests (no LLM needed)
