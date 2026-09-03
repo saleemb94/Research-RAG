@@ -377,6 +377,32 @@ found a real defect: asked "what dataset does the adversarial robustness one
 use?", the rewriter answered "what dataset does paper [9] use?" - a perfectly
 resolved reference, and useless, because no index knows what paper [9] is.
 
+### Benchmarking the stages
+
+The golden set answers *is the answer right*. It says nothing about where the
+time goes, or whether parsing produced a usable document in the first place —
+and a RAG system can be accurate and unusable, or fast and structurally broken.
+
+```bash
+python scripts/bench.py --structure     # parsing quality, instant, no LLM
+python scripts/bench.py --retrieval     # latency per channel, p50/p95
+python scripts/bench.py --generation    # answer latency and output rate
+python scripts/bench.py --ingest 3      # parse/classify/embed/summarise/write
+```
+
+Measured on 54 papers / 4,602 chunks:
+
+| Stage | Measurement | What it tells you |
+| --- | --- | --- |
+| Parsing | 100% of chunks typed to a real section; 0.2% fell back to `general` | A paper whose headings did not survive is invisible to section filtering — it degrades to plain semantic search without ever failing a test |
+| Ingestion | 18s/paper, 1.0s/page — parse 46%, summaries 43%, classification 9%, embedding 2%, write 0.2% | "Ingestion is slow" is not actionable; the split is |
+| Retrieval | rerank 123ms p50, vector search 2.8ms, BM25 3.2ms, end to end 141ms p50 / 233ms p95 | Reranking owns the budget, and it scales with candidates fetched rather than corpus size — the first knob to turn |
+| Generation | 17s p50 per answer, ~111 chars/s | Retrieval is ~1% of a request. The model, not the index, sets how fast this feels |
+
+`--structure` is the one to run after touching ingestion: it is free, needs no
+LLM, and it is the only check on parsing quality anywhere in the repo. It
+immediately found that 17 of 54 papers have no abstract chunk.
+
 ### Running the tests
 
 Classification is covered by tests that need neither Ollama nor Weaviate, so they run
@@ -559,6 +585,7 @@ research_rag/
   enumerate_.py          fan-out over papers for "which X across these papers"
   paper_cards.py         one structured card per paper, for corpus-level questions
   section_index.py       section summaries as a searchable second retrieval channel
+  titles.py              what a paper is called: metadata, then layout, then LLM
   llm.py                 single entry point for Ollama calls
   pdf_viewer.py          renders a chunk back onto its PDF page
   cli.py                 ingest / search / list / sections / delete
@@ -572,6 +599,8 @@ scripts/
   fetch_arxiv.py                   pull open-access papers by pinned arXiv id
   build_paper_cards.py             backfill paper cards without re-parsing PDFs
   screenshots.py                   regenerate the README screenshots from the app
+  bench.py                         stage timings and parsing quality
+  backfill_titles.py               resolve paper titles without re-parsing
   launch.ps1                       one-step start-up on Windows, for a shortcut
   make_icon.py                     draw docs/icon.ico
 tests/
@@ -675,8 +704,11 @@ safe to re-run. Once verified, `chroma_data/` can be deleted.
   degrade to plain semantic search.
 - **Section classification uses an LLM** and is therefore fallible. The cross-validation
   and post-retrieval filters above exist to contain that, not to eliminate it.
-- **Ingestion is slow** — Docling layout analysis plus per-heading LLM classification
-  runs roughly 1–3 minutes per paper on CPU. Retrieval afterwards is fast.
+- **Ingestion costs about 1 second per page.** Measured with
+  `scripts/bench.py --ingest`: 18s for an average paper, split parse 46% /
+  section summaries 43% / heading classification 9% / embedding 2% / writing
+  0.2%. Card building adds two more LLM calls on top. Retrieval afterwards is
+  milliseconds; see the benchmark section for the split.
 - **Anonymous access is enabled** on the Weaviate container. That is fine for a local,
   single-user setup; add authentication before exposing it on a network.
 - Papers are not committed to this repository — published articles are copyrighted.
