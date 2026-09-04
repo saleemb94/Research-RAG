@@ -318,8 +318,9 @@ runs rather than one.
 
 *Discuss the limitations reported in research on RAG*, almost the question that prompted
 the set, scored 0 of 5 fact groups on one run and 5 of 5 on two others, from the same
-index and the same question. Two questions then fail the same way every run, and tracing
-all of them found two distinct causes rather than one:
+index and the same question. Two more questions then score badly on every run, and
+reading their answers rather than their scores found unrelated causes, one of which was
+not the system at all:
 
 **Answering from cards.** *What weaknesses of large language models are identified?* and
 the RAG-limitations question on its bad runs are routed corpus-wide and answered from the
@@ -328,17 +329,28 @@ is a summary: the answer comes back fluent, correctly cited, and stating none of
 hallucination, cost or privacy findings the papers actually report. Breadth and depth are
 in tension on these questions, the router picks one, and the choice is not stable.
 
-**Untargeted retrieval.** *How do these papers evaluate retrieval and generation
-quality?* fails just as consistently but never touches the cards. It routes to `general`,
-so nothing steers it toward the evaluation sections where the metrics live, and it comes
-back with assorted passages naming no metric at all. The obvious diagnosis, that these
-are all card-routing failures, is wrong, and only checking each one showed it.
+**A question scored against the wrong thing.** *How do these papers evaluate retrieval
+and generation quality?* also fails every run, 1 of 5, and it is not a system failure at
+all. The answer is substantive: perplexity differences between original and RAG-prompt
+responses, a DCG@k estimate of what the top-k passages contribute, the eRAG method of
+scoring each retrieved document by downstream task performance, faithfulness and context
+relevance. It simply never writes the strings `nDCG`, `MRR` or `ROUGE`. The question asks
+*how* these papers evaluate, which invites methodology, and the fact groups then demanded
+metric names. The question and its scoring disagreed, and the answer was marked wrong for
+obeying the question.
 
-One caveat on the set's own construction: the robustness question draws on four papers
-where each fact is carried by a single one, which makes it the thinnest item here. Its
-low score is partly a question-design artifact and should not be read as purely a system
-failure. The evaluation question, with seven papers and well-attested facts, is the
-cleaner signal.
+That is worth recording rather than quietly fixing, because it is the failure mode a
+golden set is most prone to: a low score that looks like a system defect and is really
+the measurement. It was found by reading the answers, not the numbers, which is the only
+way it could have been found. Two of the three consistently weak questions here turned
+out to be flaws in the set. So **68% understates the real quality**, and the honest
+reading of that number is that it is a floor.
+
+The robustness question is the other one. Its answer is fluent and on topic, covering
+bias, manipulation of retrieval-augmented models and privacy leakage, but it never
+reaches the single paper that actually runs adversarial attacks. Part system, part
+question: it draws on four papers where each fact is carried by only one, which makes it
+the thinnest item in the set.
 
 **Negative controls** cover the gap every other metric leaves. All the others measure
 denying content that is present. None measures inventing content that is absent, which
