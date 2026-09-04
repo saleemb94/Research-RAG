@@ -159,6 +159,21 @@ def run(page, base_url):
               page.eval_on_selector_all("#ask-thread .cite.on", "c => c.length") == 1)
         check("panel names the source", len(page.inner_text("#src-title")) > 0,
               page.inner_text("#src-title")[:40])
+
+        # Zoom has to change the rendered width, not just the label. A global
+        # `img { max-width: 100% }` once capped the image at its container, so
+        # the percentage counted up while the page stayed exactly the same size.
+        before = page.eval_on_selector("#src-img", "i => i.getBoundingClientRect().width")
+        page.click("#src-zoom-in")
+        page.wait_for_timeout(250)
+        after = page.eval_on_selector("#src-img", "i => i.getBoundingClientRect().width")
+        check("zooming in actually enlarges the page",
+              after > before + 1, f"{before:.0f}px -> {after:.0f}px")
+        page.click("#src-zoom-out")
+        page.wait_for_timeout(250)
+        back = page.eval_on_selector("#src-img", "i => i.getBoundingClientRect().width")
+        check("zooming out shrinks it again", back < after - 1,
+              f"{after:.0f}px -> {back:.0f}px")
         page.click("#src-close")
         check("panel closes", not page.is_visible("#src-panel"))
 

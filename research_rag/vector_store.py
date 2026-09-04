@@ -35,6 +35,11 @@ from .config import (
     WEAVIATE_PORT,
 )
 
+# How many extra candidates hybrid search fetches when a source filter is in
+# play, to cover the share its keyword half returns from outside the filter.
+# Measured at alpha=0.3, roughly a third came back foreign.
+_HYBRID_OVERFETCH = 4
+
 # Properties filtered on exactly (a whole heading, a whole filename). Weaviate's
 # default `word` tokenization would make equal("Data Collection") match any
 # chunk containing the token "data", so these are indexed as a single token.
@@ -347,18 +352,41 @@ class VectorStore:
 
         Hits carry no distance: hybrid returns a fused score on a different
         scale, and everything downstream reranks anyway.
+
+        Results are filtered again in Python because the keyword half does not
+        honour the filter the way the vector half does. Asked for one paper at
+        alpha=0.0, 23 of 24 hits came back from other papers; at alpha=1.0,
+        none did. Building the filter by hand and passing it straight to the
+        client behaved identically, so it is not how the filter is constructed.
+
+        The damage was quiet and specific. The fan-out over papers takes the
+        first hit for a paper as that paper's citation, so a leaked chunk
+        produced a citation naming one paper while rendering a passage from
+        another. In one answer four of eight citations opened the same passage
+        of the same foreign paper.
         """
+        allowed: set[str] | None = None
+        if source_filter:
+            allowed = ({source_filter} if isinstance(source_filter, str)
+                       else {f for f in source_filter if f})
+
+        # Overfetch while filtering, because a share of what comes back is
+        # discarded and the caller still expects up to `limit` usable hits.
+        fetch = limit * _HYBRID_OVERFETCH if allowed else limit
         result = self._col.query.hybrid(
             query=query_text,
             vector=query_vector,
             alpha=alpha,
-            limit=limit,
+            limit=fetch,
             filters=self._build_filters(source_filter=source_filter),
         )
-        return [
+        hits = [
             SearchHit(properties=self._normalize(obj.properties), distance=None)
             for obj in result.objects
         ]
+        if allowed:
+            hits = [h for h in hits if h.properties.get("source_file") in allowed]
+        return hits[:limit]
 
     def get_by_section(
         self,

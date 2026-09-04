@@ -552,7 +552,11 @@ input[type=checkbox]:indeterminate::after {
 .iconbtn { width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--r-md); color: var(--ink-400); flex-shrink: 0; }
 .iconbtn:hover { background: var(--ink-75); color: var(--ink-900); }
 .srcbody { flex: 1; overflow: auto; background: var(--ink-75); padding: var(--s-4); }
-#src-img { border: 1px solid var(--ink-200); border-radius: var(--r-sm); background: #fff; box-shadow: var(--shadow-sm); }
+/* max-width:none overrides the global img rule. Without it the browser caps
+   the width at the container, so zooming in changed the percentage label and
+   nothing else. */
+#src-img { max-width: none; border: 1px solid var(--ink-200); border-radius: var(--r-sm);
+           background: #fff; box-shadow: var(--shadow-sm); }
 #src-text {
   background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-md);
   padding: var(--s-4); font-family: var(--serif); font-size: var(--t-xs);
