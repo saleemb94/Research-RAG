@@ -15,6 +15,7 @@ eval_results.json
 eval_quick.json
 eval_deep.json
 eval_synthesis.json
+eval_thematic.json
 
 # ── Secrets / local config ─────────────────────────────────────────────────
 .env

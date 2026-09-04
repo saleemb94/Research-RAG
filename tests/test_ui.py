@@ -194,6 +194,24 @@ def run(page, base_url):
     check("the empty state offers example questions",
           page.eval_on_selector_all("#ask-thread .exq", "e => e.length") > 0)
 
+    # The examples are built from the library's own subjects, so on a loaded
+    # shelf they must not still be the generic fallback. Checking the text
+    # against /api/papers rather than against a fixed string keeps the test
+    # true for whatever corpus it runs against.
+    topics = page.evaluate(
+        "fetch('/api/papers').then(r => r.json()).then(d => d.topics || [])")
+    ex_text = page.eval_on_selector_all(
+        "#ask-thread .exq", "e => e.map(x => x.textContent).join(' | ')").lower()
+    if topics:
+        check("the examples name what the library is actually about",
+              any(t.lower() in ex_text for t in topics),
+              f"topics={topics} examples={ex_text!r}")
+        check("the examples are discussion questions, not lookups",
+              "discuss" in ex_text, ex_text)
+    else:
+        check("an empty library still offers the generic examples",
+              "across these papers" in ex_text, ex_text)
+
     library_checks(page)
 
     # -- the page never logged an error -------------------------------------

@@ -13,11 +13,16 @@ hides which one broke. This script measures them separately:
   generation  Given the right paper, does the answer actually state the fact?
               Scored against the paper the fact really lives in, so a low score
               is the LLM's summary omitting or contradicting retrieved content.
+  thematic    A discussion question over a topic rather than a paper, which is
+              what a reader with a reading pile actually asks. Scored on facts,
+              on how many of the topic's papers the answer draws on, and on
+              whether its citations are distinct pieces of evidence.
 
 Usage:
     python scripts/eval_rag.py --coverage             # no LLM, instant
     python scripts/eval_rag.py --generation
     python scripts/eval_rag.py --retrieval
+    python scripts/eval_rag.py --thematic -v
     python scripts/eval_rag.py --all -v
     python scripts/eval_rag.py --all --limit 8        # quick smoke run
 """
@@ -63,7 +68,7 @@ def score_facts(groups: list[list[str]], text: str) -> tuple[int, list[int]]:
 
 
 def load_items(limit: int | None, mode: str = "single") -> list[dict]:
-    """`mode` is "single" (a fact inside one paper) or "synthesis" (corpus-wide)."""
+    """"single" (a fact in one paper), "synthesis", "thematic" or "negative"."""
     data = json.loads(GOLDEN.read_text(encoding="utf-8"))
     items = [i for i in data["items"] if (i.get("mode") or "single") == mode]
     return items[:limit] if limit else items
@@ -294,6 +299,111 @@ def run_synthesis(items, verbose, client=None):
     return rows
 
 
+# ── thematic: a discussion question spanning a topic, not one paper ────────
+
+def run_thematic(items, verbose, client=None):
+    """
+    Score the questions a reader actually asks of a reading pile: "discuss the
+    limitations of RAG", not "what F1 did paper X report".
+
+    These are scored differently from --synthesis on purpose. A synthesis
+    question has a closed answer, so every expected paper must appear. A
+    discussion question does not: the corpus holds eight papers on hate speech
+    and a good four-paragraph answer draws on some of them, not all eight.
+    Demanding the full set would score a genuinely good answer as a failure.
+
+    So breadth is judged against `min_papers`, and three things are measured
+    that the synthesis scorer does not:
+
+      on-topic     citations that land outside the theme entirely. An answer
+                   about RAG limitations citing a hate-speech paper is padding
+                   its evidence, which reads as authoritative and is not.
+
+                   Topic boundaries in a real corpus are fuzzy, so each theme
+                   carries a second list, `related_papers`: papers that satisfy
+                   most of the theme's fact groups in their own text without
+                   being primarily about it, which is mostly the surveys.
+                   Citing one is neither a hit nor a miss. Without that split
+                   the metric scores the boundary I drew rather than the
+                   system, and a survey citation looks like a mistake.
+      distinct     distinct passages behind the citations. Eight markers all
+                   pointing at one paragraph looks like eight sources in the
+                   interface and is one.
+      breadth      questions meeting their min_papers bar.
+    """
+    from fastapi.testclient import TestClient
+    import app as appmod
+
+    if client is None:
+        with TestClient(appmod.app) as c:
+            return run_thematic(items, verbose, client=c)
+
+    rows = []
+    for i, it in enumerate(items, 1):
+        print(f"  [{i}/{len(items)}] {it['id']}", flush=True)
+        t0 = time.perf_counter()
+        r = client.post("/api/ask", json={"query": it["question"]}).json()
+        secs = time.perf_counter() - t0
+
+        answer = r.get("answer", "") if r.get("ok") else ""
+        ok, flags = score_facts(it["key_facts"], answer)
+
+        cited_nums = set(r.get("cited") or [])
+        cited = [s for s in (r.get("sources") or []) if s["number"] in cited_nums]
+        cited_papers = {s["source"] for s in cited}
+        # Two citations quoting the same paragraph are one piece of evidence.
+        passages = {(s["source"], (s.get("text") or "")[:160]) for s in cited}
+
+        want = set(it.get("expected_papers") or [])
+        near = set(it.get("related_papers") or [])
+        on_topic = want & cited_papers
+        off_topic = cited_papers - want - near
+        need = it.get("min_papers", 3)
+        rows.append({
+            "id": it["id"], "theme": it.get("theme", ""), "seconds": secs,
+            "g_ok": ok, "g_n": len(it["key_facts"]),
+            "on_topic": len(on_topic), "cited_n": len(cited_papers),
+            "off_n": len(off_topic),
+            "passages": len(passages), "citations": len(cited),
+            "need": need, "broad": len(on_topic) >= need,
+            "off_topic": sorted(off_topic),
+            "cited_papers": sorted(cited_papers),
+            "dropped": r.get("dropped_citations") or [],
+            "missed": [it["key_facts"][j][0] for j, f in enumerate(flags) if not f],
+            "answer": answer,
+        })
+
+    f_ok = sum(r["g_ok"] for r in rows); f_n = sum(r["g_n"] for r in rows)
+    on = sum(r["on_topic"] for r in rows); tot = sum(r["cited_n"] for r in rows)
+    off = sum(r["off_n"] for r in rows)
+    broad = sum(1 for r in rows if r["broad"])
+    cits = sum(r["citations"] for r in rows); dis = sum(r["passages"] for r in rows)
+    bad = sum(len(r["dropped"]) for r in rows)
+    secs = sum(r["seconds"] for r in rows)
+    bar = "=" * 74
+    print(f"\n{bar}\nTHEMATIC - discussion questions across a topic\n{bar}")
+    print(f"  facts stated in answer  : {f_ok}/{f_n} ({f_ok / f_n:.0%})")
+    print(f"  met breadth bar         : {broad}/{len(rows)} ({broad / len(rows):.0%})")
+    print(f"  cited papers core/related/off: {on}/{tot - on - off}/{off}"
+          f"  ({off / max(tot, 1):.0%} outside the theme)")
+    print(f"  distinct passages cited : {dis}/{cits} ({dis / max(cits, 1):.0%})")
+    print(f"  invalid citations emitted: {bad}")
+    print(f"  wall clock              : {secs:.0f}s total, {secs / len(rows):.1f}s per question")
+    for r in rows:
+        mark = "ok " if r["broad"] and r["g_ok"] == r["g_n"] else "   "
+        print(f"  {mark} {r['id']:20s} facts {r['g_ok']}/{r['g_n']}  "
+              f"papers {r['on_topic']}/{r['need']}  "
+              f"passages {r['passages']}/{r['citations']}  missed={r['missed']}")
+        if verbose:
+            if r["off_topic"]:
+                print(f"        off topic: {[c[:34] for c in r['off_topic']]}")
+            print(f"        cited: {[c[:34] for c in r['cited_papers']]}")
+            print(f"        {r['answer'][:220]!r}")
+    (ROOT / "eval_thematic.json").write_text(
+        json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8")
+    return rows
+
+
 # ── retrieval + generation, through the real API ───────────────────────────
 
 def run_pipeline(items, verbose, do_retrieval, do_generation, deep=False):
@@ -406,6 +516,8 @@ def main():
     ap.add_argument("--generation", action="store_true")
     ap.add_argument("--synthesis", action="store_true",
                     help="Score the corpus-wide cited-answer questions")
+    ap.add_argument("--thematic", action="store_true",
+                    help="Score the topic-wide discussion questions")
     ap.add_argument("--negative", action="store_true",
                     help="Score the questions the corpus cannot answer")
     ap.add_argument("--all", action="store_true")
@@ -423,10 +535,12 @@ def main():
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
     if a.all:
-        a.coverage = a.retrieval = a.generation = a.synthesis = a.negative = True
-    if not (a.coverage or a.retrieval or a.generation or a.synthesis or a.negative):
+        a.coverage = a.retrieval = a.generation = True
+        a.synthesis = a.thematic = a.negative = True
+    if not (a.coverage or a.retrieval or a.generation or a.synthesis
+            or a.thematic or a.negative):
         ap.error("choose at least one of --coverage / --retrieval / "
-                 "--generation / --synthesis / --all")
+                 "--generation / --synthesis / --thematic / --all")
 
     items = load_items(a.limit, "single")
     items, absent, absent_papers = split_by_presence(items)
@@ -452,11 +566,14 @@ def main():
             print("  The facts metric still counts facts that only those papers "
                   "stated, so read it alongside the absent list above.")
             print()
+    the_items = load_items(a.limit, "thematic")
     neg_items = load_items(a.limit, "negative")
     print(f"Golden set: {len(items)} single-paper question(s) over "
           f"{len({i['paper'] for i in items})} paper(s) "
-          f"+ {len(syn_items)} synthesis + {len(neg_items)} negative control(s); "
-          f"{sum(len(i['key_facts']) for i in items + syn_items)} fact group(s)")
+          f"+ {len(syn_items)} synthesis + {len(the_items)} thematic "
+          f"+ {len(neg_items)} negative control(s); "
+          f"{sum(len(i['key_facts']) for i in items + syn_items + the_items)} "
+          f"fact group(s)")
 
     if a.coverage:
         run_coverage(items, a.verbose)
@@ -488,6 +605,25 @@ def main():
                 vals = [run[i]["g_ok"] for run in runs]
                 flag = "  <-- unstable" if max(vals) != min(vals) else ""
                 print(f"    {it['id']:22s} {vals}  /{runs[0][i]['g_n']}{flag}")
+    if a.thematic and the_items:
+        from fastapi.testclient import TestClient
+        import app as appmod
+        with TestClient(appmod.app) as _client:
+            runs = [run_thematic(the_items, a.verbose, client=_client)
+                    for _ in range(max(1, a.repeat))]
+        if len(runs) > 1:
+            facts = [sum(r["g_ok"] for r in run) for run in runs]
+            broad = [sum(1 for r in run if r["broad"]) for run in runs]
+            f_n = sum(r["g_n"] for r in runs[0])
+            bar = "=" * 74
+            print(f"\n{bar}\nTHEMATIC over {len(runs)} runs\n{bar}")
+            print(f"  facts  : {statistics.mean(facts):.1f}/{f_n} "
+                  f"({statistics.mean(facts) / f_n:.0%})  "
+                  f"range {min(facts)}-{max(facts)}  "
+                  f"sd {statistics.pstdev(facts):.1f}")
+            print(f"  breadth: {statistics.mean(broad):.1f}/{len(the_items)} "
+                  f"range {min(broad)}-{max(broad)}")
+
     if a.negative and neg_items:
         run_negative(neg_items, a.verbose)
     if a.retrieval or a.generation:

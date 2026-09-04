@@ -127,25 +127,56 @@ def favicon():
     return Response(status_code=204)
 
 
+def _library_topics(cards, limit: int = 3) -> list[str]:
+    """
+    The subjects this particular library is about, most common first.
+
+    Used for the example questions on the Ask tab. Hardcoding them would mean
+    suggesting hate-speech questions to someone whose shelf is all chemistry,
+    so they are read from the cards instead and follow whatever is loaded.
+
+    Disciplines are written by the model as a coarse-to-fine path, "nlp / hate
+    speech detection", and the useful half is the last segment: the leading
+    "nlp" is true of most of a language corpus and says nothing. Segments are
+    normalized before counting because the same subject comes back both
+    hyphenated and not - "retrieval-augmented generation" and "retrieval
+    augmented generation" are one topic, and splitting them buries it.
+    """
+    counts: dict[str, int] = {}
+    for c in cards:
+        d = (c.discipline or "").strip().lower()
+        if not d:
+            continue
+        leaf = " ".join(d.rsplit("/", 1)[-1].replace("-", " ").split())
+        # A bare parent is a label, not a subject anyone would ask about.
+        if len(leaf) < 4 or leaf in {"nlp", "natural language processing"}:
+            continue
+        counts[leaf] = counts.get(leaf, 0) + 1
+    ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    # One paper is not a theme; a question about it belongs in the Paper tab.
+    return [t for t, n in ranked if n >= 2][:limit]
+
+
 @app.get("/api/papers")
 def list_papers():
     """
-    The library, plus what each paper is actually called.
+    The library, plus what each paper is called and what it is collectively about.
 
     `papers` stays a plain list of filenames because that is the key everything
     else - filters, deletes, citations - is addressed by. Titles ride alongside
     as a map so the interface can show a paper's name while still speaking
     filenames to the API.
     """
-    titles = {}
+    titles, topics = {}, []
     try:
-        titles = {c.source_file: c.title
-                  for c in card_store.all_cards() if c.title}
+        cards = card_store.all_cards()
+        titles = {c.source_file: c.title for c in cards if c.title}
+        topics = _library_topics(cards)
     except Exception:
         # A missing or half-built card store must not stop the library listing;
-        # the interface falls back to filenames on its own.
+        # the interface falls back to filenames and generic examples on its own.
         pass
-    return {"papers": store.list_sources(), "titles": titles}
+    return {"papers": store.list_sources(), "titles": titles, "topics": topics}
 
 
 def _refresh_section_index(source_file: str):

@@ -297,7 +297,7 @@ input[type=checkbox]:indeterminate::after {
    separated by a rule and a lot of air, the way sections of a report are. */
 .thread { flex: 1; overflow-y: auto; display: flex; flex-direction: column;
   padding: var(--s-8) var(--s-8) var(--s-16); }
-/* Centred while the stage is the whole width, anchored left once the source
+/* Centered while the stage is the whole width, anchored left once the source
    panel claims the right side - which keeps the reading column balanced in
    both states instead of stranding 40% of the window. */
 .turn, .empty, .composer form { max-width: 44rem; margin-inline: auto; width: 100%; }
@@ -313,7 +313,7 @@ input[type=checkbox]:indeterminate::after {
   max-width: 36em;
 }
 
-/* The centrepiece. Serif, 17px, 1.75 leading, measure capped near 70
+/* The centerpiece. Serif, 17px, 1.75 leading, measure capped near 70
    characters - long-form reading settings, not chat settings. */
 .answer {
   font-family: var(--serif);
@@ -438,7 +438,7 @@ input[type=checkbox]:indeterminate::after {
 @keyframes sp { to { transform: rotate(360deg); } }
 .elapsed { font-variant-numeric: tabular-nums; color: var(--ink-400); font-size: var(--t-xs); }
 
-/* An empty thread centres its guidance in the space it has. Pinned to the
+/* An empty thread centers its guidance in the space it has. Pinned to the
    top it read as unfinished, with the composer 700px below it. */
 .empty { margin-block: auto; padding: var(--s-12) 0; }
 .empty > * { max-width: 34rem; }
@@ -862,7 +862,7 @@ const state = {
   scratch: { history: [], busy: false, paper: '' },
   // Library selection, kept out here so it survives the list re-rendering
   // after each delete.
-  papers: [], shown: [], selected: new Set(), titles: {},
+  papers: [], shown: [], selected: new Set(), titles: {}, topics: [],
 };
 
 // ── navigation ────────────────────────────────────────────────────────────
@@ -1158,11 +1158,37 @@ function errorBlock(msg) {
 }
 
 // ── empty states ──────────────────────────────────────────────────────────
-const EXAMPLES = [
+//
+// The examples are the first thing anyone reads, and they teach what this tab
+// is for. Generic ones ("which datasets are used?") taught the wrong lesson:
+// they read as a database query, so that is what people asked. The tab is at
+// its best on a discussion question spanning a topic - the sort you would put
+// to a colleague who had read the pile - so the examples now ask one.
+//
+// The topics come from the library itself rather than being written here, so a
+// shelf of chemistry papers is not offered a question about hate speech. Until
+// the papers load, and for a library too small or too scattered to have a
+// subject, the generic set stands in.
+const GENERIC_EXAMPLES = [
   'Which datasets are used across these papers?',
   'What evaluation metrics do the authors report?',
   'Which limitations do the authors acknowledge?',
 ];
+
+const EXAMPLE_TEMPLATES = [
+  t => `Discuss the different methods used in ${t} research.`,
+  t => `What limitations do the authors report in ${t} research?`,
+  t => `Which datasets are used in ${t} research?`,
+];
+
+function exampleQuestions() {
+  const topics = state.topics || [];
+  if (!topics.length) return GENERIC_EXAMPLES;
+  // One question per topic where there are several, so the examples show the
+  // breadth of the shelf. With a single subject, vary the question instead.
+  if (topics.length === 1) return EXAMPLE_TEMPLATES.map(f => f(topics[0]));
+  return topics.slice(0, 3).map((t, i) => EXAMPLE_TEMPLATES[i % 3](t));
+}
 
 function askEmptyState() {
   const box = document.createElement('div');
@@ -1183,7 +1209,7 @@ function askEmptyState() {
   exLabel.className = 'eyebrow';
   exLabel.textContent = 'Try';
   ex.appendChild(exLabel);
-  EXAMPLES.forEach(q => {
+  exampleQuestions().forEach(q => {
     const b = document.createElement('button');
     b.className = 'exq';
     b.type = 'button';
@@ -1589,6 +1615,16 @@ async function loadPapers() {
   const papers = data.papers;
   state.papers = papers;
   state.titles = data.titles || {};
+  // The examples are drawn from these, and the empty state is built before the
+  // first load returns. Redraw it when the topics change, or a library that
+  // has just finished loading keeps showing the generic questions until the
+  // user switches tabs.
+  const hadTopics = (state.topics || []).join('|');
+  state.topics = data.topics || [];
+  if (state.topics.join('|') !== hadTopics
+      && !state.ask.history.length && $('ask-thread')) {
+    resetThread('ask');
+  }
   // A paper deleted elsewhere must not stay selected, or the count lies and
   // the next bulk remove sends a DELETE for something already gone.
   state.selected = new Set([...state.selected].filter(x => papers.includes(x)));

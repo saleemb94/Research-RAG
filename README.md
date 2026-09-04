@@ -244,9 +244,10 @@ applies this policy in one place.
 
 ### Measuring retrieval and generation quality
 
-`tests/golden_qa.json` holds 122 graded questions with 262 fact groups that a correct
+`tests/golden_qa.json` holds 138 graded questions with 341 fact groups that a correct
 answer has to contain: 107 single-paper questions covering 53 papers (229 groups),
-10 corpus-wide synthesis questions (33 groups) and 5 negative controls.
+10 corpus-wide synthesis questions (33 groups), 16 thematic discussion questions
+(79 groups) and 5 negative controls.
 
 Every fact was read from the source PDF, never from the search index. That is the point
 of the set rather than a detail of how it was built. Facts harvested from the index
@@ -266,6 +267,7 @@ python scripts/eval_rag.py --coverage      # is the fact in the index at all? (n
 python scripts/eval_rag.py --retrieval     # asked blind, does the right paper come back?
 python scripts/eval_rag.py --generation    # given the right paper, is the fact stated?
 python scripts/eval_rag.py --synthesis     # corpus-wide cited answers
+python scripts/eval_rag.py --thematic      # discussion questions across a topic
 python scripts/eval_rag.py --all -v
 ```
 
@@ -282,6 +284,61 @@ kept apart and scored by different code. Questions in the synthesis set have to:
 They are scored on two axes that fail apart: facts stated, and which papers were
 actually cited. An answer can name four datasets while citing one paper, which reads as
 authoritative and quietly under-reports the corpus.
+
+**Thematic questions** are the third set, and they exist because the first two only ask
+things with a right answer. Neither resembles what someone with a reading pile actually
+types. They ask *discuss the limitations reported in research on retrieval-augmented
+generation*, or *compare the reranking approaches used in these papers*: a topic spanning
+a cluster of papers, with no closed answer.
+
+That difference forces different scoring. A synthesis question has an enumerable answer,
+so every expected paper must appear. A discussion question does not. The library holds
+eight papers on hate speech, and a good four-paragraph answer draws on some of them, not
+all eight; demanding the full set would mark a genuinely good answer as a failure. So
+each theme carries a `min_papers` floor and is scored on three things the synthesis
+scorer does not measure:
+
+- **breadth**, whether the answer drew on at least `min_papers` of the theme's own papers;
+- **citations outside the theme**, evidence padding that reads as authoritative;
+- **distinct passages**, because eight markers pointing at one paragraph look like eight
+  sources in the interface and are one.
+
+Topic boundaries in a real corpus are fuzzy, and a survey legitimately touches half a
+dozen themes. Counting every survey citation as off-topic would score the boundary I drew
+rather than the system, so each theme also lists `related_papers`: papers satisfying most
+of its fact groups in their own text without being primarily about it. Citing one is
+neither a hit nor a miss.
+
+Over three runs the set scores **68% of facts** (54 of 79, range 51 to 57, sd 2.4) and
+meets the breadth bar on **8.3 of 16** questions. Citations are **100% distinct
+passages** across all three runs, 366 for 366, and 40% of cited papers fall outside their
+theme. That spread is the first thing the set established, and it is larger than most
+differences anyone would want to claim, so these questions are reported over repeated
+runs rather than one.
+
+*Discuss the limitations reported in research on RAG*, almost the question that prompted
+the set, scored 0 of 5 fact groups on one run and 5 of 5 on two others, from the same
+index and the same question. Two questions then fail the same way every run, and tracing
+all of them found two distinct causes rather than one:
+
+**Answering from cards.** *What weaknesses of large language models are identified?* and
+the RAG-limitations question on its bad runs are routed corpus-wide and answered from the
+paper cards. Routing is right and breadth is right, 12 of the 12 RAG papers, but a card
+is a summary: the answer comes back fluent, correctly cited, and stating none of the
+hallucination, cost or privacy findings the papers actually report. Breadth and depth are
+in tension on these questions, the router picks one, and the choice is not stable.
+
+**Untargeted retrieval.** *How do these papers evaluate retrieval and generation
+quality?* fails just as consistently but never touches the cards. It routes to `general`,
+so nothing steers it toward the evaluation sections where the metrics live, and it comes
+back with assorted passages naming no metric at all. The obvious diagnosis, that these
+are all card-routing failures, is wrong, and only checking each one showed it.
+
+One caveat on the set's own construction: the robustness question draws on four papers
+where each fact is carried by a single one, which makes it the thinnest item here. Its
+low score is partly a question-design artifact and should not be read as purely a system
+failure. The evaluation question, with seven papers and well-attested facts, is the
+cleaner signal.
 
 **Negative controls** cover the gap every other metric leaves. All the others measure
 denying content that is present. None measures inventing content that is absent, which
@@ -317,8 +374,14 @@ Current scores, against the baseline they replaced:
 | Generation, fully correct answers | 64% | 63% | 67/107 |
 | Synthesis, facts stated in one cited answer | 73% | **76%** | 25/33 |
 | Synthesis, expected papers actually cited | 56% | **70%** | 30/43 |
+| Thematic, facts stated in a discussion answer | | 68% | 54/79, mean of 3 |
+| Thematic, questions meeting the breadth bar | | 52% | 8.3/16, mean of 3 |
+| Thematic, citations that are distinct passages | | 100% | 366/366 |
 | Negative controls, correctly declined | 100% | **100%** | 5/5 |
 | Invalid citations emitted | 0 | **0** | |
+
+The thematic rows have no baseline column because that set is new and nothing has been
+changed in response to it yet. They are a starting point to measure against, not a gain.
 
 The gain is almost all in synthesis, where papers actually cited went from 56% to 70%.
 Retrieval moved a few points. Generation moved a point the other way, which is inside
@@ -638,7 +701,7 @@ app.py                   FastAPI server and JSON API
 static/index.html        the whole interface: markup, design tokens, behavior
 scripts/
   eval_models.py                   score models on the routing tasks
-  eval_rag.py                      score coverage / retrieval / generation / synthesis
+  eval_rag.py                      score coverage / retrieval / generation / synthesis / thematic
   eval_chat.py                     score the multi-turn and ad-hoc upload views
   fetch_arxiv.py                   pull open-access papers by pinned arXiv id
   build_paper_cards.py             backfill paper cards without re-parsing PDFs
@@ -657,7 +720,7 @@ tests/
   test_paper_lifecycle.py          add/remove keeps all three collections in step
   test_ui.py                       browser tests: citations, source panel, tabs
   golden_conversations.json        26 multi-turn turns for the conversational views
-  golden_qa.json                   122 graded questions, 262 fact groups, 53 papers
+  golden_qa.json                   138 graded questions, 341 fact groups, 53 papers
 docker-compose.yml       Weaviate service
 ```
 

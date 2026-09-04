@@ -1424,7 +1424,7 @@
    "id": "n49-purpose",
    "paper": "SiJesi_Large_Language_Model_Chatbot_with_Augmented_Retrieval_Approach_Generation_and_Prompt_Engineering.pdf",
    "section_type": "abstract",
-   "question": "What is the SiJesi chatbot built to advise on, and for which organisation?",
+   "question": "What is the SiJesi chatbot built to advise on, and for which organization?",
    "key_facts": [
     [
      "cyber incident"
@@ -1578,7 +1578,7 @@
    "id": "n54-themes",
    "paper": "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf",
    "section_type": "abstract",
-   "question": "Which two directions of integration does this survey organise itself around?",
+   "question": "Which two directions of integration does this survey organize itself around?",
    "key_facts": [
     [
      "search4llm"
@@ -1895,6 +1895,636 @@
    "question": "What did the eye-tracking studies in these papers reveal about how users scan search results?",
    "why": "No chunk mentions eye tracking; no paper runs a user study of this kind.",
    "key_facts": []
+  },
+  {
+   "id": "th-rag-limits",
+   "mode": "thematic",
+   "theme": "retrieval-augmented generation",
+   "question": "Discuss the limitations reported in research on retrieval-augmented generation.",
+   "min_papers": 4,
+   "expected_papers": [
+    "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+    "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+    "Graph_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey (1).pdf",
+    "Old IR Methods Meet RAG.pdf",
+    "The Power of Noise Redefining Retrieval for RAG Systems.pdf",
+    "To_Enhance_Graph-Based_Retrieval-Augmented_Generation_RAG_with_Robust_Retrieval_Techniques.pdf",
+    "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf",
+    "Retrieval-Augmented Generation with Knowledge Graphs for.pdf"
+   ],
+   "key_facts": [
+    [
+     "hallucination"
+    ],
+    [
+     "noisy",
+     "noise"
+    ],
+    [
+     "outdated",
+     "out-of-date"
+    ],
+    [
+     "computational cost",
+     "resource-intensive",
+     "expensive"
+    ],
+    [
+     "chunking",
+     "segmentation"
+    ]
+   ],
+   "related_papers": []
+  },
+  {
+   "id": "th-hate-methods",
+   "mode": "thematic",
+   "theme": "hate speech detection",
+   "question": "Discuss the different methodologies used for hate speech detection across these papers.",
+   "min_papers": 4,
+   "expected_papers": [
+    "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
+    "Comparative_Analysis_of_Transformer_Based_Vector_Models_for_Hate_Speech_in_Turkish_Tweets.pdf",
+    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+    "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+    "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf"
+   ],
+   "key_facts": [
+    [
+     "bilstm"
+    ],
+    [
+     "cnn",
+     "convolutional"
+    ],
+    [
+     "svm",
+     "support vector"
+    ],
+    [
+     "word embedding",
+     "word2vec",
+     "aravec"
+    ],
+    [
+     "transformer",
+     "bert"
+    ]
+   ],
+   "related_papers": [
+    "A_Data-Efficient_Method_for_One-Shot_Text_Classification.pdf",
+    "Research_on_Medical_Text_Classification_based_on_BioBERT-GRU-Attention.pdf"
+   ]
+  },
+  {
+   "id": "th-kg-rag",
+   "mode": "thematic",
+   "theme": "knowledge graphs",
+   "question": "How is knowledge graph structure used to improve retrieval-augmented generation in this research?",
+   "min_papers": 3,
+   "expected_papers": [
+    "Advanced_RAG_Models_with_Graph_Structures_Optimizing_Complex_Knowledge_Reasoning_and_Text_Generation.pdf",
+    "Enhancing_Vector_based_Retrieval_Augmented_Generation_with_Contextual_Knowledge_Graph_Construction.pdf",
+    "Graph_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey (1).pdf",
+    "HybridRAG - Integrating Knowledge Graphs and Vector Retrieval Augmented Generation for Efficient Information Extraction.pdf",
+    "Retrieval-Augmented Generation with Knowledge Graphs for.pdf",
+    "To_Enhance_Graph-Based_Retrieval-Augmented_Generation_RAG_with_Robust_Retrieval_Techniques.pdf"
+   ],
+   "key_facts": [
+    [
+     "hybridrag"
+    ],
+    [
+     "graph neural network",
+     "gnn"
+    ],
+    [
+     "sub-graph",
+     "subgraph"
+    ],
+    [
+     "ontology",
+     "entity"
+    ],
+    [
+     "ckgc",
+     "contextual knowledge graph"
+    ]
+   ],
+   "related_papers": []
+  },
+  {
+   "id": "th-rerank",
+   "mode": "thematic",
+   "theme": "reranking",
+   "question": "Compare the reranking approaches used in these papers.",
+   "min_papers": 3,
+   "expected_papers": [
+    "Comparative_Analysis_of_Listwise_Reranking_with_Large_Language_Models_in_Limited-Resource_Language_Contexts.pdf",
+    "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
+    "Improving Neural Models for the Retrieval of Relevant Passages to Geographical Queries.pdf",
+    "MarkedBERT_ Integrating Traditional IR Cues in Pre-trained Language Models for Passage Retrieval.pdf",
+    "Multitask_Fine-Tuning_for_Passage_Re-Ranking_Using_BM25_and_Pseudo_Relevance_Feedback.pdf",
+    "Self-supervised Fine-tuning for Efficient Passage Re-ranking.pdf"
+   ],
+   "key_facts": [
+    [
+     "cross-encoder"
+    ],
+    [
+     "listwise"
+    ],
+    [
+     "bm25"
+    ],
+    [
+     "mrr",
+     "ndcg"
+    ],
+    [
+     "bi-encoder",
+     "dual-encoder"
+    ]
+   ],
+   "related_papers": [
+    "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+    "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf"
+   ]
+  },
+  {
+   "id": "th-lowresource",
+   "mode": "thematic",
+   "theme": "low-resource languages",
+   "question": "Discuss how these papers handle low-resource and non-English languages.",
+   "min_papers": 4,
+   "expected_papers": [
+    "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+    "Comparative_Analysis_of_Listwise_Reranking_with_Large_Language_Models_in_Limited-Resource_Language_Contexts.pdf",
+    "Comparative_Analysis_of_Transformer_Based_Vector_Models_for_Hate_Speech_in_Turkish_Tweets.pdf",
+    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+    "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+    "Prompt_Tuning_on_Graph-Augmented_Low-Resource_Text_Classification.pdf"
+   ],
+   "key_facts": [
+    [
+     "arabic"
+    ],
+    [
+     "turkish"
+    ],
+    [
+     "indonesian"
+    ],
+    [
+     "urdu",
+     "sindhi"
+    ],
+    [
+     "translation",
+     "cross-lingual",
+     "multilingual"
+    ]
+   ],
+   "related_papers": []
+  },
+  {
+   "id": "th-prompting",
+   "mode": "thematic",
+   "theme": "prompt engineering",
+   "question": "Discuss the prompt engineering and prompt tuning techniques applied in this research.",
+   "min_papers": 4,
+   "expected_papers": [
+    "A_Study_on_Performance_Improvement_of_Prompt_Engineering_for_Generative_AI_with_a_Large_Language_Model.pdf",
+    "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+    "Evaluation_of_Healthprompt_for_Zero-shot_Clinical_Text_Classification.pdf",
+    "Exploring_Soft_Prompt_Initialization_Strategy_for_Few-Shot_Continual_Text_Classification.pdf",
+    "Prompt-Based_Label-Aware_Framework_for_Few-Shot_Multi-Label_Text_Classification.pdf",
+    "Prompt_Tuning_on_Graph-Augmented_Low-Resource_Text_Classification.pdf",
+    "SiJesi_Large_Language_Model_Chatbot_with_Augmented_Retrieval_Approach_Generation_and_Prompt_Engineering.pdf",
+    "Small_Sample_Classification_Based_on_Prompt_Learning.pdf"
+   ],
+   "key_facts": [
+    [
+     "soft prompt",
+     "prompt tuning"
+    ],
+    [
+     "template"
+    ],
+    [
+     "zero-shot"
+    ],
+    [
+     "few-shot"
+    ],
+    [
+     "verbalizer",
+     "label word",
+     "mask"
+    ]
+   ],
+   "related_papers": [
+    "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
+   ]
+  },
+  {
+   "id": "th-clinical",
+   "mode": "thematic",
+   "theme": "clinical and medical NLP",
+   "question": "Discuss the challenges of applying language models to clinical and medical text.",
+   "min_papers": 3,
+   "expected_papers": [
+    "Evaluation_of_Healthprompt_for_Zero-shot_Clinical_Text_Classification.pdf",
+    "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf",
+    "Proximity-Aware_Clinical_Passage_Retrieval_Framework_by_Exploiting_Knowledge_Structure.pdf",
+    "Research_on_Medical_Text_Classification_based_on_BioBERT-GRU-Attention.pdf",
+    "Semantic_Textual_Similarity_Analysis_of_Clinical_Text_in_the_Era_of_LLM.pdf",
+    "To_Enhance_Graph-Based_Retrieval-Augmented_Generation_RAG_with_Robust_Retrieval_Techniques.pdf"
+   ],
+   "key_facts": [
+    [
+     "annotat"
+    ],
+    [
+     "biobert",
+     "clinicalbert"
+    ],
+    [
+     "domain-specific",
+     "domain adaptation"
+    ],
+    [
+     "ehr",
+     "clinical note",
+     "patient"
+    ],
+    [
+     "privacy",
+     "de-identif"
+    ]
+   ],
+   "related_papers": [
+    "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf"
+   ]
+  },
+  {
+   "id": "th-eval-methods",
+   "mode": "thematic",
+   "theme": "evaluation",
+   "question": "How do these papers evaluate retrieval and generation quality?",
+   "min_papers": 4,
+   "expected_papers": [
+    "Evaluating Retrieval Quality in Retrieval-Augmented Generation.pdf",
+    "Comparative_Analysis_of_Listwise_Reranking_with_Large_Language_Models_in_Limited-Resource_Language_Contexts.pdf",
+    "Feature_Selection_in_Learning_to_Rank_for_Listwise_Approach_using_Multiobjective_Evolutionary_Algorithm.pdf",
+    "MarkedBERT_ Integrating Traditional IR Cues in Pre-trained Language Models for Passage Retrieval.pdf",
+    "Old IR Methods Meet RAG.pdf",
+    "To_Enhance_Graph-Based_Retrieval-Augmented_Generation_RAG_with_Robust_Retrieval_Techniques.pdf",
+    "Multitask_Fine-Tuning_for_Passage_Re-Ranking_Using_BM25_and_Pseudo_Relevance_Feedback.pdf"
+   ],
+   "key_facts": [
+    [
+     "ndcg"
+    ],
+    [
+     "mrr"
+    ],
+    [
+     "benchmark",
+     "msmarco",
+     "ms marco",
+     "trec"
+    ],
+    [
+     "rouge"
+    ],
+    [
+     "kendall",
+     "correlation"
+    ]
+   ],
+   "related_papers": [
+    "Retrieval-Augmented Generation with Knowledge Graphs for.pdf"
+   ]
+  },
+  {
+   "id": "th-fewshot",
+   "mode": "thematic",
+   "theme": "few-shot classification",
+   "question": "Discuss the approaches proposed for few-shot and low-resource text classification.",
+   "min_papers": 3,
+   "expected_papers": [
+    "A_Data-Efficient_Method_for_One-Shot_Text_Classification.pdf",
+    "Exploring_Soft_Prompt_Initialization_Strategy_for_Few-Shot_Continual_Text_Classification.pdf",
+    "Few-Shot_Text_Classification_Method_Based_on_Feature_Optimization.pdf",
+    "Prompt-Based_Label-Aware_Framework_for_Few-Shot_Multi-Label_Text_Classification.pdf",
+    "Prompt_Tuning_on_Graph-Augmented_Low-Resource_Text_Classification.pdf",
+    "Small_Sample_Classification_Based_on_Prompt_Learning.pdf"
+   ],
+   "key_facts": [
+    [
+     "plaml"
+    ],
+    [
+     "g2p2"
+    ],
+    [
+     "bigbert",
+     "binary grouping"
+    ],
+    [
+     "prompt learning",
+     "prompt-based"
+    ],
+    [
+     "catastrophic forgetting",
+     "continual",
+     "prototypical",
+     "support set"
+    ]
+   ],
+   "related_papers": []
+  },
+  {
+   "id": "th-dense-training",
+   "mode": "thematic",
+   "theme": "dense retrieval training",
+   "question": "What training strategies are used to improve dense passage retrieval?",
+   "min_papers": 3,
+   "expected_papers": [
+    "3628797.3628810.pdf",
+    "Drop your Decoder_ Pre-training with Bag-of-Word Prediction for Dense Passage Retrieval..pdf",
+    "Improving Neural Models for the Retrieval of Relevant Passages to Geographical Queries.pdf",
+    "Multitask_Fine-Tuning_for_Passage_Re-Ranking_Using_BM25_and_Pseudo_Relevance_Feedback.pdf",
+    "Self-supervised Fine-tuning for Efficient Passage Re-ranking.pdf"
+   ],
+   "key_facts": [
+    [
+     "hard negative"
+    ],
+    [
+     "knowledge distillation"
+    ],
+    [
+     "contrastive"
+    ],
+    [
+     "data augmentation"
+    ],
+    [
+     "masked language model",
+     "mlm",
+     "bag-of-word"
+    ]
+   ],
+   "related_papers": [
+    "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf",
+    "Semantic_Textual_Similarity_Analysis_of_Clinical_Text_in_the_Era_of_LLM.pdf",
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf"
+   ]
+  },
+  {
+   "id": "th-llm-weakness",
+   "mode": "thematic",
+   "theme": "LLM weaknesses",
+   "question": "What weaknesses of large language models are identified across this collection?",
+   "min_papers": 4,
+   "expected_papers": [
+    "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+    "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf",
+    "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+    "Exploring_Language_Models_A_Comprehensive_Survey_and_Analysis.pdf",
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
+    "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
+   ],
+   "key_facts": [
+    [
+     "hallucination"
+    ],
+    [
+     "interpretability",
+     "black box",
+     "black-box"
+    ],
+    [
+     "privacy"
+    ],
+    [
+     "environmental",
+     "energy",
+     "carbon footprint"
+    ],
+    [
+     "computational cost",
+     "expensive",
+     "resource"
+    ]
+   ],
+   "related_papers": [
+    "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf"
+   ]
+  },
+  {
+   "id": "th-platforms",
+   "mode": "thematic",
+   "theme": "social media data",
+   "question": "Which social media platforms are used as data sources, and for what tasks?",
+   "min_papers": 4,
+   "expected_papers": [
+    "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+    "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
+    "Comparative_Analysis_of_Transformer_Based_Vector_Models_for_Hate_Speech_in_Turkish_Tweets.pdf",
+    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+    "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf"
+   ],
+   "key_facts": [
+    [
+     "twitter"
+    ],
+    [
+     "youtube"
+    ],
+    [
+     "facebook"
+    ],
+    [
+     "instagram"
+    ],
+    [
+     "cyberbullying",
+     "hate speech"
+    ]
+   ],
+   "related_papers": []
+  },
+  {
+   "id": "th-explainability",
+   "mode": "thematic",
+   "theme": "explainability",
+   "question": "How do these papers make model behavior interpretable or traceable?",
+   "min_papers": 3,
+   "expected_papers": [
+    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+    "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
+    "To_Enhance_Graph-Based_Retrieval-Augmented_Generation_RAG_with_Robust_Retrieval_Techniques.pdf",
+    "3637211.pdf",
+    "Exploring_Language_Models_A_Comprehensive_Survey_and_Analysis.pdf"
+   ],
+   "key_facts": [
+    [
+     "lime"
+    ],
+    [
+     "explainable",
+     "xai"
+    ],
+    [
+     "traceability",
+     "provenance",
+     "source"
+    ],
+    [
+     "transparency"
+    ]
+   ],
+   "related_papers": [
+    "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf",
+    "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
+   ]
+  },
+  {
+   "id": "th-sparse-dense",
+   "mode": "thematic",
+   "theme": "sparse versus dense retrieval",
+   "question": "What do these papers conclude about sparse keyword retrieval compared with dense retrieval?",
+   "min_papers": 3,
+   "expected_papers": [
+    "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
+    "MarkedBERT_ Integrating Traditional IR Cues in Pre-trained Language Models for Passage Retrieval.pdf",
+    "Multitask_Fine-Tuning_for_Passage_Re-Ranking_Using_BM25_and_Pseudo_Relevance_Feedback.pdf",
+    "Old IR Methods Meet RAG.pdf",
+    "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf",
+    "Self-supervised Fine-tuning for Efficient Passage Re-ranking.pdf"
+   ],
+   "key_facts": [
+    [
+     "bm25"
+    ],
+    [
+     "vocabulary mismatch",
+     "lexical gap",
+     "exact match"
+    ],
+    [
+     "dense retrieval",
+     "dense vector"
+    ],
+    [
+     "hybrid",
+     "combin"
+    ],
+    [
+     "sparse"
+    ]
+   ],
+   "related_papers": [
+    "3628797.3628810.pdf",
+    "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+    "Drop your Decoder_ Pre-training with Bag-of-Word Prediction for Dense Passage Retrieval..pdf",
+    "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+    "Evaluating Retrieval Quality in Retrieval-Augmented Generation.pdf",
+    "The Power of Noise Redefining Retrieval for RAG Systems.pdf"
+   ]
+  },
+  {
+   "id": "th-domains",
+   "mode": "thematic",
+   "theme": "application domains",
+   "question": "In which application domains is retrieval-augmented generation deployed across these papers?",
+   "min_papers": 4,
+   "expected_papers": [
+    "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+    "HybridRAG - Integrating Knowledge Graphs and Vector Retrieval Augmented Generation for Efficient Information Extraction.pdf",
+    "Retrieval-Augmented Generation with Knowledge Graphs for.pdf",
+    "SiJesi_Large_Language_Model_Chatbot_with_Augmented_Retrieval_Approach_Generation_and_Prompt_Engineering.pdf",
+    "To_Enhance_Graph-Based_Retrieval-Augmented_Generation_RAG_with_Robust_Retrieval_Techniques.pdf",
+    "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf"
+   ],
+   "key_facts": [
+    [
+     "legal",
+     "law",
+     "court"
+    ],
+    [
+     "finance",
+     "financial",
+     "earnings"
+    ],
+    [
+     "customer service",
+     "ticket",
+     "jira"
+    ],
+    [
+     "healthcare",
+     "diabetes",
+     "medical"
+    ],
+    [
+     "chatbot",
+     "conversational",
+     "question answering"
+    ]
+   ],
+   "related_papers": [
+    "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+    "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf",
+    "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+    "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+    "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
+   ]
+  },
+  {
+   "id": "th-adversarial",
+   "mode": "thematic",
+   "theme": "robustness and attacks",
+   "question": "Discuss the robustness and security concerns raised in this research.",
+   "min_papers": 2,
+   "expected_papers": [
+    "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
+    "SiJesi_Large_Language_Model_Chatbot_with_Augmented_Retrieval_Approach_Generation_and_Prompt_Engineering.pdf",
+    "The Power of Noise Redefining Retrieval for RAG Systems.pdf",
+    "Exploring_Language_Models_A_Comprehensive_Survey_and_Analysis.pdf"
+   ],
+   "key_facts": [
+    [
+     "adversarial"
+    ],
+    [
+     "attack"
+    ],
+    [
+     "perturb",
+     "evade",
+     "misclassif"
+    ],
+    [
+     "defen",
+     "robustness"
+    ],
+    [
+     "prompt injection"
+    ]
+   ],
+   "related_papers": []
   }
  ]
 }
