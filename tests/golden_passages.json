@@ -842,25 +842,25 @@
      "chunk_index": 4,
      "grade": 2,
      "section_name": "Abstract",
-     "anchor": "We compare proprietary models RankGPT3.5, Rank4o-mini, RankGPTo1-mini and RankClaudesonnet in cross-lingual contexts."
+     "anchor": "This study assesses the performance of large language models (LLMs) in listwise reranking for limitedresource African languages."
     },
     {
      "chunk_index": 14,
      "grade": 2,
      "section_name": "INTRODUCTION",
-     "anchor": "- How do proprietary LLMs such as RankGPT3.5, Rank4omini, RankGPTo1-mini, and RankClaude-sonnet compare to traditional ranking methods like "
+     "anchor": "- What are the specific challenges of reranking passages translated from low-resource African languages, and how well do LLMs handle these c"
     },
     {
      "chunk_index": 17,
      "grade": 2,
      "section_name": "INTRODUCTION",
-     "anchor": "This study seeks to address these questions by evaluating the performance of RankGPT3.5, RankGPT4o-mini, RankGPTo1-mini and RankClaude-sonne"
+     "anchor": "We employ CIRAL to create cross-lingual retrieval scenarios via query or document translation."
     },
     {
      "chunk_index": 19,
      "grade": 2,
      "section_name": "INTRODUCTION",
-     "anchor": "RankGPT3.5, RankGPT4o-mini and RankClaude-sonne also perform well, achieving significant improvements in reranking tasks."
+     "anchor": "Among these models, RankGPTo1-mini demonstrates the best overall performance, especially for languages like Hausa, Swahili and Yoruba."
     },
     {
      "chunk_index": 42,
