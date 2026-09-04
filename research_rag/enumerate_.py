@@ -338,7 +338,10 @@ def gather(
     return findings
 
 
-NOTHING_FOUND = "Nothing in the indexed papers addresses this question."
+# Defined in paper_cards so the card path and the fan-out path decline in
+# exactly the same words; re-exported here because callers import it from
+# this module.
+from .paper_cards import NOTHING_FOUND  # noqa: E402  (re-export)
 
 
 def reduce_findings(query: str, findings: list[PaperFinding], model: str) -> str:

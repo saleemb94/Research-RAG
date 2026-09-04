@@ -97,6 +97,82 @@ Excerpts:
 
 JSON:"""
 
+# The one sentence both refusal paths emit. It lives here because enumerate_
+# already imports from this module; two copies would drift apart, and the
+# eval's abstention check matches on it exactly.
+NOTHING_FOUND = "Nothing in the indexed papers addresses this question."
+
+# How many cards go into one prompt.
+#
+# All of them used to. That worked at 17 papers and broke at 54: the prompt
+# reached roughly 6,600 tokens and the 4B model stopped answering the question,
+# emitting a generic "here is a comprehensive summary of the library" instead.
+# Two negative controls flipped from a correct refusal to a fabricated
+# overview, which is the worst failure this system has - a confident answer to
+# a false premise.
+#
+# Batching keeps every prompt small while still reading every card, so recall
+# is unchanged. That matters: the reason for having a card table at all is that
+# the top-k chunks can only ever see a handful of papers.
+CARDS_PER_BATCH = 12
+_SCAN_MAX_TOKENS = 260
+
+_CARD_SCAN_PROMPT = """\
+Below is a card for each of several papers, listing what each one studies and
+the datasets, models, languages, platforms, metrics, methods and limitations it
+reports.
+
+Question: {query}
+
+For every paper that genuinely addresses the question, write one line:
+
+[n] the specific detail that paper contributes
+
+Use only the numbers shown against each card. Read every line of a card, not
+just its summary: a paper whose field says "clinical trial" may still list the
+technique being asked about in its methods.
+
+Include a paper only if its card states the specific thing being asked about.
+Working in a related area is not enough. Listing a challenge in general terms -
+"cost", "bias", "limitations" - does not count as reporting a measurement, and
+a word used in a different sense does not count either: "federated search" is
+not federated learning.
+
+A question that assumes something none of these papers did is answered by
+leaving them all out.
+
+If none of these papers addresses the question, reply with exactly NONE.
+
+Cards:
+{cards}
+
+Lines:"""
+
+_CARD_REDUCE_PROMPT = """\
+Below is what each paper contributes to one question, gathered by reading every
+paper in the library.
+
+Question: {query}
+
+Write ONE continuous answer. Cite each claim with the paper's number in square
+brackets, like [2], using only the numbers shown below. Group related items
+rather than listing paper by paper.
+
+Check each contribution against the question before using it. A paper that only
+works in a related area, or that lists a general challenge rather than the
+specific thing asked about, is not an answer. If that is all the contributions
+amount to, reply with exactly: {nothing}
+
+Never reply with citation markers alone. Either state what the papers found, in
+words, or give the sentence above.
+
+Do not summarise the library. Answer the question that was asked.
+
+Contributions:
+{findings}
+
+Answer:"""
+
 _ANSWER_PROMPT = """\
 Below is a card for every paper in a library, listing what each one studies and
 the datasets, models, languages, platforms, metrics, methods and
@@ -315,15 +391,59 @@ class PaperCardStore:
             pass
 
 
+_NONE_REPLY = re.compile(r"^\s*(none|n/a|nothing)\b", re.I)
+_CITE_MARK = re.compile(r"\[\s*\d+\s*\]")
+
+
 def answer_from_cards(
     query: str, cards: list[PaperCard], model: str = OLLAMA_MODEL
 ) -> tuple[str, list[PaperCard]]:
-    """Answer a corpus-level question from the card table. One LLM call, any size."""
+    """
+    Answer a corpus-level question from the card table.
+
+    Scanned in batches, then reduced, rather than in one prompt. Every card is
+    still read - which is the whole point of the table - but no single prompt
+    grows large enough for the model to lose the question. Card numbers are
+    global, so a citation resolves the same way whichever batch produced it.
+    """
     if not cards:
         return "", []
-    rendered = "\n".join(c.render(i + 1) for i, c in enumerate(cards))
+
+    numbered = list(enumerate(cards, start=1))
+    lines: list[str] = []
+    for start in range(0, len(numbered), CARDS_PER_BATCH):
+        batch = numbered[start:start + CARDS_PER_BATCH]
+        rendered = "\n".join(c.render(i) for i, c in batch)
+        try:
+            reply = _llm(
+                _CARD_SCAN_PROMPT.format(query=query, cards=rendered),
+                model_for("answer", model),
+                max_tokens=_SCAN_MAX_TOKENS,
+            )
+        except Exception as exc:       # one bad batch must not lose the rest
+            print(f"    ! card batch failed: {exc}")
+            continue
+        if reply and not _NONE_REPLY.match(reply.strip()):
+            lines.append(reply.strip())
+
+    # Every batch declined: the library does not address it, which for a
+    # false-premise question is the correct answer rather than a failure.
+    if not lines:
+        return NOTHING_FOUND, cards
+
     answer = _llm(
-        _ANSWER_PROMPT.format(query=query, cards=rendered, n=len(cards)),
+        _CARD_REDUCE_PROMPT.format(
+            query=query, findings="\n".join(lines), nothing=NOTHING_FOUND
+        ),
         model_for("answer", model),
     )
+    if not answer.strip() or _NONE_REPLY.match(answer.strip()):
+        return NOTHING_FOUND, cards
+
+    # A reply that is only citation markers is not an answer. It happens when
+    # the scan over-included and the reducer had nothing to say about the
+    # papers it was handed - one run came back as the single string "[32]".
+    # Shown to a user that is worse than a refusal: it looks like evidence.
+    if sum(ch.isalpha() for ch in _CITE_MARK.sub("", answer)) < 24:
+        return NOTHING_FOUND, cards
     return answer, cards
