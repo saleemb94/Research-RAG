@@ -365,12 +365,12 @@ python scripts/eval_rag.py --passages --at-k 10
 
 | | |
 | --- | --- |
-| Recall@10 | 0.665 |
-| MRR@10 | 0.771 |
-| MAP@10 | 0.567 |
-| nDCG@10 | 0.645 |
-| Gold passage ranked first | 27/38 (71%) |
-| No gold passage returned | 4/38 (11%) |
+| Recall@10 | 0.711 |
+| MRR@10 | 0.759 |
+| MAP@10 | 0.582 |
+| nDCG@10 | 0.664 |
+| Gold passage ranked first | 26/38 (68%) |
+| No gold passage returned | 3/38 (8%) |
 
 Two design decisions carry the weight. Gold passages are pinned by a **verbatim text
 anchor** rather than a chunk id, and every anchor is verified to resolve to exactly one
@@ -383,30 +383,50 @@ The split underneath the average is the finding:
 
 | | questions | recall | nDCG |
 | --- | --- | --- | --- |
-| One gold passage | 17 | **0.941** | 0.835 |
-| Two or more gold passages | 21 | **0.442** | 0.491 |
+| One gold passage | 17 | **0.941** | 0.813 |
+| Two or more gold passages | 21 | **0.535** | 0.549 |
 
-That gap is mostly not a retrieval failure. The synthesis path caps sources at
-`PER_PAPER_SOURCES = 2`, deliberately, so that one densely-worded paper cannot take
-every slot in a corpus-wide answer. A question whose evidence is spread over five
-passages of a single paper therefore *cannot* score above 2, whatever the retriever
-does. Measured against that ceiling instead of against the raw gold count, recall is
-0.712, and 5 of the 11 questions needing three or more passages hit their ceiling
-exactly. The same cap explains the volume: 6.9 passages come back on average, and fewer
-than the requested 10 on 37 of 38 questions.
+That gap was mostly not a retrieval failure, and finding out what it was is what this
+set was worth building for. The synthesis path capped sources at two per paper,
+deliberately, so that one densely-worded paper could not take every slot in a
+corpus-wide answer. A question whose evidence is spread over five passages of a single
+paper therefore *could not* score above two, whatever the retriever did, and 5 of the 11
+questions needing three or more passages sat exactly at that ceiling.
 
-So the finding is not that retrieval stops early. It is that **one cap serves two
-question types that want opposite things.** For a corpus-wide question the cap is
-exactly right, and it was added because the eight best chunks for "which datasets are
-used" really do come from the two papers that discuss datasets most densely. For a
-focused question like "what accuracy did BiLSTM, CNN and GRU each reach", every piece of
-the answer is in one paper, and capping at two truncates it. The cap is currently applied
-whenever the question is not explicitly scoped to a paper, which does not distinguish
-the two cases.
+So the defect was never that retrieval stops early. It was that **one cap served two
+question types that want opposite things.** Spreading evidence across papers is right
+for "which datasets are used across these papers", which is why the cap was added: the
+eight best chunks really do come from the two papers that discuss datasets most densely.
+It is wrong for "what accuracy did BiLSTM, CNN and GRU each reach", where the whole
+answer is inside one paper. The cap applied whenever a question was not explicitly
+scoped to a paper, which does not tell those apart.
 
-This is worth stating plainly because the first reading of these numbers was wrong. The
-split looked like a retrieval defect and was reported as one; it took reading the
-retrieval code to find the cap. A metric shows where to look, not what is true.
+`cap_for()` now keys the cap off the router's classification: focused questions may take
+four passages from one paper, corpus and enumerate questions still two. Four rather than
+unlimited, because a focused classification is sometimes wrong and one paper taking all
+eight slots is the failure the diversification exists to prevent.
+
+Three runs per setting, since the run-to-run spread here is wide enough to manufacture
+whichever result you were hoping for:
+
+| | cap 2 | cap 4 | |
+| --- | --- | --- | --- |
+| Recall@10 | 0.662 [0.656-0.665] | **0.711** [0.709-0.717] | +0.049 |
+| MAP@10 | 0.556 [0.551-0.564] | **0.582** [0.580-0.585] | +0.027 |
+| nDCG@10 | 0.635 [0.630-0.643] | **0.664** [0.661-0.667] | +0.028 |
+| MRR@10 | 0.759 [0.752-0.769] | 0.759 [0.755-0.764] | 0.000 |
+| Ranked first | 0.690 [0.676-0.711] | 0.679 [0.676-0.684] | overlapping |
+
+The three that moved have non-overlapping ranges. MRR and the rank-1 rate do not move,
+which is the shape the change predicts: letting more gold through further down a list
+should not disturb its top.
+
+The cap protects breadth on corpus-wide questions, so the obvious way for this to be a
+bad trade is a breadth regression elsewhere. Measured over three runs each, thematic
+facts went 68% to 66% and breadth 8.3 to 8.0 of 16, synthesis facts 76% to 75% and
+papers cited 70% to 67%; every one of those overlaps its baseline range. A first single
+run had shown breadth at 7 of 16, which looked like exactly the regression to fear and
+was noise.
 
 Two caveats, both of which make these numbers floors rather than estimates. Labeling is
 **known to be incomplete**: only chunks carrying a golden fact were reviewed, so a

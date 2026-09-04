@@ -131,5 +131,35 @@ def main() -> int:
     return 1 if failed else 0
 
 
+# ── the per-paper cap depends on the kind of question ──────────────────────
+
+def test_focused_questions_may_take_more_from_one_paper():
+    """
+    A focused question's evidence is inside one paper. "What accuracy did
+    BiLSTM, CNN and GRU each reach" needs numbers the paper states across
+    several passages, and the corpus-wide cap of two truncates the answer
+    before retrieval is consulted.
+    """
+    from research_rag.synthesize import cap_for, PER_PAPER_SOURCES
+    assert cap_for("focused") > PER_PAPER_SOURCES
+
+
+def test_corpus_questions_keep_the_spreading_cap():
+    """
+    The cap exists so one densely-worded paper cannot take every slot in a
+    corpus-wide answer. Raising it there would reintroduce exactly that.
+    """
+    from research_rag.synthesize import cap_for, PER_PAPER_SOURCES
+    assert cap_for("corpus") == PER_PAPER_SOURCES
+    assert cap_for("enumerate") == PER_PAPER_SOURCES
+
+
+def test_the_focused_cap_still_leaves_room_for_other_papers():
+    """Focused is a classification and is sometimes wrong, so it is a cap and
+    not an exemption: one paper must never be able to take every slot."""
+    from research_rag.synthesize import cap_for, MAX_SOURCES
+    assert cap_for("focused") < MAX_SOURCES
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

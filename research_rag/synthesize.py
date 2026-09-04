@@ -48,6 +48,16 @@ MAX_SOURCES = 8
 # support a claim and qualify it, while leaving room for the rest of the corpus.
 PER_PAPER_SOURCES = 2
 
+# The same cap for a question whose answer lives inside one paper. "What accuracy
+# did BiLSTM, CNN and GRU each reach" needs three numbers that the paper states in
+# two or three different passages, and a cap of two truncates the answer before
+# retrieval is even consulted. Measured on the gold-passage set, focused questions
+# needing three or more passages sat exactly at their cap rather than below it.
+# Still a cap and not unlimited: one paper taking all eight slots is the failure
+# the diversification was written to prevent, and a focused classification is
+# sometimes wrong.
+PER_PAPER_SOURCES_FOCUSED = 4
+
 # Characters of each chunk included. Enough for the claim, short enough that
 # eight of them still leave the model room to reason.
 _SOURCE_CHARS = 900
@@ -221,6 +231,18 @@ def diversify_by_paper(
     return (picked + overflow)[:limit]
 
 
+def cap_for(kind: str) -> int:
+    """
+    How many passages one paper may contribute, given the kind of question.
+
+    Corpus-wide and enumerate questions want their evidence spread: without a
+    cap the two papers that phrase the topic most densely take every slot and
+    the answer reports them as though they were the whole library. A focused
+    question wants the opposite, because all of its evidence is in one paper.
+    """
+    return PER_PAPER_SOURCES_FOCUSED if kind == "focused" else PER_PAPER_SOURCES
+
+
 def _build_sources(hits: list[SearchHit]) -> list[Source]:
     return [
         Source(
@@ -284,7 +306,7 @@ def synthesize_answer(
     history: list[dict] | None = None,
     max_sources: int = MAX_SOURCES,
     section_filter: bool | None = None,
-    per_paper: int = PER_PAPER_SOURCES,
+    per_paper: int | None = None,
     allow_enumeration: bool = True,
     cards: list | None = None,
     section_index=None,
@@ -491,6 +513,15 @@ def synthesize_answer(
     # diversification meaningless, so it is skipped there.
     if reranker:
         hits = reranker.rerank(standalone, hits, top_n=max(max_sources * 3, max_sources))
+    # One cap cannot serve both question types, because they want opposite
+    # things. A corpus-wide question needs its evidence spread, or the two
+    # papers that phrase the topic most densely take every slot and the answer
+    # reports them as though they were the whole library. A focused question
+    # has all of its evidence in one paper, and spreading is exactly wrong.
+    # Resolved here rather than at the signature so an explicit caller still
+    # wins.
+    if per_paper is None:
+        per_paper = cap_for(kind)
     hits = (
         hits[:max_sources] if source_filter
         else diversify_by_paper(hits, max_sources, per_paper)
