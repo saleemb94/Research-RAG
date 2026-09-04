@@ -427,7 +427,7 @@ def synthesize_answer(
         else None
     )
 
-    query_vector = embedder.embed_one(standalone)
+    query_vector = embedder.embed_query(standalone)
     fetch_k = max(max_sources, top_k) * (RERANK_FETCH_MULTIPLIER if reranker else 1)
 
     # Stage one of two-stage retrieval: shortlist papers, then search only

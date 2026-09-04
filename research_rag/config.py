@@ -35,6 +35,22 @@ def _env_int(name: str, default: int) -> int:
 
 # ── Embeddings ─────────────────────────────────────────────────────────────
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
+
+# Prepended to a search query before embedding, never to a passage.
+#
+# Empty by default because it was measured and it loses. bge is trained
+# asymmetrically, so putting BAAI's instruction on the query is textbook usage,
+# and over three runs each it took rank-1 accuracy from 0.708 to 0.649 and MRR
+# from 0.775 to 0.760, both with non-overlapping ranges, while recall barely
+# moved. Two reasons it does not transfer here. Passages are not stored bare:
+# each is embedded with its paper title and section prepended, so the passage
+# side of the space already carries a prefix and instructing only the query
+# pulls the two apart. And bge-en-v1.5 was specifically retrained to retrieve
+# well without the instruction, which earlier bge versions needed.
+#
+# Kept as a setting because it is model-specific, not wrong: e5 wants "query: "
+# and will retrieve poorly without it.
+QUERY_INSTRUCTION = os.getenv("QUERY_INSTRUCTION", "")
 EMBEDDING_DIM = _env_int("EMBEDDING_DIM", 384)
 
 # ── LLM (Ollama) ───────────────────────────────────────────────────────────

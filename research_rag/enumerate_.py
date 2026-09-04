@@ -266,7 +266,7 @@ def gather(
     cards: list[PaperCard] | None = None,
 ) -> list[PaperFinding]:
     """Ask each shortlisted paper the question; keep the ones that answer."""
-    query_vector = embedder.embed_one(query)
+    query_vector = embedder.embed_query(query)
     # Measured: unioning a card-chosen shortlist in front of the vector one made
     # things worse (facts 74% -> 64%), because card picks displaced vector picks
     # under the cap while adding nothing the extraction step could use. The cards

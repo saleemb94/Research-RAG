@@ -1,5 +1,5 @@
 from sentence_transformers import SentenceTransformer
-from .config import EMBEDDING_MODEL
+from .config import EMBEDDING_MODEL, QUERY_INSTRUCTION
 
 
 class Embedder:
@@ -15,4 +15,16 @@ class Embedder:
         ).tolist()
 
     def embed_one(self, text: str) -> list[float]:
+        """Embed a passage, or anything stored in the index."""
         return self.embed([text])[0]
+
+    def embed_query(self, text: str) -> list[float]:
+        """
+        Embed a search query.
+
+        Separate from embed_one because the two are not the same operation for
+        an asymmetric retrieval model. Passages are stored bare and the query
+        carries the instruction the model was trained to expect; using one
+        method for both silently makes the query look like a passage.
+        """
+        return self.embed([QUERY_INSTRUCTION + text])[0]

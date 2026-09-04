@@ -102,7 +102,14 @@ class FakeStore:
 
 
 class FakeEmbedder:
+    # Both halves of the real interface. A query and a passage are embedded by
+    # different methods because for an asymmetric model they are different
+    # operations, and a double implementing only one hides a caller reaching
+    # for the wrong side.
     def embed_one(self, text):
+        return [0.1] * 8
+
+    def embed_query(self, text):
         return [0.1] * 8
 
 

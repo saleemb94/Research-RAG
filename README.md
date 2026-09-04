@@ -471,7 +471,7 @@ cp .env.example .env
 Changing `EMBEDDING_MODEL` changes the vector dimension, so wipe and re-ingest
 (`docker compose down -v`) when you do.
 
-**Two settings that were measured rather than chosen.** `HYBRID_ALPHA` between 0 and
+**Three settings that were measured rather than chosen.** `HYBRID_ALPHA` between 0 and
 0.5 is indistinguishable on the golden set and quality falls above that, so 0.3 stays;
 vector-only retrieval is five points worse, which is the sparse channel earning its
 place on a corpus full of acronyms like SR-DPR, PLAML and CIRAL. `PAPER_PREFILTER_N`
@@ -480,6 +480,12 @@ off because on a library this size it loses: shortlisting to 20 of 54 papers too
 right paper from 95% to 90% and saved no time, since searching 3,900 chunks flat is
 already milliseconds. It becomes the right trade when a flat scan costs real time,
 which is a few hundred papers. The recall cost at each width is in `.env.example`.
+`QUERY_INSTRUCTION` is empty for the same reason. bge is an asymmetric model, so
+prefixing the query with BAAI's instruction is textbook usage, and here it took rank-1
+accuracy from 0.708 to 0.649 over three runs each. Passages are not stored bare: each is
+embedded with its title and section prepended, so instructing only the query pulls the
+two sides of the space apart, and bge-en-v1.5 was retrained to retrieve well without it.
+The setting stays because a different model needs it: e5 wants `query: `.
 
 ---
 

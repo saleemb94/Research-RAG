@@ -144,7 +144,7 @@ def search_and_summarize(
                         use_section_names = True
                     # All matches vetoed → fall back to section_type filtering.
 
-    query_vector = embedder.embed_one(query)
+    query_vector = embedder.embed_query(query)
     fetch_k = top_k * RERANK_FETCH_MULTIPLIER if reranker else top_k
 
     hits, section_filtered = _hierarchical_search(
