@@ -30,6 +30,7 @@ from __future__ import annotations
 import re
 
 from .llm import generate as _llm
+from .llm import temperature_for
 
 SECTION_TYPES = [
     "abstract",
@@ -635,7 +636,7 @@ def classify_headings_batch(headings: list[str], model: str) -> dict[str, str]:
         distinctions=_DISTINCTIONS,
         numbered_headings=numbered,
     )
-    raw = _llm(prompt, model)
+    raw = _llm(prompt, model, temperature=temperature_for("classify"))
 
     result: dict[str, str] = {}
     for line in raw.splitlines():
@@ -682,7 +683,7 @@ def verify_with_first_paragraph(heading: str, first_paragraph: str, model: str) 
         text=first_paragraph[:800],
         label_guide=_LABEL_GUIDE,
     )
-    raw = _llm(prompt, model)
+    raw = _llm(prompt, model, temperature=temperature_for("classify"))
     # Take the first non-empty line of the response
     for line in raw.splitlines():
         label = _normalize(line.strip())
@@ -723,7 +724,7 @@ def identify_target_section(query: str, model: str) -> str:
     Returns a single natural-language phrase, e.g. "related work".
     """
     prompt = _IDENTIFY_SECTION_PROMPT.format(query=query)
-    raw = _llm(prompt, model)
+    raw = _llm(prompt, model, temperature=temperature_for("classify"))
     # Take the first non-empty line, lowercase, strip trailing punctuation
     for line in raw.splitlines():
         phrase = line.strip().lower().rstrip(".")
@@ -816,7 +817,7 @@ def match_headings_to_target(
         target=target_section,
         numbered_headings=numbered,
     )
-    raw = _llm(prompt, model).lower()
+    raw = _llm(prompt, model, temperature=temperature_for("classify")).lower()
 
     if "none" in raw:
         return []
@@ -883,7 +884,7 @@ Reply with ONLY a comma-separated list of 1 or 2 labels. Use underscores. No exp
 def classify_query(query: str, model: str) -> list[str]:
     """LLM maps a user question to target section type(s)."""
     prompt = _QUERY_PROMPT.format(query=query)
-    raw = _llm(prompt, model)
+    raw = _llm(prompt, model, temperature=temperature_for("classify"))
     valid = []
     for part in re.split(r"[,\n]", raw):
         # Strip list markers the LLM might add: "1. ", "- ", "• ", etc.

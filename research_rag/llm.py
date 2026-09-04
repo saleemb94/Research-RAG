@@ -37,6 +37,32 @@ _ROLE_OVERRIDES = {
 }
 
 
+# Sampling temperature per role, and the reason this file has one at all.
+#
+# qwen3:4b-instruct ships temperature 0.7, and nothing here used to override it,
+# so the three-way router that chooses between answering from paper cards,
+# fanning out over papers, and ordinary retrieval was sampling its decision. The
+# same question took different paths on different runs: "discuss the limitations
+# reported in research on RAG" scored 0 of 5 fact groups on one run and 5 of 5 on
+# another, from an unchanged index. That is not variance in the answer, it is
+# variance in which pipeline produced it.
+#
+# Sampling while writing an answer is a choice. Sampling while picking a label or
+# a path is a coin flip, and there is no upside to it: for these steps there is
+# one right answer and temperature only adds a chance of missing it. So routing
+# and extraction are greedy, and answering keeps the model's own default.
+_ROLE_TEMPERATURE = {
+    "routing": 0.0,
+    "extract": 0.0,
+    "classify": 0.0,
+}
+
+
+def temperature_for(role: str) -> float | None:
+    """None means "leave the model's own default alone"."""
+    return _ROLE_TEMPERATURE.get(role)
+
+
 def model_for(role: str, requested: str) -> str:
     """
     Which model a given step should use.
@@ -53,6 +79,7 @@ def generate(
     model: str = OLLAMA_MODEL,
     think: bool | None = None,
     max_tokens: int | None = None,
+    temperature: float | None = None,
 ) -> str:
     """
     Run a prompt and return the response text, without any reasoning trace.
@@ -61,13 +88,22 @@ def generate(
     steps the answer is a handful of names, but given a long prompt the model
     will happily write paragraphs about them, and generation - not input length -
     is what the wall clock is made of.
+
+    `temperature` left as None keeps whatever the model ships with. Pass 0 for
+    any step whose output is a label, a path or a field rather than prose; see
+    `temperature_for`.
     """
     global _think_supported
 
     want = OLLAMA_THINK if think is None else think
     kwargs: dict = {"think": want} if _think_supported else {}
+    options: dict = {}
     if max_tokens:
-        kwargs["options"] = {"num_predict": max_tokens}
+        options["num_predict"] = max_tokens
+    if temperature is not None:
+        options["temperature"] = temperature
+    if options:
+        kwargs["options"] = options
 
     try:
         response = ollama.generate(model=model, prompt=prompt, **kwargs)
@@ -76,7 +112,7 @@ def generate(
             raise
         # Client too old to accept `think`, or a server that rejects it.
         _think_supported = False
-        retry: dict = {"options": {"num_predict": max_tokens}} if max_tokens else {}
+        retry: dict = {"options": options} if options else {}
         response = ollama.generate(model=model, prompt=prompt, **retry)
 
     return (response.response or "").strip()

@@ -33,6 +33,7 @@ from .prefilter import shortlist_papers
 from .embedder import Embedder
 from .llm import generate as _llm
 from .llm import model_for
+from .llm import temperature_for
 from .enumerate_ import classify_question, gather, reduce_findings
 from .paper_cards import answer_from_cards
 from .section_index import chunks_for_sections, sections_for_query
@@ -184,7 +185,8 @@ def condense_question(
     )
     try:
         standalone = _llm(
-            _CONDENSE_PROMPT.format(history=rendered, question=question), model
+            _CONDENSE_PROMPT.format(history=rendered, question=question), model,
+            temperature=temperature_for("extract"),
         )
     except Exception:
         return question           # never let rewriting break the query

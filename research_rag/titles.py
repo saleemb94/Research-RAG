@@ -26,6 +26,7 @@ import re
 
 from .config import OLLAMA_MODEL
 from .llm import generate as _llm
+from .llm import temperature_for
 
 # A title is a sentence-ish phrase. These bounds reject running heads, author
 # lines, DOIs and the odd full paragraph that leads a badly typeset paper.
@@ -137,7 +138,7 @@ def from_model(first_page_text: str, model: str = OLLAMA_MODEL) -> str:
         return ""
     try:
         raw = _llm(_PROMPT.format(text=first_page_text[:2500]), model,
-                   max_tokens=80)
+                   max_tokens=80, temperature=temperature_for("extract"))
     except Exception:
         return ""
     if raw.strip().upper().startswith("NONE"):

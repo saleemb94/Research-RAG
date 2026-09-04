@@ -191,12 +191,16 @@ papers cited 70% to 67%; every one of those overlaps its baseline range. A first
 run had shown breadth at 7 of 16, which looked like exactly the regression to fear and
 was noise.
 
-Two caveats, both of which make these numbers floors rather than estimates. Labeling is
-**known to be incomplete**: only chunks carrying a golden fact were reviewed, so a
-passage that answers in paraphrase can be unlabeled and scores as a miss. Two questions
-are **excluded rather than scored zero**, because the router sends them to the paper
-cards and they never reach passage retrieval at all; booking that as a retrieval failure
-would hide a routing decision inside a retrieval number.
+One caveat makes these numbers floors rather than estimates: labeling is **known to be
+incomplete**. Only chunks carrying a golden fact were reviewed, so a passage that answers
+in paraphrase can be unlabeled and scores as a miss.
+
+The scorer also **excludes rather than zeroes** any question the router sends to the
+paper cards, since those never reach passage retrieval and booking them as retrieval
+failures would hide a routing decision inside a retrieval number. When the router
+sampled, this fired on two or three questions and varied between runs. With routing
+greedy it fires on none, and the exclusion is now a guard against a case that no longer
+occurs rather than a live adjustment.
 
 **Negative controls** cover the gap every other metric leaves. All the others measure
 denying content that is present. None measures inventing content that is absent, which

@@ -375,8 +375,8 @@ python scripts/eval_rag.py --all -v
 | Generation, fact stated in the answer | 71% | 69% | 158/229 |
 | Synthesis, facts stated in one cited answer | 73% | **76%** | 25/33 |
 | Synthesis, expected papers actually cited | 56% | **70%** | 30/43 |
-| Thematic, facts stated in a discussion answer | | 68% | 54/79, mean of 3 |
-| Thematic, questions meeting the breadth bar | | 52% | 8.3/16, mean of 3 |
+| Thematic, facts stated in a discussion answer | | 69% | 54.7/79, mean of 3 |
+| Thematic, questions meeting the breadth bar | | 48% | 7.7/16, mean of 3 |
 | Negative controls, correctly declined | 100% | **100%** | 5/5 |
 | Invalid citations emitted | 0 | **0** | |
 
@@ -384,10 +384,19 @@ Passage-level retrieval, scored against the gold passages at k=10:
 
 | | |
 | --- | --- |
-| Recall@10 | 0.711 |
+| Recall@10 | 0.709 |
 | MRR@10 | 0.771 |
 | MAP@10 | 0.595 |
 | nDCG@10 | 0.672 |
+
+Those four are exact rather than averaged, because retrieval is reproducible: three
+consecutive runs return identical numbers. That is deliberate and was not always true.
+The model ships at `temperature 0.7` and nothing overrode it, so the router that chooses
+between answering from paper cards, fanning out over papers, and ordinary retrieval was
+*sampling* its decision. The same question took different paths on different runs, which
+is not variance in the answer but variance in what produced it. Steps that pick a label
+or a path are now greedy; the step that writes prose is not, because that is a choice
+rather than a decision with one right answer.
 
 Two principles hold the sets together. Every fact was read **from the source PDF, never
 from the search index**, and gold passages were labeled **by reading, never by running
@@ -404,6 +413,12 @@ retrieved document by downstream task performance, faithfulness and context rele
 It simply never writes the strings `nDCG`, `MRR` or `ROUGE`. The question asks *how*
 these papers evaluate, which invites methodology, and the fact groups then demanded
 metric names. The answer was marked wrong for obeying the question.
+
+Fixing that was worth more than the quality it bought, which was roughly none: recall
+moved -0.003 and nDCG -0.002, both inside the old spread. What it bought was the ability
+to tell a real change from noise at all. Several conclusions in this project turned on
+differences of two or three points, and a sampling router made those differences
+unfalsifiable without running everything three times.
 
 That pattern recurred often enough to be worth stating as a result in its own right. Of
 the three consistently weak thematic questions, two turned out to be flaws in the set.

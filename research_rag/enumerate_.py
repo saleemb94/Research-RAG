@@ -29,6 +29,7 @@ from .config import HYBRID_ALPHA, OLLAMA_MODEL, USE_HYBRID_CHANNEL
 from .embedder import Embedder
 from .llm import generate as _llm
 from .llm import model_for
+from .llm import temperature_for
 from .paper_cards import PaperCard
 from .vector_store import SearchHit, VectorStore
 
@@ -185,7 +186,8 @@ def classify_question(query: str, model: str = OLLAMA_MODEL) -> str:
     """
     try:
         verdict = _llm(_DETECT_PROMPT.format(query=query),
-                       model_for("routing", model), max_tokens=8)
+                       model_for("routing", model), max_tokens=8,
+                       temperature=temperature_for("routing"))
     except (OSError, RuntimeError, ValueError):
         return "focused"    # a transport hiccup must not change the answer shape
     v = verdict.strip().lower()[:40]
@@ -240,7 +242,8 @@ def select_by_card(
     )
     try:
         raw = _llm(_SELECT_PROMPT.format(query=query, cards=rendered),
-                   model_for("routing", model), max_tokens=60)
+                   model_for("routing", model), max_tokens=60,
+                   temperature=temperature_for("routing"))
     except (OSError, RuntimeError, ValueError):
         # Only transport and model failures degrade to "no card opinion"; a
         # programming error must surface rather than look like an empty result.
@@ -319,6 +322,7 @@ def gather(
                 _EXTRACT_PROMPT.format(paper=paper, query=query, excerpts=excerpts),
                 model_for("extract", model),
                 max_tokens=EXTRACT_MAX_TOKENS,
+                temperature=temperature_for("extract"),
             )
         except Exception:
             continue

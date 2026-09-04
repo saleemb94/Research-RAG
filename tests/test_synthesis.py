@@ -161,5 +161,54 @@ def test_the_focused_cap_still_leaves_room_for_other_papers():
     assert cap_for("focused") < MAX_SOURCES
 
 
+# ── steps that decide rather than write are greedy ─────────────────────────
+
+def test_decisions_are_greedy():
+    """
+    The router picks between three different pipelines. Sampling that decision
+    made the same question take different paths on different runs, which is not
+    variance in the answer but variance in what produced it.
+    """
+    from research_rag.llm import temperature_for
+    assert temperature_for("routing") == 0
+    assert temperature_for("extract") == 0
+    assert temperature_for("classify") == 0
+
+
+def test_answering_keeps_the_model_default():
+    """
+    Writing prose is not a decision with one right answer, so the answer step
+    is left alone rather than forced to greedy on the same reasoning.
+    """
+    from research_rag.llm import temperature_for
+    assert temperature_for("answer") is None
+    assert temperature_for("anything-else") is None
+
+
+def test_temperature_reaches_the_request():
+    """
+    A temperature that never arrives in options is the failure this would have
+    had: the constant reads correctly and nothing changes at the server.
+    """
+    import research_rag.llm as llm
+    seen = {}
+
+    class _Resp:
+        response = "ok"
+
+    def fake_generate(model, prompt, **kwargs):
+        seen.update(kwargs)
+        return _Resp()
+
+    real = llm.ollama.generate
+    llm.ollama.generate = fake_generate
+    try:
+        llm.generate("hi", model="m", temperature=0.0, max_tokens=8)
+    finally:
+        llm.ollama.generate = real
+    assert seen["options"]["temperature"] == 0.0
+    assert seen["options"]["num_predict"] == 8
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
