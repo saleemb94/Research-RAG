@@ -17,7 +17,8 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
-$appUrl    = "http://127.0.0.1:7860"
+$port      = 7860
+$appUrl    = "http://127.0.0.1:$port"
 $weaviate  = "http://localhost:8081/v1/.well-known/ready"
 $ollama    = "http://localhost:11434/api/tags"
 
@@ -76,11 +77,28 @@ Write-Host "  $root" -ForegroundColor DarkGray
 Write-Host ""
 
 # -- already running? just open it ------------------------------------------
+#
+# The page is probed, not only the health endpoint. An instance started from a
+# folder that has since been moved or renamed still answers /api/health, which
+# only reads the database, while every request for the page fails: it serves
+# static/index.html relative to a working directory that no longer exists.
+# Checking health alone made that look healthy and opened a browser onto a 500.
 if (Test-Endpoint "$appUrl/api/health") {
-    Write-Host "  Already running - opening the browser." -ForegroundColor Green
-    Start-Process $appUrl
-    Start-Sleep -Seconds 2
-    exit 0
+    if (Test-Endpoint $appUrl) {
+        Write-Host "  Already running - opening the browser." -ForegroundColor Green
+        Start-Process $appUrl
+        Start-Sleep -Seconds 2
+        exit 0
+    }
+    Write-Host "  Port $port is in use, but not by a working copy of the app." -ForegroundColor Red
+    Write-Host "  This is usually an older instance started from a folder that has" -ForegroundColor Red
+    Write-Host "  since moved. Close that window, or stop it with:" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "    Get-NetTCPConnection -LocalPort $port -State Listen |" -ForegroundColor Yellow
+    Write-Host "      ForEach-Object { Stop-Process -Id `$_.OwningProcess -Force }" -ForegroundColor Yellow
+    Write-Host ""
+    Read-Host "  Press Enter to close"
+    exit 1
 }
 
 $python = Find-Python
