@@ -246,11 +246,19 @@ applies this policy in one place.
 
 ### Measuring retrieval and generation quality
 
-`tests/golden_qa.json` holds 85 graded questions with 210 fact groups that a correct
-answer must contain: 65 single-paper questions covering all 17 papers (157 groups),
-15 corpus-wide synthesis questions (53 groups), and 5 negative controls. Every fact
-was read from the source PDF, not from the search index, so the set also detects
-content lost during ingestion.
+`tests/golden_qa.json` holds 122 graded questions with 262 fact groups that a correct
+answer must contain: 107 single-paper questions covering 53 papers (229 groups),
+10 corpus-wide synthesis questions (33 groups), and 5 negative controls.
+
+Every fact was read from the source PDF, never from the search index. That is the
+point of the set rather than a detail of how it was built: facts harvested from the
+index could not detect content that ingestion dropped, because coverage would then
+be 100% by construction. It is 100%, but earned — and building it this way caught
+two real defects, both described under *Notes & limitations*.
+
+A golden set also goes stale as a library is curated. `eval_rag.py` names any paper
+that has been removed and skips its questions rather than scoring them zero, because
+a question whose source document is gone measures the shelf, not the system.
 
 A RAG system can fail in three separate places and one end-to-end number hides which
 one broke, so the scorer reports them apart:
@@ -311,25 +319,61 @@ that abstains on everything scores 100% here and 0% on synthesis.
 needs no LLM, and a drop there means content was dropped or mangled before retrieval
 ever got a chance.
 
-The corpus is 17 papers — 11 supplied plus 6 fetched from arXiv with
-`scripts/fetch_arxiv.py` (ids pinned in `papers/arxiv_manifest.json`). The arXiv set
-deliberately spans cs.CL, q-bio.PE, stat.AP and econ.EM, so the discipline-agnostic
-classifier is exercised on real epidemiology, clinical-trial and econometrics papers
-rather than assumed to work.
+**Negative controls are verified, not assumed.** Each term is counted across every
+chunk before it is trusted as absent: quantum, differential privacy, blockchain,
+autonomous driving and eye tracking appear zero times in 4,602 chunks. The previous
+controls had gone quietly stale as the library grew — RLHF, once absent, now appears
+in five chunks — which is how a control that still reads as sensible stops measuring
+anything at all.
 
-Current scores, and what the set caught on its first run:
+The corpus these figures were measured on is 54 papers on retrieval-augmented
+generation, information retrieval, text classification, hate-speech detection and
+clinical NLP. `papers/` is gitignored, so a clone starts empty; `scripts/fetch_arxiv.py`
+pulls a small open-access set to try the pipeline on.
+
+Current scores, on the 54-paper corpus and the 122-question set:
+
+| | score | |
+| --- | --- | --- |
+| Coverage — fact is in the index | **100%** | 229/229 |
+| Retrieval — right paper returned | **67%** | 72/107 |
+| Retrieval — right paper ranked first | **51%** | 55/107 |
+| Routing — right section targeted | **57%** | 61/107 |
+| Generation — fact stated in the answer | **71%** | 163/229 |
+| Generation — fully correct answers | **64%** | 69/107 |
+| Synthesis — facts stated in one cited answer | **73%** | 24/33 |
+| Synthesis — expected papers actually cited | **56%** | 24/43 |
+| Negative controls — correctly declined | **100%** | 5/5 |
+| Invalid citations emitted | **0** | |
+
+**These are not comparable to the figures below**, and the drop in retrieval is
+not a regression. The corpus tripled and became topically homogeneous — dozens
+of papers about retrieval-augmented generation, passage ranking and text
+classification — which is the hardest possible case for needle retrieval: many
+papers can plausibly answer "which datasets were used". The 35 retrieval misses
+are spread evenly across topics rather than concentrated in one, which is what
+that explanation predicts. Generation is the more stable half: given the right
+paper in scope, it still states 71% of facts.
+
+Routing is measured against the section each fact *ought* to live in, which is
+my judgement when writing the question, so some of that 57% is disagreement
+about labels rather than a routing error.
+
+An earlier 17-paper corpus with an 85-question set scored 81% / 70% / 78% /
+79% / 71% on the same rows. That set is gone: 8 of its papers were removed from
+the library, and 29 of its questions pointed at documents that no longer exist.
+The table below records what it was originally built to catch.
 
 | | before | after |
 | --- | --- | --- |
-| Coverage — fact is in the index | 99% | **100%** |
-| Retrieval — right paper returned | 72% | **81%** |
-| Retrieval — right paper ranked first | 56% | **70%** |
-| Routing — right section targeted | 46% | **78%** |
-| Generation — fact stated in the answer | 59% | **79%** |
-| Generation — fully correct answers | 49% | **71%** |
-| Synthesis — facts stated in one cited answer | 64% | **89%** |
-| Synthesis — expected papers actually cited | 58% | **94%** |
-| Negative controls — correctly declined | — | **100%** |
+| Coverage — fact is in the index | 99% | 100% |
+| Retrieval — right paper returned | 72% | 81% |
+| Retrieval — right paper ranked first | 56% | 70% |
+| Routing — right section targeted | 46% | 78% |
+| Generation — fact stated in the answer | 59% | 79% |
+| Generation — fully correct answers | 49% | 71% |
+| Synthesis — facts stated in one cited answer | 64% | 89% |
+| Synthesis — expected papers actually cited | 58% | 94% |
 
 Both synthesis rows are scored against the fifteen-question set described above.
 An earlier six-question set flattered the same pipeline into the high eighties,
@@ -394,7 +438,7 @@ Measured on 54 papers / 4,602 chunks:
 
 | Stage | Measurement | What it tells you |
 | --- | --- | --- |
-| Parsing | 100% of chunks typed to a real section; 0.2% fell back to `general` | A paper whose headings did not survive is invisible to section filtering — it degrades to plain semantic search without ever failing a test |
+| Parsing | 100% of chunks typed to a real section; 0.2% fell back to `general`; 1 paper unreadable | A paper whose headings did not survive is invisible to section filtering — it degrades to plain semantic search without ever failing a test |
 | Ingestion | 18s/paper, 1.0s/page — parse 46%, summaries 43%, classification 9%, embedding 2%, write 0.2% | "Ingestion is slow" is not actionable; the split is |
 | Retrieval | rerank 123ms p50, vector search 2.8ms, BM25 3.2ms, end to end 141ms p50 / 233ms p95 | Reranking owns the budget, and it scales with candidates fetched rather than corpus size — the first knob to turn |
 | Generation | 17s p50 per answer, ~111 chars/s | Retrieval is ~1% of a request. The model, not the index, sets how fast this feels |
@@ -610,7 +654,7 @@ tests/
   test_paper_lifecycle.py          add/remove keeps all three collections in step
   test_ui.py                       browser tests: citations, source panel, tabs
   golden_conversations.json        26 multi-turn turns for the conversational tabs
-  golden_qa.json                   85 graded questions, 210 fact groups, 17 papers
+  golden_qa.json                   122 graded questions, 262 fact groups, 53 papers
 docker-compose.yml       Weaviate service
 ```
 
@@ -698,6 +742,29 @@ safe to re-run. Once verified, `chroma_data/` can be deleted.
   questions will then count it twice. Comparing content hashes would catch byte-identical
   copies but not the same paper from two publishers, which is the case that actually
   turns up, so the check would buy less than it appears to.
+
+- **A PDF whose font encoding cannot be resolved indexes as nonsense, silently.**
+  One paper in the 54 came out as `(QKDQFLQJ %(57` for "Enhancing BERT" — 51
+  chunks of it, stored without error, matching nothing. The paper is in the
+  library and invisible to every query, which no test noticed until
+  `bench.py --structure` was taught to look. It detects this by case rather
+  than vocabulary: checking for common English words flags every Turkish and
+  Polish paper in the corpus, while the shift producing this mojibake reads as
+  ~100% uppercase against 5% for Turkish prose. Re-export or OCR the PDF; there
+  is no recovering it after the fact.
+
+- **Layout parsing sometimes splits a decimal point**, so `29.6%` is extracted
+  as `29 . 6%`. Only 0.4% of chunks across 7 papers, but it lands on exactly
+  the figures people ask for — accuracies, perplexities, F1 scores — where an
+  exact search misses and a quoted answer looks broken. Repaired at ingest;
+  papers ingested before that fix keep the artifact until re-ingested.
+
+- **Corpus-level answers are read from the paper cards in batches of twelve.**
+  Sending all of them in one prompt worked at 17 papers and failed at 54: the
+  prompt reached ~6,600 tokens and the model began summarising the library
+  instead of answering. Batching keeps recall — every card is still read — but
+  costs one LLM call per twelve papers, so a much larger library will want a
+  shortlisting step ahead of the scan.
 
 - **Not a general PDF chatbot.** It assumes academic papers with recognisable section
   headings. Slide decks, scanned documents without OCR, and reports with no headings
