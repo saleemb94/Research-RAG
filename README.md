@@ -375,28 +375,36 @@ python scripts/eval_rag.py --all -v
 | Generation, fact stated in the answer | 71% | 69% | 158/229 |
 | Synthesis, facts stated in one cited answer | 73% | **76%** | 25/33 |
 | Synthesis, expected papers actually cited | 56% | **70%** | 30/43 |
-| Thematic, facts stated in a discussion answer | | 67% | 53/79, mean of 5 |
-| Thematic, questions meeting the breadth bar | | 48% | 7.6/16, mean of 5 |
+| Thematic, facts stated in a discussion answer | | 68% | 54/79, mean of 3 |
+| Thematic, questions meeting the breadth bar | | 48% | 7.7/16, mean of 3 |
 | Negative controls, correctly declined | 100% | **100%** | 5/5 |
-| Invalid citations emitted | 0 | **0** | |
+| Dangling citations reaching the reader | 0 | **0** | by construction |
 
 Passage-level retrieval, scored against the gold passages at k=10:
 
 | | |
 | --- | --- |
-| Recall@10 | 0.709 |
-| MRR@10 | 0.771 |
-| MAP@10 | 0.595 |
-| nDCG@10 | 0.672 |
+| Recall@10 | 0.718 |
+| MRR@10 | 0.795 |
+| MAP@10 | 0.615 |
+| nDCG@10 | 0.689 |
 
-Those four are exact rather than averaged, because retrieval is reproducible: three
-consecutive runs return identical numbers. That is deliberate and was not always true.
+Those four are exact rather than averaged, because retrieval is reproducible: repeated
+runs return identical numbers. That is deliberate and was not always true.
 The model ships at `temperature 0.7` and nothing overrode it, so the router that chooses
 between answering from paper cards, fanning out over papers, and ordinary retrieval was
 *sampling* its decision. The same question took different paths on different runs, which
 is not variance in the answer but variance in what produced it. Steps that pick a label
 or a path are now greedy; the step that writes prose is not, because that is a choice
 rather than a decision with one right answer.
+
+The last row is worded carefully. A model writing prose about eight numbered sources
+will occasionally write `[9]`, and it does here, once or twice across sixteen questions.
+Those markers never reach a reader: `validate_citations` strips any that point at
+nothing, because a dangling marker is worse than no marker at all, looking like
+provenance and resolving to nothing. So the guarantee is structural rather than a score
+that happened to come out at zero, and the count of attempts the rail caught is reported
+separately by the scorer rather than folded into a quality number.
 
 Two principles hold the sets together. Every fact was read **from the source PDF, never
 from the search index**, and gold passages were labeled **by reading, never by running

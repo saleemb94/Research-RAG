@@ -546,6 +546,82 @@ def run_passages(items, verbose, k=10, client=None):
     return rows
 
 
+# ── references: how much did imperfect retrieval cost the answer? ──────────
+
+REFERENCES = ROOT / "tests" / "golden_references.json"
+
+
+def run_references(verbose, limit=None, client=None):
+    """
+    Score the live answer against the answer this model gives when handed the
+    gold passages outright.
+
+    Everything else here scores by substring, which cannot credit a correct
+    paraphrase and so reports a floor. This is the complement: greedy token
+    matching over contextual embeddings, which credits meaning and is blind to
+    wording. Neither is sufficient alone, and where they disagree is where the
+    interesting cases live.
+
+    The reference is a ceiling rather than a truth. Both sides come from the same
+    model, so a misreading appears identically in both and scores a perfect
+    match; this metric cannot see factual error, which is what the fact groups
+    are for. What it can see is content that retrieval failed to put in front of
+    the model, which is the one thing the fact groups keep attributing to
+    generation.
+    """
+    from fastapi.testclient import TestClient
+    import app as appmod
+    from semantic_score import SemanticScorer, baseline_floor
+
+    if not REFERENCES.exists():
+        print("No tests/golden_references.json - run scripts/make_references.py first.")
+        return []
+
+    items = json.loads(REFERENCES.read_text(encoding="utf-8"))["items"]
+    if limit:
+        items = items[:limit]
+
+    if client is None:
+        with TestClient(appmod.app) as c:
+            return run_references(verbose, limit=limit, client=c)
+
+    scorer = SemanticScorer()
+    rows = []
+    for i, it in enumerate(items, 1):
+        print(f"  [{i}/{len(items)}] {it['id']}", flush=True)
+        t0 = time.perf_counter()
+        r = client.post("/api/ask", json={"query": it["question"]}).json()
+        secs = time.perf_counter() - t0
+        answer = r.get("answer", "") if r.get("ok") else ""
+        # Citation markers are not prose and match nothing in the reference.
+        plain = re.sub(r"\[\d+\]", " ", answer)
+        s = scorer.score(plain, it["reference"])
+        rows.append({"id": it["id"], "seconds": secs, **s,
+                     "answer": answer, "reference": it["reference"]})
+
+    # An unrelated pair scores well above zero on same-domain prose, so the
+    # floor is measured rather than assumed: without it a 0.85 is unreadable.
+    floor = baseline_floor(scorer, [it["reference"] for it in items])
+    n = len(rows)
+    bar = "=" * 74
+    print(f"\n{bar}\nREFERENCES - live answer against the perfect-retrieval ceiling\n{bar}")
+    print(f"  F1        : {statistics.mean(r['f1'] for r in rows):.3f}")
+    print(f"  precision : {statistics.mean(r['p'] for r in rows):.3f}  (content not in the reference)")
+    print(f"  recall    : {statistics.mean(r['r'] for r in rows):.3f}  (reference content missing)")
+    print(f"  unrelated-pair floor: {floor:.3f}   headroom above it: "
+          f"{statistics.mean(r['f1'] for r in rows) - floor:+.3f}")
+    worst = sorted(rows, key=lambda r: r["f1"])[:8]
+    print("\n  furthest from the ceiling:")
+    for r in worst:
+        print(f"    {r['id']:18s} F1 {r['f1']:.3f}  P {r['p']:.3f}  R {r['r']:.3f}")
+        if verbose:
+            print(f"        live: {r['answer'][:150]!r}")
+            print(f"        ref : {r['reference'][:150]!r}")
+    (ROOT / "eval_references.json").write_text(
+        json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8")
+    return rows
+
+
 # ── retrieval + generation, through the real API ───────────────────────────
 
 def run_pipeline(items, verbose, do_retrieval, do_generation, deep=False):
@@ -662,6 +738,8 @@ def main():
                     help="Passage-level retrieval: Recall@k, MRR, MAP, nDCG")
     ap.add_argument("--at-k", type=int, default=10,
                     help="Cutoff k for the passage-level metrics (default 10)")
+    ap.add_argument("--references", action="store_true",
+                    help="Semantic score against the perfect-retrieval ceiling")
     ap.add_argument("--thematic", action="store_true",
                     help="Score the topic-wide discussion questions")
     ap.add_argument("--negative", action="store_true",
@@ -683,8 +761,9 @@ def main():
     if a.all:
         a.coverage = a.retrieval = a.generation = True
         a.synthesis = a.thematic = a.negative = a.passages = True
+        a.references = True
     if not (a.coverage or a.retrieval or a.generation or a.synthesis
-            or a.thematic or a.negative or a.passages):
+            or a.thematic or a.negative or a.passages or a.references):
         ap.error("choose at least one of --coverage / --retrieval / "
                  "--generation / --synthesis / --thematic / --passages / --all")
 
@@ -757,6 +836,9 @@ def main():
             print("No tests/golden_passages.json - skipping passage metrics.")
         else:
             run_passages(pas_items, a.verbose, k=a.at_k)
+
+    if a.references:
+        run_references(a.verbose, limit=a.limit)
 
     if a.thematic and the_items:
         from fastapi.testclient import TestClient
