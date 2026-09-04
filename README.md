@@ -375,8 +375,8 @@ python scripts/eval_rag.py --all -v
 | Generation, fact stated in the answer | 71% | 69% | 158/229 |
 | Synthesis, facts stated in one cited answer | 73% | **76%** | 25/33 |
 | Synthesis, expected papers actually cited | 56% | **70%** | 30/43 |
-| Thematic, facts stated in a discussion answer | | 69% | 54.7/79, mean of 3 |
-| Thematic, questions meeting the breadth bar | | 48% | 7.7/16, mean of 3 |
+| Thematic, facts stated in a discussion answer | | 67% | 53/79, mean of 5 |
+| Thematic, questions meeting the breadth bar | | 48% | 7.6/16, mean of 5 |
 | Negative controls, correctly declined | 100% | **100%** | 5/5 |
 | Invalid citations emitted | 0 | **0** | |
 

@@ -1934,7 +1934,17 @@
      "segmentation"
     ]
    ],
-   "related_papers": []
+   "related_papers": [
+    "3628797.3628810.pdf",
+    "Enhancing_Vector_based_Retrieval_Augmented_Generation_with_Contextual_Knowledge_Graph_Construction.pdf",
+    "Evaluating Retrieval Quality in Retrieval-Augmented Generation.pdf",
+    "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf",
+    "HybridRAG - Integrating Knowledge Graphs and Vector Retrieval Augmented Generation for Efficient Information Extraction.pdf",
+    "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+    "Proximity-Aware_Clinical_Passage_Retrieval_Framework_by_Exploiting_Knowledge_Structure.pdf",
+    "Semantic_Textual_Similarity_Analysis_of_Clinical_Text_in_the_Era_of_LLM.pdf",
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf"
+   ]
   },
   {
    "id": "th-hate-methods",
@@ -1975,8 +1985,25 @@
     ]
    ],
    "related_papers": [
+    "3628797.3628810.pdf",
     "A_Data-Efficient_Method_for_One-Shot_Text_Classification.pdf",
-    "Research_on_Medical_Text_Classification_based_on_BioBERT-GRU-Attention.pdf"
+    "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+    "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+    "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+    "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf",
+    "Few-Shot_Text_Classification_Method_Based_on_Feature_Optimization.pdf",
+    "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
+    "Improving Neural Models for the Retrieval of Relevant Passages to Geographical Queries.pdf",
+    "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf",
+    "Multi-Label_Zero-Shot_Learning_for_Industrial_Fault_Diagnosis.pdf",
+    "Multitask_Fine-Tuning_for_Passage_Re-Ranking_Using_BM25_and_Pseudo_Relevance_Feedback.pdf",
+    "Prompt-Based_Label-Aware_Framework_for_Few-Shot_Multi-Label_Text_Classification.pdf",
+    "Prompt_Tuning_on_Graph-Augmented_Low-Resource_Text_Classification.pdf",
+    "Research_on_Medical_Text_Classification_based_on_BioBERT-GRU-Attention.pdf",
+    "Semantic_Textual_Similarity_Analysis_of_Clinical_Text_in_the_Era_of_LLM.pdf",
+    "Small_Sample_Classification_Based_on_Prompt_Learning.pdf",
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
+    "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
    ]
   },
   {
@@ -2014,7 +2041,9 @@
      "contextual knowledge graph"
     ]
    ],
-   "related_papers": []
+   "related_papers": [
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf"
+   ]
   },
   {
    "id": "th-rerank",
@@ -2050,8 +2079,16 @@
     ]
    ],
    "related_papers": [
+    "3628797.3628810.pdf",
+    "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+    "Drop your Decoder_ Pre-training with Bag-of-Word Prediction for Dense Passage Retrieval..pdf",
+    "Enhancing_Vector_based_Retrieval_Augmented_Generation_with_Contextual_Knowledge_Graph_Construction.pdf",
     "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
-    "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf"
+    "Evaluating Retrieval Quality in Retrieval-Augmented Generation.pdf",
+    "Feature_Selection_in_Learning_to_Rank_for_Listwise_Approach_using_Multiobjective_Evolutionary_Algorithm.pdf",
+    "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf",
+    "Semantic_Textual_Similarity_Analysis_of_Clinical_Text_in_the_Era_of_LLM.pdf",
+    "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
    ]
   },
   {
@@ -2090,7 +2127,10 @@
      "multilingual"
     ]
    ],
-   "related_papers": []
+   "related_papers": [
+    "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+    "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf"
+   ]
   },
   {
    "id": "th-prompting",
@@ -2129,6 +2169,16 @@
     ]
    ],
    "related_papers": [
+    "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+    "A_Data-Efficient_Method_for_One-Shot_Text_Classification.pdf",
+    "Drop your Decoder_ Pre-training with Bag-of-Word Prediction for Dense Passage Retrieval..pdf",
+    "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+    "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf",
+    "Exploring_Language_Models_A_Comprehensive_Survey_and_Analysis.pdf",
+    "Graph_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey (1).pdf",
+    "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
+    "The Power of Noise Redefining Retrieval for RAG Systems.pdf",
     "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
    ]
   },
@@ -2169,7 +2219,20 @@
     ]
    ],
    "related_papers": [
-    "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf"
+    "3637211.pdf",
+    "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+    "A_Multi-Source_Information_Retrieval_System_for_Question_Answering_with_Sentiment_Analysis_and_LLM_Interpretation.pdf",
+    "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf",
+    "Advanced_RAG_Models_with_Graph_Structures_Optimizing_Complex_Knowledge_Reasoning_and_Text_Generation.pdf",
+    "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+    "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+    "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+    "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+    "Hybrid_Retrieval-Augmented_Generation_Approach_for_LLMs_Query_Response_Enhancement.pdf",
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
+    "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
    ]
   },
   {
@@ -2209,7 +2272,17 @@
     ]
    ],
    "related_papers": [
-    "Retrieval-Augmented Generation with Knowledge Graphs for.pdf"
+    "Drop your Decoder_ Pre-training with Bag-of-Word Prediction for Dense Passage Retrieval..pdf",
+    "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+    "Graph_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey (1).pdf",
+    "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
+    "Improving Neural Models for the Retrieval of Relevant Passages to Geographical Queries.pdf",
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+    "Retrieval-Augmented Generation with Knowledge Graphs for.pdf",
+    "Self-supervised Fine-tuning for Efficient Passage Re-ranking.pdf",
+    "Semantic_Textual_Similarity_Analysis_of_Clinical_Text_in_the_Era_of_LLM.pdf",
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
+    "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
    ]
   },
   {
@@ -2248,7 +2321,9 @@
      "support set"
     ]
    ],
-   "related_papers": []
+   "related_papers": [
+    "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
+   ]
   },
   {
    "id": "th-dense-training",
@@ -2283,9 +2358,17 @@
     ]
    ],
    "related_papers": [
+    "Comparative_Analysis_of_Transformer_Based_Vector_Models_for_Hate_Speech_in_Turkish_Tweets.pdf",
+    "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+    "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
     "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf",
+    "Prompt_Tuning_on_Graph-Augmented_Low-Resource_Text_Classification.pdf",
     "Semantic_Textual_Similarity_Analysis_of_Clinical_Text_in_the_Era_of_LLM.pdf",
-    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf"
+    "Small_Sample_Classification_Based_on_Prompt_Learning.pdf",
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
+    "The Power of Noise Redefining Retrieval for RAG Systems.pdf",
+    "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
    ]
   },
   {
@@ -2326,7 +2409,23 @@
     ]
    ],
    "related_papers": [
-    "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf"
+    "3637211.pdf",
+    "A_Multi-Source_Information_Retrieval_System_for_Question_Answering_with_Sentiment_Analysis_and_LLM_Interpretation.pdf",
+    "Advanced_RAG_Models_with_Graph_Structures_Optimizing_Complex_Knowledge_Reasoning_and_Text_Generation.pdf",
+    "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+    "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+    "Drop your Decoder_ Pre-training with Bag-of-Word Prediction for Dense Passage Retrieval..pdf",
+    "Evaluating Retrieval Quality in Retrieval-Augmented Generation.pdf",
+    "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf",
+    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+    "Graph_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey (1).pdf",
+    "HybridRAG - Integrating Knowledge Graphs and Vector Retrieval Augmented Generation for Efficient Information Extraction.pdf",
+    "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf",
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+    "Prompt-Based_Label-Aware_Framework_for_Few-Shot_Multi-Label_Text_Classification.pdf",
+    "Research_on_Medical_Text_Classification_based_on_BioBERT-GRU-Attention.pdf",
+    "The Power of Noise Redefining Retrieval for RAG Systems.pdf",
+    "To_Enhance_Graph-Based_Retrieval-Augmented_Generation_RAG_with_Robust_Retrieval_Techniques.pdf"
    ]
   },
   {
@@ -2362,7 +2461,11 @@
      "hate speech"
     ]
    ],
-   "related_papers": []
+   "related_papers": [
+    "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+    "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf"
+   ]
   },
   {
    "id": "th-explainability",
@@ -2395,7 +2498,14 @@
     ]
    ],
    "related_papers": [
+    "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
     "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf",
+    "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+    "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+    "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+    "Evaluating Retrieval Quality in Retrieval-Augmented Generation.pdf",
+    "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf",
+    "Prompt-Based_Label-Aware_Framework_for_Few-Shot_Multi-Label_Text_Classification.pdf",
     "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
    ]
   },
@@ -2436,11 +2546,27 @@
    ],
    "related_papers": [
     "3628797.3628810.pdf",
+    "3637211.pdf",
     "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+    "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf",
+    "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
     "Drop your Decoder_ Pre-training with Bag-of-Word Prediction for Dense Passage Retrieval..pdf",
+    "Enhancing_Vector_based_Retrieval_Augmented_Generation_with_Contextual_Knowledge_Graph_Construction.pdf",
     "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
     "Evaluating Retrieval Quality in Retrieval-Augmented Generation.pdf",
-    "The Power of Noise Redefining Retrieval for RAG Systems.pdf"
+    "Exploring_Language_Models_A_Comprehensive_Survey_and_Analysis.pdf",
+    "Few-Shot_Text_Classification_Method_Based_on_Feature_Optimization.pdf",
+    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+    "Hybrid_Retrieval-Augmented_Generation_Approach_for_LLMs_Query_Response_Enhancement.pdf",
+    "Improving Neural Models for the Retrieval of Relevant Passages to Geographical Queries.pdf",
+    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+    "Proximity-Aware_Clinical_Passage_Retrieval_Framework_by_Exploiting_Knowledge_Structure.pdf",
+    "Research_on_Medical_Text_Classification_based_on_BioBERT-GRU-Attention.pdf",
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
+    "The Power of Noise Redefining Retrieval for RAG Systems.pdf",
+    "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
    ]
   },
   {
@@ -2485,10 +2611,24 @@
     ]
    ],
    "related_papers": [
+    "3628797.3628810.pdf",
+    "3637211.pdf",
     "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+    "A_Multi-Source_Information_Retrieval_System_for_Question_Answering_with_Sentiment_Analysis_and_LLM_Interpretation.pdf",
+    "A_Study_on_Performance_Improvement_of_Prompt_Engineering_for_Generative_AI_with_a_Large_Language_Model.pdf",
     "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf",
+    "Advanced_RAG_Models_with_Graph_Structures_Optimizing_Complex_Knowledge_Reasoning_and_Text_Generation.pdf",
     "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
     "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+    "Enhancing_Vector_based_Retrieval_Augmented_Generation_with_Contextual_Knowledge_Graph_Construction.pdf",
+    "Graph_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey (1).pdf",
+    "Hybrid_Retrieval-Augmented_Generation_Approach_for_LLMs_Query_Response_Enhancement.pdf",
+    "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
+    "Improving Neural Models for the Retrieval of Relevant Passages to Geographical Queries.pdf",
+    "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf",
+    "Prompt-Based_Label-Aware_Framework_for_Few-Shot_Multi-Label_Text_Classification.pdf",
+    "Small_Sample_Classification_Based_on_Prompt_Learning.pdf",
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
     "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf"
    ]
   },
@@ -2524,7 +2664,19 @@
      "prompt injection"
     ]
    ],
-   "related_papers": []
+   "related_papers": [
+    "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+    "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf",
+    "Advanced_RAG_Models_with_Graph_Structures_Optimizing_Complex_Knowledge_Reasoning_and_Text_Generation.pdf",
+    "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+    "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+    "Multi-Label_Zero-Shot_Learning_for_Industrial_Fault_Diagnosis.pdf",
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf"
+   ]
   }
- ]
+ ],
+ "thematic_related_rule": "A paper is related to a theme when its own text satisfies at least two of that theme's fact groups without being one of its core papers. One group is too weak: on abstract themes it marks 41 of 54 papers related and the off-theme count stops meaning anything. The earlier rule required most groups, which is what makes a paper core rather than related, so genuine partial engagement was counted as off theme."
 }

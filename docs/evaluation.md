@@ -202,6 +202,35 @@ sampled, this fired on two or three questions and varied between runs. With rout
 greedy it fires on none, and the exclusion is now a guard against a case that no longer
 occurs rather than a live adjustment.
 
+**What "off theme" counts, and what it turned out to measure.** A citation is scored
+off theme when it names a paper that is neither core to the theme nor related to it, and
+a paper is related when its own text satisfies at least two of that theme's fact groups.
+
+That bar was set after the first version measured the wrong thing. It originally
+required a related paper to satisfy *most* of the theme's groups, which is what makes a
+paper core rather than related, so genuine partial engagement was booked as off theme
+and the rate came out near 40%. Checking each off-theme citation against the paper's own
+text showed 74% of them went to papers that do discuss the theme. The distribution said
+the same thing: six themes had no off-theme citations at all, every one of them a
+concrete subject like hate speech or knowledge graphs, while two abstract cross-cutting
+themes, LLM weaknesses and robustness, accounted for 14 of 35 between them. Nearly every
+paper in a corpus about language models mentions hallucination somewhere.
+
+One group is too loose a bar in the other direction: on the abstract themes it marks 41
+of 54 papers related and the off-theme count stops meaning anything. Two groups leaves
+the number meaning what it should, which is an answer reaching for a paper with no
+engagement with the topic. Measured over five runs it sits at 24%, stable to a couple of
+points.
+
+**Spread, and one run that does not fit.** Thematic facts run 53 of 79 over five runs,
+range 52 to 54, sd 0.6. An earlier single run returned 47, which is far outside that and
+outside the eight other post-routing-fix runs, which span 52 to 56. The golden set was
+checked against the committed version and its questions, fact groups and core papers were
+unchanged, so it is not a corrupted set. It is recorded here because it is unexplained,
+and because a three-run range was quoted for this metric before five runs were available:
+three points do not estimate a spread, and reporting sd from them was more confidence
+than the sample supports.
+
 **Negative controls** cover the gap every other metric leaves. All the others measure
 denying content that is present. None measures inventing content that is absent, which
 for a research tool is the worse failure, since retrieval always returns *something* and
