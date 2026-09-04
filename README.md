@@ -364,6 +364,7 @@ python scripts/eval_rag.py --passages      # Recall@k, MRR, MAP, nDCG over gold 
 python scripts/eval_rag.py --generation    # given the right paper, is the fact stated?
 python scripts/eval_rag.py --synthesis     # corpus-wide cited answers
 python scripts/eval_rag.py --thematic      # discussion questions across a topic
+python scripts/eval_rag.py --references    # semantic distance from perfect retrieval
 python scripts/eval_rag.py --all -v
 ```
 
@@ -405,6 +406,37 @@ nothing, because a dangling marker is worse than no marker at all, looking like
 provenance and resolving to nothing. So the guarantee is structural rather than a score
 that happened to come out at zero, and the count of attempts the rail caught is reported
 separately by the scorer rather than folded into a quality number.
+
+**What retrieval cost, measured separately from what the model can say.** Every metric
+above scores by substring, which cannot credit a correct paraphrase and so reports a
+floor. `--references` is the complement. Each of the 40 gold-passage questions has a
+reference answer written by this model from its gold passages at temperature 0: the
+answer the system would give if retrieval never missed. Live answers are scored against
+it by greedy token matching over contextual embeddings, which is BERTScore's algorithm on
+the embedding model already loaded rather than the `bert-score` package, whose default
+backbone is a 1.4GB download this project does not otherwise need.
+
+| | |
+| --- | --- |
+| F1 against the ceiling | 0.821 |
+| precision | 0.800 |
+| recall | 0.844 |
+| unrelated-pair floor | 0.484 |
+
+The floor is measured, not assumed. Contextual embeddings of same-domain prose are
+similar whatever they say, so without knowing that two unrelated answers score 0.484, an
+F1 of 0.821 could be excellent or could be chance.
+
+Two things this cannot do. Both sides come from the same model, so a misreading appears
+identically in both and scores a perfect match: it is blind to factual error, which is
+what the fact groups are for. And it rewards resembling the ceiling, not being right.
+
+It earned its place immediately. Sorting by distance from the ceiling put two questions
+below the unrelated-pair floor, and both turned out to be the system answering *"nothing
+in the indexed papers addresses this question"* about facts sitting in the index. That
+is the worst thing a research tool can say, worse than a vague answer, because the reader
+stops looking. No other metric could see it: to the fact groups a false absence and a
+missing fact score identically.
 
 Two principles hold the sets together. Every fact was read **from the source PDF, never
 from the search index**, and gold passages were labeled **by reading, never by running

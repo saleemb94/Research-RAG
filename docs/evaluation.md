@@ -391,3 +391,20 @@ scores retrieval settings without calling the LLM, which takes seconds per setti
 instead of the ten minutes a full evaluation needs, and `scripts/repair_index.py` fixes
 parsing defects in place without re-parsing anything.
 
+
+
+## Known open defect: a false absence the prompt produces
+
+`n02-growth` asks how much submissions to the FAccT conference grew between 2018 and
+2021. The router sends it to the fan-out path, retrieval returns the correct passage as
+source [1], and the answer is still "The collection does not cover it."
+
+That phrase is not a sentinel. It comes from the fan-out reduce prompt, which tells the
+model to say the collection does not cover a question only when nothing supports it, and
+the model says it anyway with the supporting passage in front of it. So this is a prompt
+and model failure rather than a code path, unlike the sentinel leak above, and fixing it
+means changing that instruction and measuring the result rather than a one-line guard.
+
+Recorded rather than fixed because it needs its own change and its own measurement. It
+reproduces every run, and `--references` scores it 0.309 against an unrelated-pair floor
+of 0.484, which is how it was found.

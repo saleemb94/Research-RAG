@@ -1,0 +1,285 @@
+{
+ "note": "Reference answers written from the gold passages of golden_passages.json, at temperature 0. They are the perfect-retrieval ceiling for this model, not ground truth: agreement with them measures what retrieval cost, not whether the answer is factually right.",
+ "items": [
+  {
+   "id": "n02-growth",
+   "question": "By how much did submissions to the FAccT conference increase between 2018 and 2021?",
+   "paper": "3637211.pdf",
+   "n_gold": 1,
+   "reference": "Submissions to the FAccT conference increased by around 350% between 2018 and 2021."
+  },
+  {
+   "id": "n05-dataset",
+   "question": "How many user queries were compiled into the evaluation dataset?",
+   "paper": "A_Multi-Source_Information_Retrieval_System_for_Question_Answering_with_Sentiment_Analysis_and_LLM_Interpretation.pdf",
+   "n_gold": 1,
+   "reference": "The evaluation dataset was compiled from 1000 user queries."
+  },
+  {
+   "id": "n22-gain",
+   "question": "How did the average F1 score of the LLM answers change when the learning-to-rank approach was applied?",
+   "paper": "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf",
+   "n_gold": 1,
+   "reference": "The average F1 score of the LLM answers increased from 0.22 without a learning-to-rank approach to 0.68 with the learning-to-rank approach."
+  },
+  {
+   "id": "n23-gpt3",
+   "question": "What is the largest parameter count of GPT-3, and what context window size does it support?",
+   "paper": "Exploring_Language_Models_A_Comprehensive_Survey_and_Analysis.pdf",
+   "n_gold": 1,
+   "reference": "The largest parameter count of GPT-3 is 175 billion, and it supports a context window size of 2048 tokens."
+  },
+  {
+   "id": "n24-gain",
+   "question": "By how much does PTCC outperform finetuning-based methods for BERT in the 4-shot setting?",
+   "paper": "Exploring_Soft_Prompt_Initialization_Strategy_for_Few-Shot_Continual_Text_Classification.pdf",
+   "n_gold": 1,
+   "reference": "PTCC outperforms finetuning-based methods for BERT in the 4-shot setting by 18.34%."
+  },
+  {
+   "id": "n26-gain",
+   "question": "By how much did average accuracy increase compared with the Siamese network and the prototypical network?",
+   "paper": "Few-Shot_Text_Classification_Method_Based_on_Feature_Optimization.pdf",
+   "n_gold": 1,
+   "reference": "The average accuracy increased by 12.1% compared with the Siamese network and by 4.18% compared with the prototypical network."
+  },
+  {
+   "id": "n28-parts",
+   "question": "What accuracy did BiLSTM, CNN and GRU reach individually?",
+   "paper": "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+   "n_gold": 1,
+   "reference": "BiLSTM reached an accuracy of 93.10%, CNN reached an accuracy of 92.83%, and GRU reached an accuracy of 92.79%."
+  },
+  {
+   "id": "n29-hard",
+   "question": "Why is exhaustive sub-graph identification from large knowledge graphs impractical?",
+   "paper": "Graph_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey (1).pdf",
+   "n_gold": 1,
+   "reference": "Exhaustive sub-graph identification from large knowledge graphs is impractical because it is computationally infeasible (NP-hard) when done exhaustively. This finding is stated in the passage, which identifies the problem at the core of Graph RAG research. The passage does not mention specific models, datasets, or numerical values related to this issue."
+  },
+  {
+   "id": "n34-period",
+   "question": "Over what period were the surveyed papers published?",
+   "paper": "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf",
+   "n_gold": 1,
+   "reference": "The surveyed papers were published from 2013 to June 2022."
+  },
+  {
+   "id": "n35-rates",
+   "question": "What attack success rates were achieved against the two victim models?",
+   "paper": "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
+   "n_gold": 1,
+   "reference": "The attack success rate achieved against the AraBERT model was 29.6%, and against the QARiB model was 27.5%."
+  },
+  {
+   "id": "n42-gain",
+   "question": "By how much does the model improve Macro-F1 on average, and what was the largest gain on any dataset?",
+   "paper": "Prompt-Based_Label-Aware_Framework_for_Few-Shot_Multi-Label_Text_Classification.pdf",
+   "n_gold": 1,
+   "reference": "The model improves Macro-F1 on average by 1.68% when compared to the best baseline, PTMLTC, across three datasets. The largest gain on any dataset is 2.39%, observed in the Prachathai67k dataset."
+  },
+  {
+   "id": "n48-sbert",
+   "question": "By how much did SBERT reduce the time to find the most similar pair among 10,000 sentences?",
+   "paper": "Semantic_Textual_Similarity_Analysis_of_Clinical_Text_in_the_Era_of_LLM.pdf",
+   "n_gold": 1,
+   "reference": "SBERT reduced the computing time for finding the most similar pair among 10,000 sentences from 65 hours to about 5 seconds."
+  },
+  {
+   "id": "n06-gain",
+   "question": "What average improvement over the unmodified query did the proposed method achieve?",
+   "paper": "A_Study_on_Performance_Improvement_of_Prompt_Engineering_for_Generative_AI_with_a_Large_Language_Model.pdf",
+   "n_gold": 2,
+   "reference": "The proposed method achieved an average improvement of 11.46% over the unmodified query."
+  },
+  {
+   "id": "n09-imbalance",
+   "question": "What share of the posts in the corpus were identified as cyberbullying?",
+   "paper": "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+   "n_gold": 2,
+   "reference": "39.105% of the posts in the corpus were identified as cyberbullying."
+  },
+  {
+   "id": "n11-method",
+   "question": "Which research methodology framework does the study follow to build its artifact?",
+   "paper": "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
+   "n_gold": 2,
+   "reference": "The study follows the Design Science Research (DSR) methodology and complements it with the CRISP-DM methodology to build its artifact. The research combines these two frameworks to guide the design and construction of a hate speech detection solution. Specifically, it evaluates three text modeling approaches: Word2Vec, BERT, and Transfer Learning with BERT. The findings indicate that BERT-based models exhibit superior performance in modeling and identifying hate speech due to their ability to maintain clear class distinctions in vector representations of tweets, particularly in capturing broader semantic contexts such as relative hate words. Additionally, the Transfer Learning approach using a pre-trained BERT model achieves higher classification accuracy. However, Word2Vec is more effective in identifying hate speech specific to the linguistic idiosyncrasies of Ecuador, such as regional terms like 'cholo' and 'mono'."
+  },
+  {
+   "id": "n15-parts",
+   "question": "What accuracy did BiLSTM, CNN and IndoBERTweet each reach on their own?",
+   "paper": "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+   "n_gold": 2,
+   "reference": "BiLSTM reached an accuracy of 82.02%, CNN reached an accuracy of 79.39%, and IndoBERTweet reached an accuracy of 80.80%."
+  },
+  {
+   "id": "n25-types",
+   "question": "What are the three categories of feature selection strategies described?",
+   "paper": "Feature_Selection_in_Learning_to_Rank_for_Listwise_Approach_using_Multiobjective_Evolutionary_Algorithm.pdf",
+   "n_gold": 2,
+   "reference": "The three categories of feature selection strategies described are filter, wrapper, and embedded methods. Filter methods prioritize features based on their statistical properties or relation to the target variable and are model-independent, quicker, and more effective, especially for big datasets. However, they may fail to consider interrelationships between features and often rely on user input to determine the feature subset size, leading to a trial-and-error process. Wrapper methods select feature subsets based on their performance in prediction models, resulting in accurate and model-specific features, but suffer from high computational complexity due to extensive model training and validation, making them less suitable for large-scale datasets and quick prototyping. Embedded methods incorporate feature selection directly into the model training process, typically using regularization techniques to penalize less admissible features, improving model performance but producing feature selections strongly linked to the specific learning technique, which may restrict applicability and cause overfitting."
+  },
+  {
+   "id": "n36-corpus",
+   "question": "How many passages does the passage ranking dataset contain?",
+   "paper": "MarkedBERT_ Integrating Traditional IR Cues in Pre-trained Language Models for Passage Retrieval.pdf",
+   "n_gold": 1,
+   "reference": "The passage ranking dataset contains over 8.8𝑀 passages."
+  },
+  {
+   "id": "n46-structure",
+   "question": "What dual-level graph structure is used to represent historical issue tickets?",
+   "paper": "Retrieval-Augmented Generation with Knowledge Graphs for.pdf",
+   "n_gold": 2,
+   "reference": "The dual-level graph structure used to represent historical issue tickets consists of an intra-issue tree T_i(N, E, R) and an inter-issue graph G(T, E, R). The intra-issue tree models each ticket t_i as a tree, where each node n ∈ N, identified by a unique combination (i, s), corresponds to a distinct section s of ticket t_i, and each edge e ∈ E and r ∈ R signifies the hierarchical connection and type of relations between these sections. The inter-issue graph represents the network of connections across different tickets, incorporating both explicit links E_exp, defined in issue tracking tickets, and implicit connections E_imp, derived from semantic similarity between tickets. For implicit connections, cosine similarity between the embedding vectors of ticket titles is used."
+  },
+  {
+   "id": "n07-sources",
+   "question": "Which two databases were searched for this survey, and how many results did the search return after removing duplicates?",
+   "paper": "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf",
+   "n_gold": 2,
+   "reference": "The two databases searched were IEEE Explore and the ACM database. The search returned 277 results after removing duplicates."
+  },
+  {
+   "id": "n40-data",
+   "question": "How many tweets are in the training set and how many in the test set?",
+   "paper": "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+   "n_gold": 2,
+   "reference": "The training set contains 3604 tweets and the test set contains 901 tweets."
+  },
+  {
+   "id": "n41-corpus",
+   "question": "Which external corpus is used, and how are its articles split into passages?",
+   "paper": "Old IR Methods Meet RAG.pdf",
+   "n_gold": 1,
+   "reference": "The external corpus used is the English Wikipedia dump from Dec. 20, 2018. Its articles are split into 100-word disjoint passages. Each passage is considered an independent document."
+  },
+  {
+   "id": "n50-bert",
+   "question": "Which BERT pre-training task is removed in this work, and which is kept?",
+   "paper": "Small_Sample_Classification_Based_on_Prompt_Learning.pdf",
+   "n_gold": 2,
+   "reference": "The NSP task is removed and the MLM task is kept."
+  },
+  {
+   "id": "n54-bing",
+   "question": "Which search engine integrated ChatGPT, and in which year?",
+   "paper": "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf",
+   "n_gold": 1,
+   "reference": "Microsoft integrated ChatGPT into its search engine in 2023."
+  },
+  {
+   "id": "n47-loss",
+   "question": "Which category of ranking loss does the model use?",
+   "paper": "Self-supervised Fine-tuning for Efficient Passage Re-ranking.pdf",
+   "n_gold": 3,
+   "reference": "The model uses a listwise ranking loss method."
+  },
+  {
+   "id": "n10-journals",
+   "question": "How many academic journal samples does the dataset contain, and how are they distributed across disciplines?",
+   "paper": "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+   "n_gold": 1,
+   "reference": "The dataset contains 18,000 academic journal samples, distributed equally among humanities, social sciences, and natural sciences, with each discipline containing 6,000 samples."
+  },
+  {
+   "id": "n21-adds",
+   "question": "What two analyses does this paper add that the original Healthprompt paper omitted?",
+   "paper": "Evaluation_of_Healthprompt_for_Zero-shot_Clinical_Text_Classification.pdf",
+   "n_gold": 3,
+   "reference": "The two analyses that this paper adds are an error analysis and an ablation study. Specifically, the paper conducts an error analysis and an ablation study on Electronic Health Records (EHR) notes to understand the capabilities and limitations of the Healthprompt framework for clinical text classification."
+  },
+  {
+   "id": "n38-videos",
+   "question": "How many videos were collected, and how were they split into training and test sets?",
+   "paper": "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+   "n_gold": 1,
+   "reference": "A total of 1051 videos were collected. They were split into training and test sets such that 80% were used for training and 20% were used for testing."
+  },
+  {
+   "id": "n04-design",
+   "question": "Which classification idea is the extensible output layer designed around, and on how many datasets was it evaluated?",
+   "paper": "A_Data-Efficient_Method_for_One-Shot_Text_Classification.pdf",
+   "n_gold": 5,
+   "reference": "The extensible output layer is designed around the One-vs-Rest method. It was evaluated on four datasets: 5AbstractGroup, 20NewsGroup, IMDB, and TREC."
+  },
+  {
+   "id": "n37-network",
+   "question": "Which two components make up the multi-scale feature extraction network?",
+   "paper": "Multi-Label_Zero-Shot_Learning_for_Industrial_Fault_Diagnosis.pdf",
+   "n_gold": 5,
+   "reference": "The two components that make up the multi-scale feature extraction network are one-dimensional convolutional neural network (1D-CNN) and convolutional block attention module (CBAM)."
+  },
+  {
+   "id": "n03-limits",
+   "question": "Which intrinsic limitations of large language models does this survey say RAG helps address?",
+   "paper": "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+   "n_gold": 3,
+   "reference": "The survey states that RAG helps address the intrinsic limitations of large language models such as the lack of domain-specific knowledge, the issue of 'hallucination', and the problem of out-of-date internal knowledge. Specifically, it mentions that hallucination rates in legal queries range from 69% to 88% for state-of-the-art LLMs, and that RAG can effectively reduce hallucinations in conversational tasks. Additionally, RAG enables the integration of latest and reliable external knowledge, which helps address the issue of out-of-date internal knowledge in LLMs. The models mentioned in the passages include GPT-4, ChatGPT, and MolReGPT. The datasets referenced are scientific literature and legal queries, with the findings indicating that RAG improves performance in tasks like scientific question answering, molecular discovery, and conversational tasks by retrieving relevant external information."
+  },
+  {
+   "id": "n12-models",
+   "question": "Which proprietary reranking models are compared in this study?",
+   "paper": "Comparative_Analysis_of_Listwise_Reranking_with_Large_Language_Models_in_Limited-Resource_Language_Contexts.pdf",
+   "n_gold": 7,
+   "reference": "The proprietary reranking models compared in this study are RankGPT3.5, RankGPT4o-mini, RankGPTo1-mini, and RankClaude-sonnet."
+  },
+  {
+   "id": "n19-data",
+   "question": "How many documents were collected for evaluation, of what type, and from which source?",
+   "paper": "Enhancing_Vector_based_Retrieval_Augmented_Generation_with_Contextual_Knowledge_Graph_Construction.pdf",
+   "n_gold": 3,
+   "reference": "A sample of 2,000 lease agreement documents was collected for evaluation. These documents are of the type lease agreements and were obtained from SEC.gov."
+  },
+  {
+   "id": "n18-count",
+   "question": "How many legal RAG pipelines were implemented in 2024 according to this survey?",
+   "paper": "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+   "n_gold": 1,
+   "reference": "More than 20 legal RAG pipelines were implemented in 2024."
+  },
+  {
+   "id": "n20-method",
+   "question": "What evaluation approach does this paper propose for retrieval models inside RAG systems?",
+   "paper": "Evaluating Retrieval Quality in Retrieval-Augmented Generation.pdf",
+   "n_gold": 4,
+   "reference": "The paper proposes an evaluation approach called eRAG for retrieval models inside RAG systems. In this approach, each document in the retrieval list is individually utilized by the large language model (LLM) within the RAG system. The output generated for each document is evaluated based on downstream task ground truth labels, using downstream task metrics such as accuracy, exact match, or ROUGE to obtain document-level annotations. These annotations are then aggregated using set-based or ranking metrics to produce a single evaluation score for each retrieval result list. The approach achieves a higher correlation with downstream RAG performance, with improvements in Kendall's τ correlation ranging from 0.168 to 0.494 across datasets. The evaluation is conducted on three downstream tasks: question answering, factchecking, and dialogue generation, using the KILT benchmark. The method consumes up to 50 times less GPU memory than end-to-end evaluation."
+  },
+  {
+   "id": "n30-methods",
+   "question": "Which two RAG methodologies does the proposed hybrid framework combine?",
+   "paper": "Hybrid_Retrieval-Augmented_Generation_Approach_for_LLMs_Query_Response_Enhancement.pdf",
+   "n_gold": 5,
+   "reference": "The two RAG methodologies combined in the proposed hybrid framework are the sentence-window and parent-child methods."
+  },
+  {
+   "id": "n49-purpose",
+   "question": "What is the SiJesi chatbot built to advise on, and for which organization?",
+   "paper": "SiJesi_Large_Language_Model_Chatbot_with_Augmented_Retrieval_Approach_Generation_and_Prompt_Engineering.pdf",
+   "n_gold": 6,
+   "reference": "The SiJesi chatbot is built to advise on cyber incident consultation, and it is for the local CSIRT in DKI Jakarta."
+  },
+  {
+   "id": "n51-transformer",
+   "question": "What is the key innovation of the Transformer compared with LSTMs and RNNs?",
+   "paper": "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
+   "n_gold": 2,
+   "reference": "The key innovation of the Transformer compared with LSTMs and RNNs is its ability to process tokens in parallel, unlike LSTMs and RNNs, which process tokens sequentially and depend on predecessors. This is achieved through a multi-head self-attention mechanism, which enables parallelized training. The passage specifies that this innovation allows the Transformer to handle all parts of the input data simultaneously, addressing the sequential processing constraint of LSTMs and RNNs. Positional encoding is used to maintain sequence information by encoding the relative position of each token, ensuring the model is aware of word order."
+  },
+  {
+   "id": "n16-task",
+   "question": "Which pre-training task does this paper propose for dense passage retrieval?",
+   "paper": "Drop your Decoder_ Pre-training with Bag-of-Word Prediction for Dense Passage Retrieval..pdf",
+   "n_gold": 5,
+   "reference": "The paper proposes a Bag-of-Word prediction task for dense passage retrieval. This task directly compresses the lexicon terms into dense representations by projecting dense representations to the vocabulary space and then predicting the input token bags using multi-label crossentropy loss. The method replaces the decoder in masked auto-encoder (MAE) pre-training with this simplified Bag-of-Word prediction task. The proposed method achieves state-of-the-art retrieval performance on several large-scale retrieval benchmarks and provides a 67% training speed-up compared to standard masked auto-encoder pre-training with enhanced decoding."
+  },
+  {
+   "id": "n44-domain",
+   "question": "Which kind of search is this passage retrieval framework built to support?",
+   "paper": "Proximity-Aware_Clinical_Passage_Retrieval_Framework_by_Exploiting_Knowledge_Structure.pdf",
+   "n_gold": 6,
+   "reference": "The passage retrieval framework is built to support CDS search. Specifically, it supports clinical decision-making by enabling passage retrieval using laboratory test results. The framework incorporates term proximity information and utilizes a knowledge structure for query expansion. It compares models with and without edge pruning to capture latent term relationships. The embedded-based knowledge structure outperforms previous knowledge structure building approaches and other proximity-aware state-of-the-art models. The framework is designed to retrieve short passages rather than full-length documents, and it shows superior performance compared to several query expansion techniques and proximity probability retrieval models."
+  }
+ ]
+}

@@ -210,5 +210,28 @@ def test_temperature_reaches_the_request():
     assert seen["options"]["num_predict"] == 8
 
 
+# ── the cards saying "I cannot" is not an answer ───────────────────────────
+
+def test_nothing_found_is_not_a_truthy_answer():
+    """
+    NOTHING_FOUND is a non-empty string, so `if raw:` accepted it as an answer
+    and returned it to the reader instead of falling through to retrieval. The
+    result was the worst thing a research tool can say: that the library does
+    not cover something it does. Three of forty gold-passage questions returned
+    it verbatim while the answering passage sat in the index.
+    """
+    import re
+    from research_rag.paper_cards import NOTHING_FOUND
+    src = (Path(__file__).resolve().parent.parent
+           / "research_rag" / "synthesize.py").read_text(encoding="utf-8")
+    calls = src.count("raw, used = answer_from_cards(")
+    guards = src.count("if raw and raw.strip() != NOTHING_FOUND:")
+    assert calls > 0, "no card call sites found; this test needs updating"
+    assert guards == calls, (
+        f"{calls} card call site(s) but {guards} guarded against the sentinel"
+    )
+    assert NOTHING_FOUND, "the sentinel must stay non-empty for this to matter"
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

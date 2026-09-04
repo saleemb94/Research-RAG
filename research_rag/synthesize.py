@@ -35,7 +35,7 @@ from .llm import generate as _llm
 from .llm import model_for
 from .llm import temperature_for
 from .enumerate_ import classify_question, gather, reduce_findings
-from .paper_cards import answer_from_cards
+from .paper_cards import NOTHING_FOUND, answer_from_cards
 from .section_index import chunks_for_sections, sections_for_query
 from .search import _hierarchical_search
 from .section_classifier import classify_query, prefer_exact_types
@@ -337,7 +337,16 @@ def synthesize_answer(
     # The cards are the only place that knowledge exists.
     if kind == "corpus" and cards:
         raw, used = answer_from_cards(standalone, cards, model)
-        if raw:
+        # NOTHING_FOUND is the cards saying they cannot answer this, and it must
+        # not be mistaken for an answer. It is a non-empty string, so a plain
+        # truthiness check passed it straight through to the reader and skipped
+        # the fallback written for exactly this case. The result was the worst
+        # failure this system can produce: telling someone their library does
+        # not cover something it does. Three of forty gold-passage questions
+        # returned the sentinel verbatim while the answering passage sat in the
+        # index, unread, because a card is a summary and the question wanted a
+        # number.
+        if raw and raw.strip() != NOTHING_FOUND:
             answer, cited, dropped = validate_citations(raw, len(used))
             sources = [
                 Source(number=i + 1, source_file=c.source_file,
@@ -387,7 +396,9 @@ def synthesize_answer(
         # measured alone it took that question from 0/3 facts to 3/3.
         if cards and len(findings) < 2:
             raw, used = answer_from_cards(standalone, cards, model)
-            if raw:
+            # Same sentinel, same reason: falling through to retrieval is always
+            # better than reporting an absence that is not real.
+            if raw and raw.strip() != NOTHING_FOUND:
                 answer, cited, dropped = validate_citations(raw, len(used))
                 sources = [
                     Source(
