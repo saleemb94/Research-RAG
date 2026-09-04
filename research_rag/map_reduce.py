@@ -1,10 +1,10 @@
 """
-Deep scan — two-step LLM targeting + map-reduce summarisation.
+Deep scan - two-step LLM targeting + map-reduce summarization.
 
-Step 1  identify_target_section()   — one LLM call → single target phrase
-Step 2  match_headings_to_target()  — one LLM call → picks from DB-stored section names
-MAP     _map_one()                  — one LLM call per chunk → short passage summary
-REDUCE  _reduce()                   — one LLM call per paper → final answer
+Step 1  identify_target_section()   - one LLM call → single target phrase
+Step 2  match_headings_to_target()  - one LLM call → picks from DB-stored section names
+MAP     _map_one()                  - one LLM call per chunk → short passage summary
+REDUCE  _reduce()                   - one LLM call per paper → final answer
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ Answer ONLY based on what this passage says. Ignore irrelevant content.
 
 Question: {query}
 
-Passage from "{source}" — section: {heading} | pages: {pages}
+Passage from "{source}" - section: {heading} | pages: {pages}
 {text}
 
 Write 1–3 concise bullet points about what this passage says relevant to the \
@@ -77,12 +77,12 @@ def deep_scan_papers(
     source_filter: str | None = None,
 ) -> dict:
     """
-    Two-step LLM section targeting followed by map-reduce summarisation.
+    Two-step LLM section targeting followed by map-reduce summarization.
 
-    Step 1 — Identify target section (one LLM call, or use UI selection).
-    Step 2 — Match target against section names stored in the DB at ingest
+    Step 1 - Identify target section (one LLM call, or use UI selection).
+    Step 2 - Match target against section names stored in the DB at ingest
               time (one LLM call); returns a parsed list of matching names.
-    Then   — Retrieve chunks by section_name, run map → reduce.
+    Then   - Retrieve chunks by section_name, run map → reduce.
     """
 
     # ── Step 1: identify the target section ──────────────────────────────
@@ -179,7 +179,7 @@ def deep_scan_papers(
 
     results = []
     for source, chunks in by_source.items():
-        print(f"  [Paper] {source} — {len(chunks)} chunk(s)")
+        print(f"  [Paper] {source} - {len(chunks)} chunk(s)")
 
         # ── MAP ───────────────────────────────────────────────────────────
         print(f"    MAP: {len(chunks)} passage(s)...")

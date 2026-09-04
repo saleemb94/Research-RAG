@@ -25,7 +25,7 @@ from research_rag.section_classifier import (  # noqa: E402
 # ── Headings that must classify the same way in every discipline ───────────
 # (discipline, heading, expected label)
 CROSS_DISCIPLINE: list[tuple[str, str, str]] = [
-    # Computer science / ML — the corpus this project was originally built on
+    # Computer science / ML - the corpus this project was originally built on
     ("cs", "1. Introduction", "introduction"),
     ("cs", "2 Related Work", "related_work"),
     ("cs", "III. LITERATURE REVIEW", "related_work"),

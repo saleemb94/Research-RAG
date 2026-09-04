@@ -2,7 +2,7 @@
 docling>=2.99,<3            # PDF -> structured document + hierarchical chunking
 sentence-transformers>=5.2  # local embeddings + cross-encoder reranker
 weaviate-client>=4.20,<5    # vector database client (server runs via docker compose)
-ollama>=0.6                 # local LLM for summarisation and section classification
+ollama>=0.6                 # local LLM for summarization and section classification
 
 # Web app
 fastapi>=0.138

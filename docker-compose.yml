@@ -5,7 +5,7 @@
 #   docker compose down -v    stop and wipe the index
 #
 # The app supplies its own embeddings (BAAI/bge-small-en-v1.5, 384-dim), so no
-# vectorizer module is enabled — Weaviate only stores and searches the vectors.
+# vectorizer module is enabled, so Weaviate only stores and searches the vectors.
 
 services:
   weaviate:

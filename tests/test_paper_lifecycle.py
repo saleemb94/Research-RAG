@@ -85,7 +85,10 @@ def main() -> int:
     make_pdf(other, "Entirely different content that must not overwrite it.")
 
     dest = appmod.PAPERS_DIR / NAME
+    # `with`, not a bare TestClient: the Weaviate stores are opened by the app's
+    # lifespan, which only runs inside the context.
     client = TestClient(appmod.app)
+    client.__enter__()
     try:
         # -- clean slate, in case an earlier run died mid-way ---------------
         client.delete(f"/api/papers/{NAME}")
@@ -137,7 +140,7 @@ def main() -> int:
               "a deleted paper must not stay citable")
         check("the PDF is removed from papers/", not dest.exists())
     finally:
-        client.close()
+        client.__exit__(None, None, None)
 
     # -- the app must survive being started more than once ----------------
     # The stores were opened at import and closed on shutdown, so they could
@@ -155,12 +158,20 @@ def main() -> int:
         check("a second app context still serves requests", False,
               f"{type(exc).__name__}: {str(exc).splitlines()[0][:70]}")
 
-    if True:
-        client.delete(f"/api/papers/{NAME}")
-        client.close()
-        for f in (probe, other):
-            f.unlink(missing_ok=True)
+    # Belt and braces, in case the run above died before its own cleanup. Needs
+    # its own context: the client used earlier is closed, and with it the
+    # stores, so a request through it now fails on a None store.
+    try:
+        with TestClient(appmod.app) as c:
+            c.delete(f"/api/papers/{NAME}")
+    except Exception:
+        pass
+    for f in (probe, other):
+        f.unlink(missing_ok=True)
+    try:
         tmp.rmdir()
+    except OSError:
+        pass
 
     failed = sum(1 for _, ok in CHECKS if not ok)
     print(f"\n{len(CHECKS) - failed}/{len(CHECKS)} check(s) passed")

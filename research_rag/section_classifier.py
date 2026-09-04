@@ -3,11 +3,11 @@ Discipline-agnostic section classification.
 
 Three stages:
 
-Stage 1  classify_heading()             — keyword match, instant, no LLM
-Stage 2  classify_headings_batch()      — LLM batch call for anything still "general"
-Stage 3  verify_with_first_paragraph()  — LLM reads first paragraph to confirm/correct
+Stage 1  classify_heading()             - keyword match, instant, no LLM
+Stage 2  classify_headings_batch()      - LLM batch call for anything still "general"
+Stage 3  verify_with_first_paragraph()  - LLM reads first paragraph to confirm/correct
 
-Design note — why the vocabulary is deliberately incomplete
+Design note - why the vocabulary is deliberately incomplete
 -----------------------------------------------------------
 Section *function* is near-universal across academic fields (an IMRaD-shaped paper
 looks structurally similar in oncology and in machine learning), but section
@@ -116,10 +116,10 @@ def prefer_exact_types(items, type_of, target_type):
         return exact
     return [i for i in items if section_type_matches(type_of(i), target_type)]
 
-# Aliases: normalise common LLM variations -> canonical type.
+# Aliases: normalize common LLM variations -> canonical type.
 # Grouped by discipline where a term is field-specific.
 _ALIASES: dict[str, str] = {
-    # ── related_work — prior research by others on the same problem ────────
+    # ── related_work - prior research by others on the same problem ────────
     "related_works": "related_work",
     "related work": "related_work",
     "related works": "related_work",
@@ -147,9 +147,9 @@ _ALIASES: dict[str, str] = {
     "systematic review": "related_work",
     "scoping review": "related_work",
     "meta-analysis": "related_work",
-    # note: "background study" removed — "background" alone → introduction (below)
+    # note: "background study" removed - "background" alone → introduction (below)
 
-    # ── theory — formal or conceptual development ─────────────────────────
+    # ── theory - formal or conceptual development ─────────────────────────
     "theory": "theory",
     "theoretical": "theory",
     "theoretical framework": "theory",
@@ -179,7 +179,7 @@ _ALIASES: dict[str, str] = {
     "complexity analysis": "theory",
     "convergence analysis": "theory",
 
-    # ── methodology — how THIS study was carried out ──────────────────────
+    # ── methodology - how THIS study was carried out ──────────────────────
     "methodology": "methodology",
     "methods": "methodology",
     "method": "methodology",
@@ -239,7 +239,7 @@ _ALIASES: dict[str, str] = {
     "simulation setup": "methodology",
     "boundary conditions": "methodology",
 
-    # ── dataset — what the study was performed ON ─────────────────────────
+    # ── dataset - what the study was performed ON ─────────────────────────
     "data": "dataset",
     "datasets": "dataset",
     "corpus": "dataset",
@@ -277,7 +277,7 @@ _ALIASES: dict[str, str] = {
     "descriptive statistics": "dataset",
     "summary statistics": "dataset",
 
-    # ── results — what was observed or measured ───────────────────────────
+    # ── results - what was observed or measured ───────────────────────────
     "experiment": "results",
     "experiments": "results",
     "evaluation": "results",
@@ -343,7 +343,7 @@ _ALIASES: dict[str, str] = {
 
 def _normalize(raw: str) -> str:
     """
-    Normalise raw LLM text to a valid SECTION_TYPES entry.
+    Normalize raw LLM text to a valid SECTION_TYPES entry.
     Handles spaces, hyphens, underscores, common aliases, and plurals.
     Returns "" if no match found.
     """
@@ -369,7 +369,7 @@ def _normalize(raw: str) -> str:
 # ── Stage 1 ────────────────────────────────────────────────────────────────
 
 # Strips ONLY a complete leading numbering prefix such as "1 ", "1. ", "1.2 ",
-# "III. ", "A. " — never strips individual letters that are part of a word.
+# "III. ", "A. " - never strips individual letters that are part of a word.
 _HEADING_NUM_PREFIX = re.compile(
     r'^(?:'
     r'(?:\d+\.?)+|'          # 1  /  1.  /  1.2  /  1.2.3
@@ -398,7 +398,7 @@ _DEFER_TO_CONTENT: frozenset[str] = frozenset({
     "models",
     "framework",
     "modeling",
-    "modelling",
+    "modeling",
     # apparatus (methods) vs data + hyperparameters (dataset)
     "experimental setup",
     "setup",
@@ -424,11 +424,11 @@ _DEFER_TO_CONTENT: frozenset[str] = frozenset({
 
 _HEADING_KEYWORDS: list[tuple[str, list[str]]] = [
     # Order is priority. Rationale for the sequence:
-    #   theory        before methodology  — "Theoretical Framework" is not "framework"
-    #   related_work  before methodology  — "Related Techniques" is not a method
-    #   methodology   before dataset      — "Materials and Methods" is methods
-    #   methodology   before results      — a clinical "Statistical Analysis" is methods
-    #   dataset       before results      — "Baseline Characteristics" is participants
+    #   theory        before methodology  - "Theoretical Framework" is not "framework"
+    #   related_work  before methodology  - "Related Techniques" is not a method
+    #   methodology   before dataset      - "Materials and Methods" is methods
+    #   methodology   before results      - a clinical "Statistical Analysis" is methods
+    #   dataset       before results      - "Baseline Characteristics" is participants
     ("abstract",     ["abstract", "executive summary", "synopsis"]),
     ("theory", [
         "theory", "theoretical", "conceptual framework", "conceptual model",
@@ -586,15 +586,15 @@ _LABEL_GUIDE = """\
 
 _DISTINCTIONS = """\
 Distinctions that are easy to get wrong:
-  Background vs Related Work — "Background" / "Preliminaries" / "Foundations" explain
+  Background vs Related Work - "Background" / "Preliminaries" / "Foundations" explain
     concepts needed to follow the paper -> introduction. "Related Work" / "Literature
     Review" / "Prior Work" survey what other researchers did -> related_work.
     These are DIFFERENT sections. Never confuse them.
-  Theory vs Methodology — a formal model, derivation or proof -> theory. The concrete
+  Theory vs Methodology - a formal model, derivation or proof -> theory. The concrete
     procedure used to run the study -> methodology.
-  Methodology vs Dataset — how the study was DONE -> methodology. What it was done ON
+  Methodology vs Dataset - how the study was DONE -> methodology. What it was done ON
     (people, samples, data, texts) -> dataset.
-  Field-dependent words — judge from the whole heading and the paper's field:
+  Field-dependent words - judge from the whole heading and the paper's field:
     "Survey" = a literature survey (related_work) OR a questionnaire (methodology)
     "Analysis" = an analysis plan (methodology) OR reported findings (results)
     "Materials" = "Materials and Methods" (methodology) OR stimuli/reagents (dataset)
@@ -603,7 +603,7 @@ Distinctions that are easy to get wrong:
 _BATCH_PROMPT = """\
 Classify each section heading from a research paper.
 
-The paper may come from ANY academic discipline — computer science, medicine,
+The paper may come from ANY academic discipline - computer science, medicine,
 psychology, physics, chemistry, economics, law, education, history. Judge each
 heading by the ROLE it plays in a paper, not by whether it uses vocabulary from
 any one field.
@@ -672,7 +672,7 @@ title), which of these labels best describes what this section is actually about
 {label_guide}
 
 Use underscores (e.g. "related_work" not "related work").
-Reply with ONLY the single label — nothing else."""
+Reply with ONLY the single label - nothing else."""
 
 
 def verify_with_first_paragraph(heading: str, first_paragraph: str, model: str) -> str:
@@ -702,16 +702,16 @@ academic discipline, so choose by the section's ROLE, not by the wording of the
 question.
 
 Pick EXACTLY ONE of these phrases and reply with it verbatim:
-  introduction   — why the work matters; background concepts the reader needs first
-  theory         — theorems, proofs, derivations, formal or conceptual models,
+  introduction   - why the work matters; background concepts the reader needs first
+  theory         - theorems, proofs, derivations, formal or conceptual models,
                    theoretical frameworks, hypothesis development
-  related work   — what OTHER researchers published on this problem
-  methodology    — how THIS study was carried out: design, procedure, protocol,
+  related work   - what OTHER researchers published on this problem
+  methodology    - how THIS study was carried out: design, procedure, protocol,
                    apparatus, instruments, analysis plan, statistical methods
-  dataset        — what the study was performed ON: data, corpora, samples,
+  dataset        - what the study was performed ON: data, corpora, samples,
                    participants, cohorts, specimens, archival sources
-  results        — what was observed, measured or estimated; outcomes, findings
-  conclusion     — discussion, limitations, implications, future work
+  results        - what was observed, measured or estimated; outcomes, findings
+  conclusion     - discussion, limitations, implications, future work
 
 Reply with ONE phrase from that list and nothing else. Do not combine two phrases.
 No explanation. No punctuation."""
@@ -719,7 +719,7 @@ No explanation. No punctuation."""
 
 def identify_target_section(query: str, model: str) -> str:
     """
-    Step 1 — Ask the LLM what section of a paper the query is about.
+    Step 1 - Ask the LLM what section of a paper the query is about.
     Returns a single natural-language phrase, e.g. "related work".
     """
     prompt = _IDENTIFY_SECTION_PROMPT.format(query=query)
@@ -747,7 +747,7 @@ Rules:
   says what the section actually holds, and papers routinely put content
   under a heading that does not advertise it.
 - Choose only TOP-LEVEL section numbers (e.g. "3" or "3, 5").
-  Selecting a top-level section automatically includes all its listed subsections —
+  Selecting a top-level section automatically includes all its listed subsections -
   do NOT try to select individual subsections.
 - Include a section only if it genuinely belongs to the target (or is a known alias):
     "related work"  <-> "Literature Review", "Prior Work", "Related Studies",
@@ -762,7 +762,7 @@ Rules:
     "introduction"  <-> "Background", "Preliminaries", "Foundations", "Clinical Context"
 - If no section matches, reply with: none
 
-Critical distinction — never confuse these two:
+Critical distinction - never confuse these two:
   "Background" / "Preliminaries" / "Foundations" explain foundational concepts needed
   to understand the paper -> INTRODUCTION family, NOT related work.
   "Related Work" / "Literature Review" / "Prior Work" survey previous research by
@@ -784,13 +784,13 @@ def match_headings_to_target(
     """
     LLM picks which top-level sections of the paper match the target.
 
-    `section_summary` — optional {section_name: [subsection_name, ...]} mapping from
+    `section_summary` - optional {section_name: [subsection_name, ...]} mapping from
     VectorStore.get_section_summary().  When supplied, each section is shown with its
     subsections so the LLM understands the hierarchy and avoids confusing a subsection
     heading with a top-level section of the same name.
 
-    `descriptions` — optional {section_name: "what the section contains"} written at
-    ingest time by _summarise_sections().  A heading alone is a weak signal: nothing
+    `descriptions` - optional {section_name: "what the section contains"} written at
+    ingest time by _summarize_sections().  A heading alone is a weak signal: nothing
     about "METHODOLOGY" reveals that it also states the corpus size, which is where
     most papers put it.  The description makes that visible, so the choice rests on
     what a section holds rather than on what it is called.
@@ -841,7 +841,7 @@ answer rather than which field the wording comes from.
 Task: identify which section(s) of a research paper you would search IN to find \
 the answer. Focus on WHERE the answer lives, not on what topics the question mentions.
 
-Critical rule — "topic IN section" queries:
+Critical rule - "topic IN section" queries:
   If the question says "in the related work", "from the methodology", "in the \
 literature review", "in the background", "in the experiments", etc., that named \
 section IS the target. Return ONLY that section, not the topic alongside it.
@@ -869,7 +869,7 @@ Use ONLY these exact labels (with underscores):
   conclusion    = conclusions, limitations, future directions, discussion
   general       = genuinely spans multiple sections with no named section in the query
 
-Critical distinction — background vs related work:
+Critical distinction - background vs related work:
   "background" / "preliminaries" / "foundations" describe concepts needed to
   understand the paper  ->  introduction
   "related work" / "literature review" / "prior work" compare previous research

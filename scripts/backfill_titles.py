@@ -11,7 +11,7 @@ nothing.
     python scripts/backfill_titles.py --force      # re-resolve titles already set
 
 A paper whose title cannot be resolved keeps its filename in the interface,
-which is the same behaviour as before, so nothing is lost by failing.
+which is the same behavior as before, so nothing is lost by failing.
 """
 
 from __future__ import annotations

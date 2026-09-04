@@ -7,14 +7,14 @@
 <link rel="icon" href="/favicon.ico" sizes="any">
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
-   Research RAG — design system
+   Research RAG - design system
 
    Self-contained: no CDN, no webfonts. The product claims to run fully
    offline, and a page that fetches a stylesheet and two font files on every
    load quietly contradicts that. System faces also mean no flash of unstyled
    text, which matters more here than a marginally nicer letterform.
 
-   Two colour roles carry the whole interface:
+   Two color roles carry the whole interface:
 
      ink     near-black neutrals. Text, borders, surfaces, primary actions.
      accent  a single amber, reserved for one meaning: evidence. Citation
@@ -34,7 +34,7 @@
   --ink-700: #333741;
   --ink-600: #4a4f5a;
   --ink-500: #646a77;
-  /* 4.69:1 on white. The obvious lighter grey for metadata measured 3.21:1,
+  /* 4.69:1 on white. The obvious lighter gray for metadata measured 3.21:1,
      which fails AA for text - and here it carried eyebrows, page numbers and
      "not cited" at 11px, all of which a reader is meant to be able to read.
      Icons use this too: ink-300 measured 1.95:1, which fails even the 3:1
@@ -217,7 +217,7 @@ img { max-width: 100%; display: block; }
   white-space: nowrap;
   transition: background var(--ease), border-color var(--ease), color var(--ease);
 }
-/* One primary treatment, near-black. Colour is not needed to say "primary" -
+/* One primary treatment, near-black. Color is not needed to say "primary" -
    contrast does it, and it leaves the accent free to mean evidence. */
 .btn-primary { background: var(--ink-900); color: #fff; }
 .btn-primary:hover { background: var(--ink-800); }
@@ -282,7 +282,7 @@ input[type=checkbox]:indeterminate::after {
 
 /* The number chip. Amber when the answer actually cited it, neutral when it
    was retrieved but unused - a distinction the old UI made with two badge
-   colours that meant nothing to a reader. */
+   colors that meant nothing to a reader. */
 .badge {
   display: inline-grid; place-items: center;
   min-width: 18px; height: 18px; padding: 0 4px;
@@ -732,11 +732,11 @@ input[type=checkbox]:indeterminate::after {
         <div class="section">
           <div class="section-head">
             <span class="eyebrow">Add papers</span>
-            <span class="section-note">Layout parsing, section classification and summaries — a minute or two each</span>
+            <span class="section-note">Layout parsing, section classification and summaries - a minute or two each</span>
           </div>
           <div id="lib-drop" class="drop">
             <p>Drop PDFs here, or <label class="linkish">browse<input type="file" id="lib-file" accept="application/pdf" class="hidden" multiple></label></p>
-            <p class="hint">Several at once is fine — they are ingested one after another.</p>
+            <p class="hint">Several at once is fine - they are ingested one after another.</p>
           </div>
           <div id="lib-status"></div>
         </div>
@@ -826,9 +826,9 @@ function paperLabel(file) {
 const short = f => paperLabel(f).text;
 
 /* Section names come from the papers themselves, so they arrive in whatever
-   case the author used - "RELATED WORK" beside "Introduction". Normalising to
+   case the author used - "RELATED WORK" beside "Introduction". Normalizing to
    lower case and letting small-caps style them keeps the list even. */
-const sectionLabel = s => (s || '').trim().toLowerCase() || '—';
+const sectionLabel = s => (s || '').trim().toLowerCase() || 'unknown';
 
 const pageLabel = p => {
   if (!p) return '';
@@ -844,7 +844,7 @@ function relevance(distance) {
   const el = document.createElement('span');
   el.className = 'rel';
   el.dataset.level = level;
-  el.title = `Retrieval distance ${distance.toFixed(3)} — lower is closer`;
+  el.title = `Retrieval distance ${distance.toFixed(3)} - lower is closer`;
   el.setAttribute('aria-label', el.title);
   for (let i = 0; i < 3; i++) el.appendChild(document.createElement('i'));
   return el;
@@ -957,7 +957,7 @@ function appendInline(parent, text, byNum) {
       const b = document.createElement('button');
       b.className = 'cite';
       b.textContent = m[1];
-      b.title = `${short(src.source)} — ${sectionLabel(src.section_name)}`;
+      b.title = `${short(src.source)} - ${sectionLabel(src.section_name)}`;
       b.onclick = () => openSource(src, b);
       parent.appendChild(b);
     } else if (part) {
@@ -1407,7 +1407,7 @@ function progressPanel(box, total) {
       bar.classList.add('indet');
     },
     ingesting(i, name) {
-      this.busy(i, 'Reading ' + short(name) + ' — a minute or two');
+      this.busy(i, 'Reading ' + short(name) + ' - a minute or two');
     },
     finish(i, ok, name, message) {
       bar.classList.remove('indet');
@@ -1419,7 +1419,7 @@ function progressPanel(box, total) {
       tag.className = 'tag ' + (ok ? 'tag-ok' : 'tag-bad');
       tag.textContent = ok ? 'ready' : 'failed';
       const text = document.createElement('span');
-      text.textContent = short(name) + (message ? ' — ' + message : '');
+      text.textContent = short(name) + (message ? ' - ' + message : '');
       line.append(tag, text);
       q('done').appendChild(line);
     },
@@ -1470,7 +1470,7 @@ async function uploadScratch(files) {
     state.scratch.paper = first;
     state.scratch.history = [];
     $('scratch-thread').innerHTML = '';
-    simpleEmpty($('scratch-thread'), 'Ready — ask anything about ' + short(first) + '.',
+    simpleEmpty($('scratch-thread'), 'Ready - ask anything about ' + short(first) + '.',
       'Nothing here touches your library.');
     $('scratch-input').disabled = false;
     $('scratch-input').placeholder = 'Ask about ' + short(first);
@@ -1531,7 +1531,7 @@ function renderPaperRows() {
   if (!state.papers.length) {
     const empty = document.createElement('div');
     empty.className = 'muted';
-    empty.textContent = 'Nothing yet — add a PDF above.';
+    empty.textContent = 'Nothing yet - add a PDF above.';
     list.appendChild(empty);
     syncLibTools();
     return;

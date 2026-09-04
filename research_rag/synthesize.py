@@ -21,12 +21,15 @@ from dataclasses import dataclass, field
 
 from .config import (
     OLLAMA_MODEL,
+    PAPER_PREFILTER_MIN_CORPUS,
+    PAPER_PREFILTER_N,
     RERANK_FETCH_MULTIPLIER,
     TOP_K,
     HYBRID_ALPHA,
     USE_HYBRID_CHANNEL,
     USE_SECTION_CHANNEL,
 )
+from .prefilter import shortlist_papers
 from .embedder import Embedder
 from .llm import generate as _llm
 from .llm import model_for
@@ -405,9 +408,28 @@ def synthesize_answer(
     query_vector = embedder.embed_one(standalone)
     fetch_k = max(max_sources, top_k) * (RERANK_FETCH_MULTIPLIER if reranker else 1)
 
+    # Stage one of two-stage retrieval: shortlist papers, then search only
+    # inside them. Skipped when the question is already scoped to one paper,
+    # and on a library small enough that there is nothing to prune.
+    search_scope = source_filter
+    if (source_filter is None and section_index is not None
+            and PAPER_PREFILTER_N > 0):
+        try:
+            if len(store.list_sources()) >= PAPER_PREFILTER_MIN_CORPUS:
+                shortlist = shortlist_papers(
+                    query_vector, section_index, PAPER_PREFILTER_N
+                )
+                # An empty shortlist means the summary index could not rank
+                # anything; searching everything is better than searching
+                # nothing.
+                if shortlist:
+                    search_scope = shortlist
+        except (OSError, RuntimeError, ValueError):
+            pass        # a first stage is an optimization, never a dependency
+
     hits, section_filtered = _hierarchical_search(
         query_vector, store, target_sections, fetch_k, top_k,
-        source_filter=source_filter, use_section_names=False,
+        source_filter=search_scope, use_section_names=False,
     )
     # Same rule as quick search: the type veto applies only when the section
     # filter actually held, never to global fallback results.
@@ -424,7 +446,7 @@ def synthesize_answer(
     if section_index is not None and USE_SECTION_CHANNEL:
         try:
             pairs = sections_for_query(
-                section_index, query_vector, source_filter=source_filter
+                section_index, query_vector, source_filter=search_scope
             )
             seen = {
                 (h.properties.get("source_file"), h.properties.get("chunk_index"))
@@ -449,7 +471,7 @@ def synthesize_answer(
             }
             for h in store.hybrid_search(
                 standalone, query_vector, limit=fetch_k,
-                alpha=HYBRID_ALPHA, source_filter=source_filter,
+                alpha=HYBRID_ALPHA, source_filter=search_scope,
             ):
                 key = (h.properties.get("source_file"), h.properties.get("chunk_index"))
                 if key not in seen:

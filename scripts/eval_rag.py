@@ -45,7 +45,7 @@ def norm(text: str) -> str:
     t = re.sub(r"(?<=\d),(?=\d{3})", "", t)     # 1,054 -> 1054
     # Layout parsing sometimes splits a decimal point: "29 . 6%". Scoring a
     # fact as absent for that reason measures the PDF extractor, not the
-    # system, so both sides are normalised before comparison.
+    # system, so both sides are normalized before comparison.
     t = re.sub(r"(?<=\d)\s+\.\s+(?=\d)", ".", t)
     t = re.sub(r"\s+", " ", t)
     return f" {t} "

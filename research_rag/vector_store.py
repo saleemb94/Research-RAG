@@ -4,7 +4,7 @@ Weaviate-backed vector store.
 The collection uses *self-provided* vectors: embeddings are computed locally by
 `Embedder` (BAAI/bge-small-en-v1.5) and handed to Weaviate, so no vectorizer
 module needs to be enabled on the server. Distances are cosine, matching the
-normalised embeddings the model produces.
+normalized embeddings the model produces.
 
 Start the database with `docker compose up -d` before using this class.
 """
@@ -318,7 +318,7 @@ class VectorStore:
         )
         return [
             SearchHit(
-                properties=self._normalise(obj.properties),
+                properties=self._normalize(obj.properties),
                 distance=obj.metadata.distance,
             )
             for obj in result.objects
@@ -356,7 +356,7 @@ class VectorStore:
             filters=self._build_filters(source_filter=source_filter),
         )
         return [
-            SearchHit(properties=self._normalise(obj.properties), distance=None)
+            SearchHit(properties=self._normalize(obj.properties), distance=None)
             for obj in result.objects
         ]
 
@@ -414,7 +414,7 @@ class VectorStore:
 
     def _fetch_all(self, filters) -> list[SearchHit]:
         hits = [
-            SearchHit(properties=self._normalise(props), distance=None)
+            SearchHit(properties=self._normalize(props), distance=None)
             for props in self._scan(filters, None)
         ]
         hits.sort(
@@ -426,11 +426,12 @@ class VectorStore:
         return hits
 
     @staticmethod
-    def _normalise(props) -> dict:
+    def _normalize(props) -> dict:
         """
-        Weaviate returns absent text properties as None and INT properties as
-        Python ints; downstream code expects the Chroma-era shape (strings
-        present, chunk_index an int).
+        Weaviate returns absent text properties as None and INT properties
+        as Python ints. Downstream code expects every string present and
+        chunk_index an int, so absences are filled in here rather than guarded
+        against at each call site.
         """
         out = dict(props)
         for key in (
@@ -458,7 +459,19 @@ class VectorStore:
     ):
         conditions = []
         if source_filter:
-            conditions.append(Filter.by_property("source_file").equal(source_filter))
+            # A list is a two-stage shortlist: restrict to those papers rather
+            # than to one. FIELD tokenization makes each filename a single
+            # token, so equality per paper is exact.
+            if isinstance(source_filter, (list, tuple, set, frozenset)):
+                names = [f for f in source_filter if f]
+                if names:
+                    conditions.append(Filter.any_of(
+                        [Filter.by_property("source_file").equal(f) for f in names]
+                    ))
+            else:
+                conditions.append(
+                    Filter.by_property("source_file").equal(source_filter)
+                )
         # section_names (exact stored headings) takes priority over section_types
         if section_names:
             conditions.append(

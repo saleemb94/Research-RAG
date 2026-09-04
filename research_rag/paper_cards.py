@@ -166,7 +166,7 @@ amount to, reply with exactly: {nothing}
 Never reply with citation markers alone. Either state what the papers found, in
 words, or give the sentence above.
 
-Do not summarise the library. Answer the question that was asked.
+Do not summarize the library. Answer the question that was asked.
 
 Contributions:
 {findings}

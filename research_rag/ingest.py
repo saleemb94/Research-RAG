@@ -15,12 +15,14 @@ from .section_classifier import (
     classify_headings_batch,
     verify_with_first_paragraph,
 )
+from .chunk_rules import is_caption_heading, noise_verdict, same_title
+from .context import embedding_text
 from .config import OLLAMA_MODEL
 from .vector_store import VectorStore
 
 
 # ---------------------------------------------------------------------------
-# Section blacklist — chunks in these sections are never stored
+# Section blacklist - chunks in these sections are never stored
 # ---------------------------------------------------------------------------
 
 _SKIP_SECTION_NAMES = {
@@ -69,7 +71,7 @@ _SKIP_SECTION_NAMES = {
 # Covers section vocabulary from several disciplines, not just computing: a
 # long clinical heading like "Participants and Recruitment Procedures for the
 # Longitudinal Cohort" must not be mistaken for a paper title and discarded.
-# The asymmetry matters — a missed rescue silently drops real content, while a
+# The asymmetry matters - a missed rescue silently drops real content, while a
 # false rescue only stores one extra heading.
 _SECTION_KEYWORDS = {
     # structure, all fields
@@ -118,9 +120,9 @@ def _is_skippable(section_name: str) -> bool:
     """True for boilerplate that carries no research content."""
     if not section_name:
         return True
-    # Normalise: lowercase, strip trailing punctuation
-    normalised = section_name.strip().lower().rstrip(":.")
-    return normalised in _SKIP_SECTION_NAMES
+    # Normalize: lowercase, strip trailing punctuation
+    normalized = section_name.strip().lower().rstrip(":.")
+    return normalized in _SKIP_SECTION_NAMES
 
 
 # ---------------------------------------------------------------------------
@@ -188,7 +190,7 @@ def _extract_doc_headers(document) -> list[str]:
     """
     Extract all section-header texts from a Docling document in document order.
 
-    This captures headings that may not appear in any chunk's metadata — most
+    This captures headings that may not appear in any chunk's metadata - most
     importantly, IEEE Roman-numeral sections (e.g. "II. BACKGROUND") whose
     entire content lives inside lettered sub-sections (A, B, C) so the
     HierarchicalChunker never emits a chunk whose headings[0] is the Roman
@@ -222,26 +224,26 @@ def _build_parent_maps(
     orphan recovery, then return corrected heading lists for every chunk.
 
     Conventions handled:
-      Decimal  — "3. Methodology" / "3.1 Data" / "3.1.2 Sub"
+      Decimal  - "3. Methodology" / "3.1 Data" / "3.1.2 Sub"
                  _HEADING_SUB_NUM matches "3.1" → parent prefix "3"
-      IEEE     — "I. Introduction" / "A. Data" / "1) Word2Vec"
+      IEEE     - "I. Introduction" / "A. Data" / "1) Word2Vec"
                  Roman numerals = L1, uppercase letters = L2, digits = L3
                  Detected when BOTH roman-numeral AND letter prefixes appear.
-      Alphabetic/mixed — "A. Methods" / "A.1 Sub"
+      Alphabetic/mixed - "A. Methods" / "A.1 Sub"
                  _HEADING_SUB_NUM matches "A.1" → parent prefix "A"
-      Unnumbered — no prefix; Docling handles hierarchy natively, no fix needed.
+      Unnumbered - no prefix; Docling handles hierarchy natively, no fix needed.
 
-    `doc_headers` — section-header texts from the Docling document object in
+    `doc_headers` - section-header texts from the Docling document object in
     document order (from _extract_doc_headers).  Supplying this list is the
     key to handling IEEE sections that have no direct chunk content: by
     scanning the ordered list we update _cur_roman_h even when "II. BACKGROUND"
     never appears as headings[0] in any chunk.
 
     Returns:
-        num_prefix_map    — top-level prefix  → raw heading text
-        letter_parent_map — letter prefix     → Roman-numeral heading (IEEE only)
-        ieee_style        — True if IEEE convention detected
-        corrected_headings — per-chunk list[str] with parent injected when needed
+        num_prefix_map    - top-level prefix  → raw heading text
+        letter_parent_map - letter prefix     → Roman-numeral heading (IEEE only)
+        ieee_style        - True if IEEE convention detected
+        corrected_headings - per-chunk list[str] with parent injected when needed
     """
     # ── Phase 1: collect every "apparent top-level" prefix ───────────────
     # Process doc_headers first (complete, in document order) then fall back
@@ -321,7 +323,7 @@ def _build_parent_maps(
             if _ordered:
                 # Walk the ordered header list up to (and including) the
                 # position of this chunk's first heading.  Any Roman headers
-                # encountered along the way update _cur_roman_h — this is
+                # encountered along the way update _cur_roman_h - this is
                 # what handles IEEE sections with no direct chunk content.
                 _cands = [p for p in _hdr_pos.get(_h0, []) if p >= _ptr]
                 if _cands:
@@ -332,13 +334,13 @@ def _build_parent_maps(
                             _cur_roman_h = _dh
                     _ptr = _cands[0] + 1
                 else:
-                    # Heading not in ordered list — fall back to direct check
+                    # Heading not in ordered list - fall back to direct check
                     _m_any = _HEADING_TOP_NUM.match(_h0)
                     if _m_any and not _HEADING_SUB_NUM.match(_h0):
                         if _m_any.group(1).upper() in _ROMAN_WORDS:
                             _cur_roman_h = _h0
             else:
-                # No ordered headers available — use direct check (old path)
+                # No ordered headers available - use direct check (old path)
                 _m_any = _HEADING_TOP_NUM.match(_h0)
                 if _m_any and not _HEADING_SUB_NUM.match(_h0):
                     if _m_any.group(1).upper() in _ROMAN_WORDS:
@@ -402,17 +404,17 @@ def _build_section_type_map(
     """
     Hierarchy-aware two-pass classification.
 
-    `chunk_headings` — optional pre-corrected heading lists (one per chunk) from
+    `chunk_headings` - optional pre-corrected heading lists (one per chunk) from
     _build_parent_maps().  When supplied, these are used instead of the raw
     chunk metadata so that classification sees the already-fixed hierarchy.
 
-    Pass 1 — classify every TOP-LEVEL heading (headings[0]) through all 3 stages.
+    Pass 1 - classify every TOP-LEVEL heading (headings[0]) through all 3 stages.
              Subsections under an already-typed parent are never classified;
              they inherit the parent's type via the chunk loop.
 
-    Pass 2 — only for top-level headings still 'general' after Pass 1,
+    Pass 2 - only for top-level headings still 'general' after Pass 1,
              classify their direct subsections (headings[1]).  This lets an
-             unrecognisably-named section ("Our System") be typed through its
+             unrecognizably-named section ("Our System") be typed through its
              children ("Data Collection" → dataset, "Experiments" → results).
     """
     # Collect top-level headings and subsections grouped by parent.
@@ -479,7 +481,7 @@ def _build_section_type_map(
 # Per-section summaries
 # ---------------------------------------------------------------------------
 
-# How much of a section is shown to the summariser. Sections run long; the
+# How much of a section is shown to the summarizer. Sections run long; the
 # opening chunks carry what the section is about, which is all routing needs.
 _SUMMARY_CONTEXT_CHARS = 3000
 
@@ -500,7 +502,7 @@ Excerpts:
 One sentence:"""
 
 
-def _summarise_sections(
+def _summarize_sections(
     chunks_data: list[dict], model: str
 ) -> dict[str, str]:
     """
@@ -544,7 +546,7 @@ def _summarise_sections(
                 ),
                 model,
             )
-        except Exception as exc:      # never let summarisation break an ingest
+        except Exception as exc:      # never let summarization break an ingest
             print(f"    ! summary failed for {section!r}: {exc}")
             continue
         summaries[section] = " ".join(summary.split())[:400]
@@ -643,7 +645,7 @@ def ingest_pdf(
     # Extract ALL section headers from the Docling document object first.
     # This gives us Roman-numeral IEEE sections (e.g. "II. BACKGROUND") that
     # have no direct chunk content because all their text is inside A/B/C
-    # sub-sections — the HierarchicalChunker never emits a chunk with that
+    # sub-sections - the HierarchicalChunker never emits a chunk with that
     # heading as headings[0], so without this list _cur_roman_h would stall
     # at the previous section and misattribute every subsection after it.
     doc_headers = _extract_doc_headers(result.document)
@@ -664,15 +666,19 @@ def ingest_pdf(
         section_type_map = _build_section_type_map(chunks, model, corrected_headings)
     clock.stop("classify")
 
-    clock.start("embed")
-    texts = [chunk.text for chunk in chunks]
-    vectors = embedder.embed(texts)
-    clock.stop("embed")
-    print(f"  → Embeddings computed")
+
+    # Resolved up front: the first heading of a paper is its title, and
+    # comparing against the real one is exact where guessing from length and
+    # vocabulary was not. Thirteen of seventeen missed abstracts were titles
+    # containing an ordinary section word - "analysis", "approach", "method".
+    from .titles import extract_title
+    paper_title, title_source = extract_title(str(pdf_path), model)
 
     chunks_data = []
     skipped = 0
-    for i, (chunk, vector) in enumerate(zip(chunks, vectors)):
+    dropped_noise = 0
+    last_real_heading: list[str] = []
+    for i, chunk in enumerate(chunks):
         # Use pre-corrected headings (orphan parents already injected)
         headings: list[str] = corrected_headings[i]
 
@@ -685,18 +691,35 @@ def ingest_pdf(
             skipped += 1
             continue
 
+        # Chunks with nothing retrievable in them: Docling's placeholder for a
+        # formula it could not parse, bare figure captions, fragments with no
+        # words, publisher furniture. Measured at 14.7% of a 54-paper index,
+        # and removing all of it costs no graded fact.
+        if noise_verdict(chunk.text):
+            dropped_noise += 1
+            continue
+
+        # A caption is not a section. Left as one, "Algorithm 1 ..." owns every
+        # chunk until the next real heading and they lose their actual section.
+        if is_caption_heading(section_name) and last_real_heading:
+            headings = list(last_real_heading)
+            section_name = _clean_heading(headings[0])
+            subsection_name = _clean_heading(headings[1]) if len(headings) >= 2 else ""
+
         # Docling files everything before the first real heading - abstract,
         # authors, index terms - under the paper title. That used to be treated
         # as boilerplate and dropped, which silently discarded the abstract of
         # every paper with a title longer than the heuristic's threshold. The
         # abstract is the densest section in a paper, so relabel this front
         # matter instead of discarding it.
-        if _looks_like_paper_title(section_name):
+        if same_title(section_name, paper_title) or _looks_like_paper_title(section_name):
             section_name = FRONT_MATTER_SECTION
             headings = [FRONT_MATTER_SECTION] + headings[1:]
             front_matter = True
         else:
             front_matter = False
+            if not is_caption_heading(section_name):
+                last_real_heading = list(headings)
 
         heading_str = " > ".join(headings) if headings else ""
 
@@ -728,21 +751,37 @@ def ingest_pdf(
                 "page_numbers": _extract_page_numbers(chunk.meta.export_json_dict()),
                 "section_summary": "",
             },
-            "vector": vector,
         })
+
+    # Embedded last, because the vector includes the paper title and the
+    # section - context the passage itself does not restate, and which the
+    # median 342-character chunk badly needs. The stored text is unchanged, so
+    # citations and the source panel still show the passage alone.
+    clock.start("embed")
+    vectors = embedder.embed([
+        embedding_text(
+            c["properties"]["text"], paper_title,
+            c["properties"]["section_name"], c["properties"]["subsection_name"],
+        )
+        for c in chunks_data
+    ]) if chunks_data else []
+    for c, v in zip(chunks_data, vectors):
+        c["vector"] = v
+    clock.stop("embed")
+    print(f"  → Embeddings computed (with title and section as context)")
 
     # One-line description of every section, used later to route a question to
     # the right section instead of guessing from the heading alone.
     if fast:
         section_summaries = {}
     else:
-        clock.start("summarise")
-        section_summaries = _summarise_sections(chunks_data, model)
-        clock.stop("summarise")
+        clock.start("summarize")
+        section_summaries = _summarize_sections(chunks_data, model)
+        clock.stop("summarize")
         for item in chunks_data:
             props = item["properties"]
             props["section_summary"] = section_summaries.get(props["section_name"], "")
-        print(f"  -> Summarised {len(section_summaries)} section(s)")
+        print(f"  -> Summarized {len(section_summaries)} section(s)")
 
     clock.start("write")
     store.insert_chunks(chunks_data)
@@ -753,13 +792,12 @@ def ingest_pdf(
     # no passage states. Skipped on the fast path along with the other LLM work.
     if card_store is not None and not fast:
         from .paper_cards import build_card
-        from .titles import extract_title
         clock.start("card")
         lead = [c["properties"]["text"] for c in chunks_data[:14]]
         card = build_card(pdf_path.name, lead, model)
-        # What the paper is called, so the interface can stop showing whatever
-        # the publisher named the file. Usually free: most PDFs declare it.
-        card.title, how = extract_title(str(pdf_path), model)
+        # Resolved before the chunk loop, which needed it to recognize front
+        # matter; reused here rather than reading the PDF a second time.
+        card.title, how = paper_title, title_source
         card_store.upsert(card, embedder.embed_one(card.embedding_text() or pdf_path.name))
         print(f"  -> Card: {card.discipline or 'unclassified'}")
         clock.stop("card")
@@ -767,7 +805,8 @@ def ingest_pdf(
             print(f"  -> Title ({how}): {card.title[:70]}")
 
     dist = Counter(c["properties"]["section_name"] for c in chunks_data)
-    print(f"  ✓ Stored {len(chunks_data)} chunks  (skipped {skipped} from boilerplate sections)")
+    print(f"  ✓ Stored {len(chunks_data)} chunks  "
+          f"(skipped {skipped} boilerplate, {dropped_noise} without content)")
     print(f"    Section distribution: {dict(sorted(dist.items()))}")
     return len(chunks_data)
 

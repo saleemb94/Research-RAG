@@ -1,7 +1,7 @@
 """
 Draw the desktop icon: a page with a magnifier over it.
 
-Generated rather than committed as an opaque binary, so the shape and colours
+Generated rather than committed as an opaque binary, so the shape and colors
 can be changed by editing this file. Drawn at 4x and downscaled, because
 ImageDraw has no anti-aliasing of its own and circles look ragged otherwise.
 
@@ -89,9 +89,9 @@ def main():
     # downscales 256px itself and the result is mushy in the taskbar.
     sizes = [(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)]
     img.resize((256, 256), Image.LANCZOS).save(OUT, format="ICO", sizes=sizes)
-    png = OUT.with_suffix(".png")
-    img.resize((256, 256), Image.LANCZOS).save(png)
-    print(f"wrote {OUT.relative_to(ROOT)} and {png.relative_to(ROOT)}")
+    # Only the .ico is used, by the shortcut and the favicon route. A PNG
+    # alongside it was written for a while and referenced by nothing.
+    print(f"wrote {OUT.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

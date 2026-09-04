@@ -143,7 +143,7 @@ def _run(query_labels, matched, source_filter=None, forced_sections=None):
 # ── Bug 1: cross-paper heading pooling ─────────────────────────────────────
 
 def test_unscoped_query_does_not_match_headings():
-    """An unscoped query must stay on section_type, which generalises."""
+    """An unscoped query must stay on section_type, which generalizes."""
     result, stub = _run(["dataset"], ["Our Data Collection Protocol"])
     assert stub.match_calls == 0, "heading matching ran on a corpus-wide query"
     assert result["papers_found"] == 2, (
@@ -166,7 +166,7 @@ def test_unscoped_query_reaches_every_paper_for_its_type():
     assert {r["source"] for r in result["results"]} == {PAPER_A, PAPER_B}
 
 
-# ── Bug 2: safety filters cancelling the global fallback ───────────────────
+# ── Bug 2: safety filters canceling the global fallback ───────────────────
 
 def test_fallback_survives_the_post_retrieval_filters():
     """

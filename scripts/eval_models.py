@@ -1,7 +1,7 @@
 """
 Benchmark Ollama models on the classification tasks this pipeline actually depends on.
 
-The generation step (writing a summary from retrieved chunks) is forgiving — almost any
+The generation step (writing a summary from retrieved chunks) is forgiving - almost any
 instruct model produces something reasonable. The *routing* steps are not: they decide
 which sections get searched at all, so an error there silently changes the answer.
 
@@ -37,7 +37,7 @@ from research_rag import section_classifier as sc  # noqa: E402
 # ── Ground truth ───────────────────────────────────────────────────────────
 
 # (heading, expected_label). Only headings whose label is unambiguous across
-# disciplines — anything genuinely ambiguous belongs in _DEFER_TO_CONTENT, not here.
+# disciplines - anything genuinely ambiguous belongs in _DEFER_TO_CONTENT, not here.
 HEADINGS: list[tuple[str, str]] = [
     # computing
     ("Related Work", "related_work"),

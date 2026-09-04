@@ -4,7 +4,7 @@ Single entry point for every Ollama call in the pipeline.
 Why this exists: Qwen3 and other hybrid models emit a chain of thought before
 answering. Ollama keeps that text out of `response` (it arrives in a separate
 `thinking` field), so it never corrupts the strict short outputs the classifier
-parses — but generating it is expensive. Benchmarked on the routing tasks in
+parses - but generating it is expensive. Benchmarked on the routing tasks in
 scripts/eval_models.py, qwen3:8b with reasoning enabled was 15x slower than the
 same model with it disabled *and* scored lower (92% vs 96%): deliberation makes
 a model second-guess one-word answers.

@@ -1,12 +1,5 @@
 -r requirements.txt
 
-# Only needed to run scripts/migrate_chroma_to_weaviate.py against a legacy
-# ChromaDB index. The application itself no longer depends on chromadb.
-chromadb>=1.0
-
-# Notebooks
-jupyter>=1.0
-
 # Tests (tests/ also run standalone: python tests/test_section_classifier.py)
 pytest>=8.0
 

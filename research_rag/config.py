@@ -3,7 +3,7 @@ Central configuration.
 
 Every value can be overridden with an environment variable, so the same code
 runs unchanged locally, in Docker, or in CI. Copy `.env.example` to `.env` and
-adjust — python-dotenv loads it automatically if the file exists.
+adjust - python-dotenv loads it automatically if the file exists.
 """
 
 import os
@@ -99,6 +99,18 @@ USE_HYBRID_CHANNEL = _env_bool("USE_HYBRID_CHANNEL", True)
 # 1.0 is pure vector, 0.0 pure keyword. Low favours keyword; 0.5 was measured
 # losing a case that pure vector found, 0.3 did not.
 HYBRID_ALPHA = float(os.getenv("HYBRID_ALPHA", "0.3"))
+
+# Two-stage retrieval: rank whole papers first, then search chunks only inside
+# the best ones. 0 disables it and searches every chunk flat.
+#
+# The point is precision on a library where many papers are about the same
+# thing, and cost that stops growing with the shelf. Measured on 54 papers, the
+# right paper is inside the top 20 by section-summary similarity 93% of the
+# time, so at that width the first stage throws away almost nothing.
+PAPER_PREFILTER_N = int(os.getenv("PAPER_PREFILTER_N", "0"))
+# Below this many papers there is nothing to prune and the extra search is
+# just latency.
+PAPER_PREFILTER_MIN_CORPUS = int(os.getenv("PAPER_PREFILTER_MIN_CORPUS", "40"))
 
 # ── Retrieval ──────────────────────────────────────────────────────────────
 TOP_K = _env_int("TOP_K", 5)

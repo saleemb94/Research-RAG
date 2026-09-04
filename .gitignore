@@ -7,9 +7,7 @@ papers/*
 # rebuild the exact corpus the golden question set was written against.
 !papers/arxiv_manifest.json
 
-# Legacy ChromaDB index (superseded by Weaviate) and the on-disk Weaviate dir.
 # Weaviate's live data lives in the named Docker volume, not in the repo.
-chroma_data/
 weaviate_data/
 
 # Eval output (regenerate with: python scripts/eval_rag.py --all)
@@ -50,6 +48,5 @@ env/
 Thumbs.db
 desktop.ini
 
-# ── Claude Code local settings ─────────────────────────────────────────────
-.claude/settings.local.json
+# Ad-hoc uploads, which are throwaway by design.
 scratch/

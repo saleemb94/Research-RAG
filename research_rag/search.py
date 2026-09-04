@@ -69,7 +69,7 @@ def _hierarchical_search(
         )
         hits = store.search(query_vector, limit=fetch_k, **kwargs)
         if hits:
-            # Return whatever is in the section — never blend in chunks from
+            # Return whatever is in the section - never blend in chunks from
             # other sections, even if only a few results were found.
             return hits, True
         # Section is completely empty → fall back to global so the user
@@ -115,7 +115,7 @@ def search_and_summarize(
         # picks names that exist in only one or two papers ("DATA PREPROCESSING
         # AND ANNOTATION") and filtering on them makes every other paper
         # unreachable. The cross-paper equivalent of a heading is section_type,
-        # which is assigned per chunk at ingest precisely so that it generalises,
+        # which is assigned per chunk at ingest precisely so that it generalizes,
         # so an unscoped query stays on the section_type path.
         if orig_section_type and source_filter:
             stored_names = store.get_unique_section_names(source_filter)
@@ -132,7 +132,7 @@ def search_and_summarize(
                 if matched:
                     # Cross-validate: keep only sections whose dominant
                     # ingest-time section_type agrees with the query target.
-                    # Use "general" as the missing-key default — an unknown
+                    # Use "general" as the missing-key default - an unknown
                     # section gets the benefit of the doubt, but NOT a free
                     # pass disguised as the expected type.
                     type_map = store.get_section_type_map(source_filter)

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "research-rag"
 version = "0.2.0"
-description = "Fully offline RAG over research papers: Docling parsing, section-aware retrieval over Weaviate, and local LLM summarisation via Ollama."
+description = "Fully offline RAG over research papers: Docling parsing, section-aware retrieval over Weaviate, and local LLM summarization via Ollama."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -30,7 +30,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["chromadb>=1.0", "jupyter>=1.0"]
+dev = ["pytest>=8.0", "playwright>=1.40"]
 
 [project.scripts]
 research-rag = "research_rag.cli:main"

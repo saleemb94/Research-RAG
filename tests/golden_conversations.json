@@ -281,7 +281,7 @@
      ]
     },
     {
-     "q": "Which questionnaire supplies its behavioural features?",
+     "q": "Which questionnaire supplies its behavioral features?",
      "needs_history": true,
      "resolves_to": [
       "toddler",

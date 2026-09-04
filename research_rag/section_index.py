@@ -6,7 +6,7 @@ router read a heading list. Measured against the facts the pipeline was missing,
 they turn out to be the densest thing in the index: all 22 missed fact groups -
 AraVec, ArCybC, OSACT5, "hallucination", Mechanical Turk, 98.83% - appear
 somewhere in a summary, and the summaries together are 6% the size of the chunk
-text. They are dense because the summariser was told to name concrete things:
+text. They are dense because the summarizer was told to name concrete things:
 datasets and their sizes, methods, instruments, metrics.
 
 Searching them is therefore a second retrieval channel with a different failure

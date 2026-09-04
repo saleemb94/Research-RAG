@@ -352,7 +352,8 @@
      "rankgpt"
     ],
     [
-     "rankclaude"
+     "o1-mini",
+     "4o-mini"
     ]
    ]
   },
@@ -755,7 +756,7 @@
    "id": "n26-method",
    "paper": "Few-Shot_Text_Classification_Method_Based_on_Feature_Optimization.pdf",
    "section_type": "abstract",
-   "question": "Which two components are combined to optimise text features in this few-shot method?",
+   "question": "Which two components are combined to optimize text features in this few-shot method?",
    "key_facts": [
     [
      "wdab"
@@ -1283,7 +1284,7 @@
    "id": "n44-idea",
    "paper": "Proximity-Aware_Clinical_Passage_Retrieval_Framework_by_Exploiting_Knowledge_Structure.pdf",
    "section_type": "methodology",
-   "question": "What does the proposed framework expand, and what does it analyse to do so?",
+   "question": "What does the proposed framework expand, and what does it analyze to do so?",
    "key_facts": [
     [
      "query"

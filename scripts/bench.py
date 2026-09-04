@@ -70,7 +70,7 @@ def pct(values: list[float], p: float) -> float:
     return s[i]
 
 
-def summarise(name: str, samples: list[float], unit: str = "ms"):
+def summarize(name: str, samples: list[float], unit: str = "ms"):
     if not samples:
         print(f"  {name:26} no samples")
         return
@@ -210,13 +210,13 @@ def bench_retrieval(repeat: int):
                 if hits:
                     t = time.perf_counter(); reranker.rerank(q, hits, top_n=TOP_K); rerank_t.append(time.perf_counter() - t)
 
-    summarise("embed the query", embed_t)
-    summarise("chunk vector search", vector_t)
-    summarise("BM25 hybrid search", hybrid_t)
-    summarise("cross-encoder rerank", rerank_t)
+    summarize("embed the query", embed_t)
+    summarize("chunk vector search", vector_t)
+    summarize("BM25 hybrid search", hybrid_t)
+    summarize("cross-encoder rerank", rerank_t)
     total = [sum(x) for x in zip(embed_t, vector_t, hybrid_t,
                                  rerank_t or [0.0] * len(embed_t))]
-    summarise("→ retrieval, end to end", total)
+    summarize("→ retrieval, end to end", total)
     print("\n  Reranking is usually the largest share, and it is the one that")
     print("  scales with how many candidates are fetched rather than with")
     print("  corpus size - which is the knob worth turning first.")
@@ -241,7 +241,7 @@ def bench_generation(repeat: int):
                     chars.append(len(r.get("answer") or ""))
                     sources.append(len(r.get("sources") or []))
 
-    summarise("whole /api/ask call", lat, unit="s")
+    summarize("whole /api/ask call", lat, unit="s")
     if lat:
         rate = [c / t for c, t in zip(chars, lat)]
         print(f"  answer length              : median {statistics.median(chars):.0f} chars")
@@ -302,7 +302,7 @@ def bench_ingest(count: int):
             pass
         store.close()
 
-    stages = ["parse", "classify", "embed", "summarise", "write"]
+    stages = ["parse", "classify", "embed", "summarize", "write"]
     print(f"\n  {'paper':30} {'pp':>3} {'chunks':>6} {'total':>7}  " +
           "  ".join(f"{s:>9}" for s in stages))
     for r in rows:
