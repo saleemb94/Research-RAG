@@ -83,6 +83,31 @@ def summarise(name: str, samples: list[float], unit: str = "ms"):
 
 # ── structure: what ingestion actually produced ───────────────────────────
 
+def looks_like_text(chunk: str) -> bool:
+    """
+    Does this chunk read as language?
+
+    Some PDFs carry a font encoding the extractor cannot resolve, and the text
+    comes out shifted into nonsense - "(QKDQFLQJ %(57" for "Enhancing BERT".
+    It indexes without error and matches nothing, so the paper is silently
+    unfindable: in the library, invisible to every query. Nothing else in the
+    repo notices, which is why it belongs here.
+
+    Detected by case, not by vocabulary. The obvious test - "does it contain
+    common English words" - flags every paper written in another language, and
+    this corpus has Turkish, Polish and Korean ones. The shift that produces
+    this mojibake maps lowercase letters into the uppercase range, so measured
+    across a chunk it is ~100% uppercase against 5% for Turkish prose and 3%
+    for English. Non-Latin scripts have no case at all and score 0, so they
+    pass for the right reason.
+    """
+    letters = [c for c in (chunk or "") if c.isalpha()]
+    if len(letters) < 40:
+        return True          # too short to judge; headings are legitimately caps
+    upper = sum(1 for c in letters if c.isupper())
+    return upper / len(letters) < 0.6
+
+
 def bench_structure():
     """
     Parsing and classification quality, read straight off the index.
@@ -137,6 +162,22 @@ def bench_structure():
     mostly_general = [p for p, v in by_paper.items()
                       if sum(1 for r in v
                              if (r.get("section_type") or "") == "general") > len(v) * 0.6]
+    # Chunks that are not language at all.
+    garbled = [r for r in rows
+               if len(r.get("text") or "") > 120 and not looks_like_text(r.get("text"))]
+    by_garbled: Counter = Counter(r.get("source_file") for r in garbled)
+    unreadable = [p for p, v in by_paper.items()
+                  if sum(1 for r in v if not looks_like_text(r.get("text")))
+                  > len(v) * 0.5]
+
+    print(f"\n  chunks that are not language: {len(garbled)}/{n} "
+          f"({len(garbled) / n:.1%})"
+          "     <- a broken font encoding indexes without error")
+    print(f"  papers unreadable end to end: {len(unreadable)}"
+          "        <- in the library, invisible to every query")
+    for p in unreadable[:6]:
+        print(f"      {by_garbled.get(p, 0):4} garbled chunks  {p[:52]}")
+
     print(f"\n  papers with no abstract    : {len(no_abstract)}")
     print(f"  papers with no page numbers: {len(no_pages)}"
           "        <- citations cannot be rendered for these")

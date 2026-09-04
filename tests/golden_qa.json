@@ -1,324 +1,126 @@
 {
  "_about": {
-  "purpose": "Golden question/answer set for measuring retrieval and generation quality.",
-  "provenance": "Every fact was read from the source PDF with PyMuPDF, not from the search index, so the set also detects content lost during ingestion.",
+  "purpose": "Graded questions for scoring retrieval and generation against the indexed corpus.",
+  "provenance": "Every fact was read from the source PDF, not from the search index. That is deliberate: facts harvested from the index could never detect content that ingestion dropped or mangled, because coverage would be 100% by construction.",
+  "history": "Rebuilt for the current 54-paper library. The previous set covered a 17-paper corpus, of which 8 papers were later removed; 29 of its questions pointed at documents that no longer exist and could only ever score zero.",
   "fields": {
-   "paper": "Filename the answer lives in.",
-   "question": "Asked verbatim through /api/chat.",
-   "section_type": "Section the router should target. null means no single section owns the answer.",
-   "expected_sections": "Stored section_name values that should supply the chunks. Advisory, not scored strictly.",
-   "key_facts": "List of fact groups. A group is a list of acceptable surface forms (OR). A summary scores a point per group it contains. Digits are compared with commas stripped, so '1,054' matches '1054'.",
-   "mode": "'single' (or absent) = a fact inside one paper, asked with that paper in scope. 'synthesis' = a corpus-wide question whose complete answer spans at least two papers. 'negative' = a question the corpus cannot answer, where the only correct behaviour is to say so.",
-   "expected_papers": "synthesis only: papers a complete answer should draw on."
+   "paper": "Filename the fact lives in (single-paper questions only).",
+   "mode": "absent or 'single' for a fact inside one paper; 'synthesis' for corpus-wide; 'negative' for a control.",
+   "key_facts": "Groups of surface forms. A group is satisfied when ANY of its forms appears; the score is how many groups are satisfied.",
+   "expected_papers": "Papers a complete synthesis answer should cite.",
+   "why": "For negative controls: why the corpus cannot answer this."
   },
-  "corpus": "17 papers: 11 supplied by the user plus 6 fetched from arXiv (scripts/fetch_arxiv.py; ids pinned in papers/arxiv_manifest.json). The arXiv set spans cs.CL, q-bio.PE, stat.AP and econ.EM so the discipline-agnostic classifier is exercised on real papers rather than assumed to work.",
-  "synthesis_rules": [
-   "A complete answer needs at least two papers, or it is needle retrieval wearing a synthesis costume.",
-   "The answer is a closed, enumerable set - languages, models, datasets, scores - not an invitation to discuss.",
-   "It is answerable without naming a paper.",
-   "Fact groups must be discriminating: a fluent non-answer must score zero. A group like ['annotat'] matches almost anything and measures nothing.",
-   "Scored on two axes that fail apart - facts stated, and which papers were actually cited. An answer can name four datasets while citing one paper."
-  ],
-  "negative_controls": "Everything else measures false negatives - denying content that is present. These measure the opposite and more dangerous failure for a research tool: inventing an answer for content that is absent. Abstention rate here is in tension with recall on the synthesis questions, which is the point: a system that abstains on everything scores 100% here and 0% there."
+  "corpus": "54 papers on retrieval-augmented generation, information retrieval, text classification, hate-speech detection and clinical NLP.",
+  "synthesis_rules": "A synthesis question must need at least two papers, have a closed enumerable answer, be answerable without naming a paper, and use fact groups discriminating enough that a fluent non-answer scores zero.",
+  "negative_controls": "Five questions the corpus genuinely cannot answer, each verified by scanning every chunk for the term: quantum, differential privacy, blockchain, autonomous driving and eye tracking all appear zero times. They measure the failure no other metric here does - inventing content that is absent."
  },
  "items": [
   {
-   "id": "p01-classifiers",
-   "paper": "1-s2.0-S277244252300045X-main.pdf",
-   "question": "Which machine learning classifiers were compared for autism spectrum disorder screening?",
+   "id": "n01-method",
+   "paper": "3628797.3628810.pdf",
    "section_type": "methodology",
-   "expected_sections": [
-    "A B S T R A C T",
-    "Introduction",
-    "Proposed methodology"
-   ],
+   "question": "What ranking approach does this paper propose for dense passage retrieval?",
    "key_facts": [
     [
-     "naive bayes",
-     "naïve bayes",
-     " nb "
+     "stratified ranking",
+     "sr-dpr"
     ],
     [
-     "logistic regression",
-     " lr "
-    ],
-    [
-     "support vector machine",
-     "svm"
-    ],
-    [
-     "random forest",
-     " rf "
+     "three-way",
+     "three relevance"
     ]
    ]
   },
   {
-   "id": "p01-toddler-size",
-   "paper": "1-s2.0-S277244252300045X-main.pdf",
-   "question": "How many records are in the toddler autism screening dataset and how many attributes does it have?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "Autism screening data for toddlers:"
-   ],
+   "id": "n01-levels",
+   "paper": "3628797.3628810.pdf",
+   "section_type": "methodology",
+   "question": "Which three relevance levels does SR-DPR distinguish between?",
    "key_facts": [
     [
-     "1054"
+     "positive"
     ],
     [
-     "18"
-    ]
-   ]
-  },
-  {
-   "id": "p01-adolescent-size",
-   "paper": "1-s2.0-S277244252300045X-main.pdf",
-   "question": "How many instances does the adolescent autism screening dataset contain?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "Autism screening data for toddlers:"
-   ],
-   "key_facts": [
-    [
-     "248"
-    ]
-   ]
-  },
-  {
-   "id": "p01-screening-tool",
-   "paper": "1-s2.0-S277244252300045X-main.pdf",
-   "question": "Which screening questionnaire supplies the behavioural features in the autism datasets?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "Autism screening data for toddlers:"
-   ],
-   "key_facts": [
-    [
-     "q-chat",
-     "qchat",
-     "q chat"
-    ]
-   ]
-  },
-  {
-   "id": "p02-workflow",
-   "paper": "2408.08921v2.pdf",
-   "question": "What are the three stages of the GraphRAG workflow?",
-   "section_type": null,
-   "expected_sections": [
-    "Graph Retrieval-Augmented Generation: A Survey",
-    "Overview of GraphRAG"
-   ],
-   "key_facts": [
-    [
-     "graph-based indexing",
-     "graph based indexing"
+     "hard negative"
     ],
     [
-     "graph-guided retrieval",
-     "graph guided retrieval"
-    ],
-    [
-     "graph-enhanced generation",
-     "graph enhanced generation"
+     "random"
     ]
    ]
   },
   {
-   "id": "p02-llm-problems",
-   "paper": "2408.08921v2.pdf",
-   "question": "Which shortcomings of large language models does retrieval-augmented generation aim to mitigate?",
+   "id": "n02-scope",
+   "paper": "3637211.pdf",
+   "section_type": "abstract",
+   "question": "Which four notions does this systematic review treat as requirements for a trustworthy information retrieval system?",
+   "key_facts": [
+    [
+     "fairness"
+    ],
+    [
+     "accountability"
+    ],
+    [
+     "transparency"
+    ],
+    [
+     "ethic"
+    ]
+   ]
+  },
+  {
+   "id": "n02-growth",
+   "paper": "3637211.pdf",
    "section_type": "introduction",
-   "expected_sections": [
-    "Introduction"
-   ],
+   "question": "By how much did submissions to the FAccT conference increase between 2018 and 2021?",
+   "key_facts": [
+    [
+     "350"
+    ]
+   ]
+  },
+  {
+   "id": "n03-limits",
+   "paper": "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+   "section_type": "introduction",
+   "question": "Which intrinsic limitations of large language models does this survey say RAG helps address?",
    "key_facts": [
     [
      "hallucination"
     ],
     [
-     "outdated",
-     "out-of-date"
+     "domain-specific"
     ],
     [
-     "domain-specific",
-     "domain specific"
+     "computational resources",
+     "computational"
     ]
    ]
   },
   {
-   "id": "p02-graph-sources",
-   "paper": "2408.08921v2.pdf",
-   "question": "What two categories of graph data sources are used for graph-based indexing?",
-   "section_type": null,
-   "expected_sections": [
-    "Graph-Based Indexing"
-   ],
-   "key_facts": [
-    [
-     "open knowledge graph"
-    ],
-    [
-     "self-constructed",
-     "self constructed"
-    ]
-   ]
-  },
-  {
-   "id": "p03-corpus-size",
-   "paper": "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
-   "question": "How many posts are in the cyberbullying lexicon corpus, and how do they split between bullying and non-bullying?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "METHODOLOGY"
-   ],
-   "key_facts": [
-    [
-     "20000"
-    ],
-    [
-     "7821"
-    ],
-    [
-     "12179"
-    ]
-   ]
-  },
-  {
-   "id": "p03-best-classifier",
-   "paper": "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
-   "question": "Which classifier achieved the highest average accuracy in the cyberbullying word distribution study, and what was it?",
-   "section_type": "results",
-   "expected_sections": [
-    "EXPERIMENTAL RESULTS",
-    "INTRODUCTION"
-   ],
-   "key_facts": [
-    [
-     "svm",
-     "support vector"
-    ],
-    [
-     "84"
-    ]
-   ]
-  },
-  {
-   "id": "p03-preprocessing",
-   "paper": "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
-   "question": "What text preprocessing steps were applied to the cyberbullying tweet corpus?",
+   "id": "n03-pipeline",
+   "paper": "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
    "section_type": "methodology",
-   "expected_sections": [
-    "METHODOLOGY"
-   ],
+   "question": "What does RAG invoke first, and where does it search?",
    "key_facts": [
     [
-     "lowercase",
-     "lower case",
-     "case folding"
+     "retriever"
     ],
     [
-     "punctuation"
-    ],
-    [
-     "hashtag",
-     "mention",
-     "numerical",
-     "number"
+     "external database",
+     "external"
     ]
    ]
   },
   {
-   "id": "p03-phases",
-   "paper": "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
-   "question": "What are the four phases of the analysis process for determining cyberbullying word distribution?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "METHODOLOGY"
-   ],
+   "id": "n04-method",
+   "paper": "A_Data-Efficient_Method_for_One-Shot_Text_Classification.pdf",
+   "section_type": "abstract",
+   "question": "What method does this paper propose for one-shot text classification, and what is it based on?",
    "key_facts": [
     [
-     "selection",
-     "dataset selection"
-    ],
-    [
-     "preparation"
-    ],
-    [
-     "preprocessing",
-     "pre-processing"
-    ],
-    [
-     "extraction"
-    ]
-   ]
-  },
-  {
-   "id": "p04-corpus-total",
-   "paper": "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
-   "question": "How many tweets were collected in total for the Ecuadorian hate speech study, and from which sources?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "METHODOLOGY"
-   ],
-   "key_facts": [
-    [
-     "178320"
-    ],
-    [
-     "hateeval"
-    ],
-    [
-     "166850"
-    ]
-   ]
-  },
-  {
-   "id": "p04-methodology",
-   "paper": "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
-   "question": "Which two research methodologies were combined to structure the Ecuadorian hate speech study?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "METHODOLOGY"
-   ],
-   "key_facts": [
-    [
-     "design science",
-     "dsr"
-    ],
-    [
-     "crisp-dm",
-     "crisp dm"
-    ]
-   ]
-  },
-  {
-   "id": "p04-bert-results",
-   "paper": "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
-   "question": "What accuracy did the BERT transfer learning model reach on the Ecuadorian hate speech data?",
-   "section_type": "results",
-   "expected_sections": [
-    "EXPERIMENTS AND RESULTS"
-   ],
-   "key_facts": [
-    [
-     "0.88",
-     "88"
-    ]
-   ]
-  },
-  {
-   "id": "p04-finding",
-   "paper": "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
-   "question": "In the Ecuador study, which technique adapted better to local linguistic idiosyncrasies and which generalised better?",
-   "section_type": "conclusion",
-   "expected_sections": [
-    "CONCLUSIONS AND FUTURE WORK",
-    "EXPERIMENTS AND RESULTS"
-   ],
-   "key_facts": [
-    [
-     "word embedding",
-     "word2vec"
+     "bigbert",
+     "binary grouping"
     ],
     [
      "bert"
@@ -326,184 +128,662 @@
    ]
   },
   {
-   "id": "p05-ai-tool",
-   "paper": "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
-   "question": "Which AI tool was applied to the haptic boot engineering design process?",
+   "id": "n04-design",
+   "paper": "A_Data-Efficient_Method_for_One-Shot_Text_Classification.pdf",
    "section_type": "methodology",
-   "expected_sections": [
-    "METHODOLOGY",
-    "INTRODUCTION"
-   ],
+   "question": "Which classification idea is the extensible output layer designed around, and on how many datasets was it evaluated?",
    "key_facts": [
     [
-     "chatgpt"
+     "one-vs-rest",
+     "one vs rest"
     ],
     [
-     "3.5"
+     "four"
     ]
    ]
   },
   {
-   "id": "p05-experts",
-   "paper": "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
-   "question": "How many domain experts assessed the AI contributions to the haptic boot design?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "EVALUATION",
-    "METHODOLOGY"
-   ],
-   "key_facts": [
-    [
-     "eight",
-     "8"
-    ]
-   ]
-  },
-  {
-   "id": "p05-prompt-elements",
-   "paper": "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
-   "question": "What are the five fundamental components of a well-crafted prompt in the haptic boot study?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "METHODOLOGY"
-   ],
-   "key_facts": [
-    [
-     "instruction"
-    ],
-    [
-     "context"
-    ],
-    [
-     "example"
-    ],
-    [
-     "constraint"
-    ],
-    [
-     "role"
-    ]
-   ]
-  },
-  {
-   "id": "p05-limitations",
-   "paper": "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
-   "question": "What weaknesses did the authors observe in ChatGPT's design output for the haptic boot?",
-   "section_type": "conclusion",
-   "expected_sections": [
-    "DISCUSSION, FUTURE WORK, AND LIMITATIONS",
-    "CONCLUSION"
-   ],
-   "key_facts": [
-    [
-     "hallucination"
-    ],
-    [
-     "traceability"
-    ]
-   ]
-  },
-  {
-   "id": "p06-dataset-size",
-   "paper": "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
-   "question": "How many tweets are in the Indonesian hate-speech dataset, and how are they split between the two labels?",
+   "id": "n05-dataset",
+   "paper": "A_Multi-Source_Information_Retrieval_System_for_Question_Answering_with_Sentiment_Analysis_and_LLM_Interpretation.pdf",
    "section_type": "dataset",
-   "expected_sections": [
-    "RESEARCH METHODOLOGY"
-   ],
+   "question": "How many user queries were compiled into the evaluation dataset?",
    "key_facts": [
     [
-     "13169"
-    ],
-    [
-     "7608"
-    ],
-    [
-     "5561"
+     "1000"
     ]
    ]
   },
   {
-   "id": "p06-best-config",
-   "paper": "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
-   "question": "Which batch size and learning rate gave the best Indonesian hate-speech detection results, and what accuracy followed?",
-   "section_type": "results",
-   "expected_sections": [
-    "EXPERIMENTS AND RESULTS",
-    "INTRODUCTION"
-   ],
+   "id": "n05-types",
+   "paper": "A_Multi-Source_Information_Retrieval_System_for_Question_Answering_with_Sentiment_Analysis_and_LLM_Interpretation.pdf",
+   "section_type": "related_work",
+   "question": "Into which four categories does the paper divide question-answering systems?",
    "key_facts": [
     [
-     "batch size of 8",
+     "chatbot"
+    ],
+    [
+     "knowledge-based",
+     "knowledge based"
+    ],
+    [
+     "retrieval"
+    ],
+    [
+     "free text"
+    ]
+   ]
+  },
+  {
+   "id": "n06-models",
+   "paper": "A_Study_on_Performance_Improvement_of_Prompt_Engineering_for_Generative_AI_with_a_Large_Language_Model.pdf",
+   "section_type": "methodology",
+   "question": "Which Korean language models were used to validate the proposed query transformation method?",
+   "key_facts": [
+    [
+     "gpt-2",
+     "gpt2"
+    ],
+    [
+     "kogpt"
+    ]
+   ]
+  },
+  {
+   "id": "n06-gain",
+   "paper": "A_Study_on_Performance_Improvement_of_Prompt_Engineering_for_Generative_AI_with_a_Large_Language_Model.pdf",
+   "section_type": "results",
+   "question": "What average improvement over the unmodified query did the proposed method achieve?",
+   "key_facts": [
+    [
+     "11.46"
+    ]
+   ]
+  },
+  {
+   "id": "n07-sources",
+   "paper": "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf",
+   "section_type": "methodology",
+   "question": "Which two databases were searched for this survey, and how many results did the search return after removing duplicates?",
+   "key_facts": [
+    [
+     "ieee"
+    ],
+    [
+     "acm"
+    ],
+    [
+     "277"
+    ]
+   ]
+  },
+  {
+   "id": "n07-scope",
+   "paper": "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf",
+   "section_type": "abstract",
+   "question": "Beyond text alone, which kind of classification methods does this survey say it goes further than previous surveys to include?",
+   "key_facts": [
+    [
+     "multimodal",
+     "multi-modal"
+    ]
+   ]
+  },
+  {
+   "id": "n08-modules",
+   "paper": "Advanced_RAG_Models_with_Graph_Structures_Optimizing_Complex_Knowledge_Reasoning_and_Text_Generation.pdf",
+   "section_type": "methodology",
+   "question": "Which three modules make up the proposed graph-based RAG framework?",
+   "key_facts": [
+    [
+     "graph structure"
+    ],
+    [
+     "retrieval"
+    ],
+    [
+     "generation"
+    ]
+   ]
+  },
+  {
+   "id": "n08-technique",
+   "paper": "Advanced_RAG_Models_with_Graph_Structures_Optimizing_Complex_Knowledge_Reasoning_and_Text_Generation.pdf",
+   "section_type": "methodology",
+   "question": "What is used to encode the graph structure data in this model?",
+   "key_facts": [
+    [
+     "graph neural network",
+     "gnn"
+    ]
+   ]
+  },
+  {
+   "id": "n09-imbalance",
+   "paper": "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+   "section_type": "results",
+   "question": "What share of the posts in the corpus were identified as cyberbullying?",
+   "key_facts": [
+    [
+     "39.1"
+    ]
+   ]
+  },
+  {
+   "id": "n09-goal",
+   "paper": "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+   "section_type": "abstract",
+   "question": "What resource does this paper set out to develop from cyberbullying word distribution?",
+   "key_facts": [
+    [
+     "lexicon"
+    ],
+    [
+     "dictionary"
+    ]
+   ]
+  },
+  {
+   "id": "n10-langs",
+   "paper": "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+   "section_type": "abstract",
+   "question": "Which three languages are compared in this annotation-quality study?",
+   "key_facts": [
+    [
+     "turkish"
+    ],
+    [
+     "indonesian"
+    ],
+    [
+     "minangkabau"
+    ]
+   ]
+  },
+  {
+   "id": "n10-journals",
+   "paper": "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+   "section_type": "dataset",
+   "question": "How many academic journal samples does the dataset contain, and how are they distributed across disciplines?",
+   "key_facts": [
+    [
+     "18000"
+    ],
+    [
+     "6000"
+    ],
+    [
+     "33.3"
+    ]
+   ]
+  },
+  {
+   "id": "n11-context",
+   "paper": "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
+   "section_type": "abstract",
+   "question": "Which country and which social platform does this hate-speech study focus on?",
+   "key_facts": [
+    [
+     "ecuador"
+    ],
+    [
+     "twitter"
+    ]
+   ]
+  },
+  {
+   "id": "n11-method",
+   "paper": "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
+   "section_type": "methodology",
+   "question": "Which research methodology framework does the study follow to build its artifact?",
+   "key_facts": [
+    [
+     "design science"
+    ]
+   ]
+  },
+  {
+   "id": "n12-models",
+   "paper": "Comparative_Analysis_of_Listwise_Reranking_with_Large_Language_Models_in_Limited-Resource_Language_Contexts.pdf",
+   "section_type": "abstract",
+   "question": "Which proprietary reranking models are compared in this study?",
+   "key_facts": [
+    [
+     "rankgpt"
+    ],
+    [
+     "rankclaude"
+    ]
+   ]
+  },
+  {
+   "id": "n12-langs",
+   "paper": "Comparative_Analysis_of_Listwise_Reranking_with_Large_Language_Models_in_Limited-Resource_Language_Contexts.pdf",
+   "section_type": "results",
+   "question": "Which collection is used for the cross-lingual scenarios, and which African languages benefited most?",
+   "key_facts": [
+    [
+     "ciral"
+    ],
+    [
+     "hausa"
+    ],
+    [
+     "swahili"
+    ],
+    [
+     "yoruba"
+    ]
+   ]
+  },
+  {
+   "id": "n12-baseline",
+   "paper": "Comparative_Analysis_of_Listwise_Reranking_with_Large_Language_Models_in_Limited-Resource_Language_Contexts.pdf",
+   "section_type": "results",
+   "question": "Which traditional baseline do the LLM rerankers outperform?",
+   "key_facts": [
+    [
+     "bm25"
+    ]
+   ]
+  },
+  {
+   "id": "n13-vectors",
+   "paper": "Comparative_Analysis_of_Transformer_Based_Vector_Models_for_Hate_Speech_in_Turkish_Tweets.pdf",
+   "section_type": "methodology",
+   "question": "Which multilingual sentence-transformer models are compared for Turkish hate speech detection?",
+   "key_facts": [
+    [
+     "minilm"
+    ],
+    [
+     "labse"
+    ],
+    [
+     "distilbert"
+    ],
+    [
+     "distiluse"
+    ]
+   ]
+  },
+  {
+   "id": "n13-classifiers",
+   "paper": "Comparative_Analysis_of_Transformer_Based_Vector_Models_for_Hate_Speech_in_Turkish_Tweets.pdf",
+   "section_type": "methodology",
+   "question": "Which machine learning algorithms are applied on top of the vector models?",
+   "key_facts": [
+    [
+     "naive bayes"
+    ],
+    [
+     "svm"
+    ],
+    [
+     "knn"
+    ]
+   ]
+  },
+  {
+   "id": "n14-llm",
+   "paper": "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+   "section_type": "methodology",
+   "question": "Which language model was used to assume stakeholder roles during the design process?",
+   "key_facts": [
+    [
+     "chatgpt",
+     "gpt-3.5"
+    ]
+   ]
+  },
+  {
+   "id": "n14-artifact",
+   "paper": "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf",
+   "section_type": "abstract",
+   "question": "What hardware artifact was designed in this project?",
+   "key_facts": [
+    [
+     "haptic"
+    ],
+    [
+     "boot"
+    ]
+   ]
+  },
+  {
+   "id": "n15-best",
+   "paper": "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+   "section_type": "results",
+   "question": "What was the best accuracy achieved, and with which batch size and learning rate?",
+   "key_facts": [
+    [
+     "85.45"
+    ],
+    [
      "batch size 8",
-     " 8 "
+     "batch size of 8"
     ],
     [
      "0.001"
-    ],
-    [
-     "85.45"
     ]
    ]
   },
   {
-   "id": "p06-models",
+   "id": "n15-parts",
    "paper": "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
-   "question": "Which three models were combined for Indonesian hate speech detection?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "RESEARCH METHODOLOGY",
-    "INTRODUCTION"
-   ],
+   "section_type": "results",
+   "question": "What accuracy did BiLSTM, CNN and IndoBERTweet each reach on their own?",
    "key_facts": [
     [
-     "indobertweet"
+     "82.02"
     ],
     [
-     "bilstm",
-     "bi-lstm"
+     "79.39"
     ],
     [
-     "cnn"
+     "80.80"
     ]
    ]
   },
   {
-   "id": "p06-preprocessing",
-   "paper": "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
-   "question": "Which preprocessing techniques were applied to the Indonesian tweets?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "RESEARCH METHODOLOGY"
-   ],
+   "id": "n16-task",
+   "paper": "Drop your Decoder_ Pre-training with Bag-of-Word Prediction for Dense Passage Retrieval..pdf",
+   "section_type": "abstract",
+   "question": "Which pre-training task does this paper propose for dense passage retrieval?",
    "key_facts": [
     [
-     "case folding",
-     "lowercase"
-    ],
-    [
-     "stopword",
-     "stop word"
-    ],
-    [
-     "cleaning",
-     "cleansing"
-    ],
-    [
-     "tokeniz",
-     "tokenis"
+     "bag-of-word",
+     "bag of word"
     ]
    ]
   },
   {
-   "id": "p07-languages",
+   "id": "n16-drops",
+   "paper": "Drop your Decoder_ Pre-training with Bag-of-Word Prediction for Dense Passage Retrieval..pdf",
+   "section_type": "methodology",
+   "question": "What component of masked auto-encoder pre-training does the proposed method remove?",
+   "key_facts": [
+    [
+     "decoder"
+    ]
+   ]
+  },
+  {
+   "id": "n18-stages",
+   "paper": "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+   "section_type": "methodology",
+   "question": "Which three key processes does this survey say RAG comprises?",
+   "key_facts": [
+    [
+     "retrieval"
+    ],
+    [
+     "augmentation"
+    ],
+    [
+     "generation"
+    ]
+   ]
+  },
+  {
+   "id": "n18-count",
+   "paper": "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+   "section_type": "related_work",
+   "question": "How many legal RAG pipelines were implemented in 2024 according to this survey?",
+   "key_facts": [
+    [
+     "20"
+    ]
+   ]
+  },
+  {
+   "id": "n19-method",
+   "paper": "Enhancing_Vector_based_Retrieval_Augmented_Generation_with_Contextual_Knowledge_Graph_Construction.pdf",
+   "section_type": "abstract",
+   "question": "What approach does this paper introduce to enhance vector-based RAG, and which techniques does it combine?",
+   "key_facts": [
+    [
+     "ckgc",
+     "contextual knowledge graph"
+    ],
+    [
+     "ontology"
+    ],
+    [
+     "chunking"
+    ]
+   ]
+  },
+  {
+   "id": "n19-data",
+   "paper": "Enhancing_Vector_based_Retrieval_Augmented_Generation_with_Contextual_Knowledge_Graph_Construction.pdf",
+   "section_type": "dataset",
+   "question": "How many documents were collected for evaluation, of what type, and from which source?",
+   "key_facts": [
+    [
+     "2000"
+    ],
+    [
+     "lease"
+    ],
+    [
+     "sec"
+    ]
+   ]
+  },
+  {
+   "id": "n20-method",
+   "paper": "Evaluating Retrieval Quality in Retrieval-Augmented Generation.pdf",
+   "section_type": "abstract",
+   "question": "What evaluation approach does this paper propose for retrieval models inside RAG systems?",
+   "key_facts": [
+    [
+     "erag"
+    ]
+   ]
+  },
+  {
+   "id": "n20-gains",
+   "paper": "Evaluating Retrieval Quality in Retrieval-Augmented Generation.pdf",
+   "section_type": "results",
+   "question": "What improvement in Kendall's tau correlation is reported, and how much less memory does the approach consume?",
+   "key_facts": [
+    [
+     "0.168"
+    ],
+    [
+     "0.494"
+    ],
+    [
+     "50"
+    ]
+   ]
+  },
+  {
+   "id": "n21-framework",
+   "paper": "Evaluation_of_Healthprompt_for_Zero-shot_Clinical_Text_Classification.pdf",
+   "section_type": "abstract",
+   "question": "Which framework is evaluated, and for what clinical NLP setting?",
+   "key_facts": [
+    [
+     "healthprompt"
+    ],
+    [
+     "zero-shot",
+     "zero shot"
+    ]
+   ]
+  },
+  {
+   "id": "n21-adds",
+   "paper": "Evaluation_of_Healthprompt_for_Zero-shot_Clinical_Text_Classification.pdf",
+   "section_type": "abstract",
+   "question": "What two analyses does this paper add that the original Healthprompt paper omitted?",
+   "key_facts": [
+    [
+     "error analysis"
+    ],
+    [
+     "ablation"
+    ]
+   ]
+  },
+  {
+   "id": "n22-gain",
+   "paper": "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf",
+   "section_type": "results",
+   "question": "How did the average F1 score of the LLM answers change when the learning-to-rank approach was applied?",
+   "key_facts": [
+    [
+     "0.22"
+    ],
+    [
+     "0.68"
+    ]
+   ]
+  },
+  {
+   "id": "n22-tasks",
+   "paper": "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf",
+   "section_type": "dataset",
+   "question": "Which two clinical keywords define the chart review tasks, and how many clinical notes were reviewed in each?",
+   "key_facts": [
+    [
+     "diabetes"
+    ],
+    [
+     "seizure"
+    ],
+    [
+     "300"
+    ]
+   ]
+  },
+  {
+   "id": "n23-concerns",
+   "paper": "Exploring_Language_Models_A_Comprehensive_Survey_and_Analysis.pdf",
+   "section_type": "abstract",
+   "question": "Which concerns about large language models does this survey identify as prominent?",
+   "key_facts": [
+    [
+     "bias"
+    ],
+    [
+     "interpretability"
+    ],
+    [
+     "privacy"
+    ],
+    [
+     "environmental"
+    ]
+   ]
+  },
+  {
+   "id": "n23-gpt3",
+   "paper": "Exploring_Language_Models_A_Comprehensive_Survey_and_Analysis.pdf",
+   "section_type": "related_work",
+   "question": "What is the largest parameter count of GPT-3, and what context window size does it support?",
+   "key_facts": [
+    [
+     "175 billion",
+     "175b"
+    ],
+    [
+     "2048"
+    ]
+   ]
+  },
+  {
+   "id": "n24-method",
+   "paper": "Exploring_Soft_Prompt_Initialization_Strategy_for_Few-Shot_Continual_Text_Classification.pdf",
+   "section_type": "abstract",
+   "question": "What soft-prompt initialization strategy does this paper propose for few-shot continual learning?",
+   "key_facts": [
+    [
+     "task-aware",
+     "tai"
+    ]
+   ]
+  },
+  {
+   "id": "n24-gain",
+   "paper": "Exploring_Soft_Prompt_Initialization_Strategy_for_Few-Shot_Continual_Text_Classification.pdf",
+   "section_type": "results",
+   "question": "By how much does PTCC outperform finetuning-based methods for BERT in the 4-shot setting?",
+   "key_facts": [
+    [
+     "18.34"
+    ]
+   ]
+  },
+  {
+   "id": "n25-stages",
+   "paper": "Feature_Selection_in_Learning_to_Rank_for_Listwise_Approach_using_Multiobjective_Evolutionary_Algorithm.pdf",
+   "section_type": "abstract",
+   "question": "Which three stages make up the proposed feature selection approach?",
+   "key_facts": [
+    [
+     "instance selection"
+    ],
+    [
+     "feature selection"
+    ],
+    [
+     "ensemble"
+    ]
+   ]
+  },
+  {
+   "id": "n25-types",
+   "paper": "Feature_Selection_in_Learning_to_Rank_for_Listwise_Approach_using_Multiobjective_Evolutionary_Algorithm.pdf",
+   "section_type": "related_work",
+   "question": "What are the three categories of feature selection strategies described?",
+   "key_facts": [
+    [
+     "wrapper"
+    ],
+    [
+     "filter"
+    ],
+    [
+     "embed"
+    ]
+   ]
+  },
+  {
+   "id": "n26-method",
+   "paper": "Few-Shot_Text_Classification_Method_Based_on_Feature_Optimization.pdf",
+   "section_type": "abstract",
+   "question": "Which two components are combined to optimise text features in this few-shot method?",
+   "key_facts": [
+    [
+     "wdab"
+    ],
+    [
+     "prototypical"
+    ]
+   ]
+  },
+  {
+   "id": "n26-gain",
+   "paper": "Few-Shot_Text_Classification_Method_Based_on_Feature_Optimization.pdf",
+   "section_type": "results",
+   "question": "By how much did average accuracy increase compared with the Siamese network and the prototypical network?",
+   "key_facts": [
+    [
+     "12.1"
+    ],
+    [
+     "4.18"
+    ]
+   ]
+  },
+  {
+   "id": "n27-langs",
    "paper": "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
-   "question": "Which languages does the fine-grained multilingual hate speech model cover?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "INTRODUCTION",
-    "METHODOLOGY"
-   ],
+   "section_type": "abstract",
+   "question": "Which three languages does this fine-grained hate speech model cover?",
    "key_facts": [
     [
      "english"
@@ -517,232 +797,312 @@
    ]
   },
   {
-   "id": "p07-categories",
+   "id": "n27-xai",
    "paper": "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
-   "question": "What are the five fine-grained hate speech categories used in the multilingual study?",
    "section_type": "methodology",
-   "expected_sections": [
-    "METHODOLOGY",
-    "INTRODUCTION"
-   ],
+   "question": "What is used to interpret the model's decisions?",
    "key_facts": [
     [
-     "disability"
-    ],
-    [
-     "gender"
-    ],
-    [
-     "nationality",
-     "origin"
-    ],
-    [
-     "race"
-    ],
-    [
-     "religion"
+     "xai",
+     "explainable"
     ]
    ]
   },
   {
-   "id": "p07-scores",
-   "paper": "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
-   "question": "What F-score did XLM-RoBERTa achieve for binary and fine-grained multilingual hate speech classification?",
-   "section_type": "results",
-   "expected_sections": [
-    "RESULTS",
-    "INTRODUCTION"
-   ],
-   "key_facts": [
-    [
-     "xlm-roberta",
-     "xlm roberta"
-    ],
-    [
-     "91"
-    ],
-    [
-     "86"
-    ]
-   ]
-  },
-  {
-   "id": "p07-xai",
-   "paper": "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
-   "question": "Which explainable AI technique was used to interpret the multilingual hate speech models?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "METHODOLOGY",
-    "INTRODUCTION"
-   ],
-   "key_facts": [
-    [
-     "lime",
-     "local interpretable"
-    ]
-   ]
-  },
-  {
-   "id": "p08-accuracy",
+   "id": "n28-best",
    "paper": "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
-   "question": "What accuracy and F1-score did the CNN-BiLSTM-GRU model reach for Arabic cyberbullying detection?",
    "section_type": "results",
-   "expected_sections": [
-    "RESULTS AND DISCUSSION",
-    "INTRODUCTION"
-   ],
+   "question": "What accuracy and F1-score did the hybrid CNN-BiLSTM-GRU model achieve?",
    "key_facts": [
     [
      "98.83"
     ],
     [
-     "98.81"
+     "98.81",
+     "98.13"
     ]
    ]
   },
   {
-   "id": "p08-collection",
+   "id": "n28-parts",
    "paper": "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
-   "question": "How many tweets were gathered in the initial Arabic cyberbullying collection, and over what period?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "DATA ACQUISITION"
-   ],
+   "section_type": "results",
+   "question": "What accuracy did BiLSTM, CNN and GRU reach individually?",
    "key_facts": [
     [
-     "14596"
+     "93.1"
+    ],
+    [
+     "92.83"
+    ],
+    [
+     "92.79"
+    ]
+   ]
+  },
+  {
+   "id": "n29-gretriever",
+   "paper": "Graph_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey (1).pdf",
+   "section_type": "related_work",
+   "question": "Which algorithm does G-Retriever use to construct sub-graphs, and which benchmark does it introduce?",
+   "key_facts": [
+    [
+     "steiner"
+    ],
+    [
+     "graphqa"
+    ]
+   ]
+  },
+  {
+   "id": "n29-hard",
+   "paper": "Graph_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey (1).pdf",
+   "section_type": "related_work",
+   "question": "Why is exhaustive sub-graph identification from large knowledge graphs impractical?",
+   "key_facts": [
+    [
+     "np-hard",
+     "np hard"
+    ]
+   ]
+  },
+  {
+   "id": "n30-methods",
+   "paper": "Hybrid_Retrieval-Augmented_Generation_Approach_for_LLMs_Query_Response_Enhancement.pdf",
+   "section_type": "abstract",
+   "question": "Which two RAG methodologies does the proposed hybrid framework combine?",
+   "key_facts": [
+    [
+     "sentence-window",
+     "sentence window"
+    ],
+    [
+     "parent-child",
+     "parent child"
+    ]
+   ]
+  },
+  {
+   "id": "n30-child",
+   "paper": "Hybrid_Retrieval-Augmented_Generation_Approach_for_LLMs_Query_Response_Enhancement.pdf",
+   "section_type": "methodology",
+   "question": "In Parent-Child RAG, how are the top child chunks used?",
+   "key_facts": [
+    [
+     "parent chunk"
+    ],
+    [
+     "context"
+    ]
+   ]
+  },
+  {
+   "id": "n31-stages",
+   "paper": "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
+   "section_type": "abstract",
+   "question": "Which evaluation campaign is this system built for, and which sparse and dense indexes does the first stage use?",
+   "key_facts": [
+    [
+     "poleval"
+    ],
+    [
+     "bm25"
+    ],
+    [
+     "faiss"
+    ]
+   ]
+  },
+  {
+   "id": "n31-reranker",
+   "paper": "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
+   "section_type": "methodology",
+   "question": "Which neural model is used for the re-ranking stage?",
+   "key_facts": [
+    [
+     "mt5"
+    ]
+   ]
+  },
+  {
+   "id": "n32-combo",
+   "paper": "HybridRAG - Integrating Knowledge Graphs and Vector Retrieval Augmented Generation for Efficient Information Extraction.pdf",
+   "section_type": "abstract",
+   "question": "Which two RAG techniques does HybridRAG combine?",
+   "key_facts": [
+    [
+     "graphrag"
+    ],
+    [
+     "vectorrag"
+    ]
+   ]
+  },
+  {
+   "id": "n32-domain",
+   "paper": "HybridRAG - Integrating Knowledge Graphs and Vector Retrieval Augmented Generation for Efficient Information Extraction.pdf",
+   "section_type": "abstract",
+   "question": "What kind of documents does HybridRAG extract information from?",
+   "key_facts": [
+    [
+     "earnings call"
+    ],
+    [
+     "financial"
+    ]
+   ]
+  },
+  {
+   "id": "n33-dataset",
+   "paper": "Improving Neural Models for the Retrieval of Relevant Passages to Geographical Queries.pdf",
+   "section_type": "dataset",
+   "question": "Which large dataset are the passage retrieval models trained and evaluated on?",
+   "key_facts": [
+    [
+     "ms-marco",
+     "ms marco"
+    ]
+   ]
+  },
+  {
+   "id": "n33-arch",
+   "paper": "Improving Neural Models for the Retrieval of Relevant Passages to Geographical Queries.pdf",
+   "section_type": "methodology",
+   "question": "Which two Transformer architectures are compared, and which is used for re-ranking?",
+   "key_facts": [
+    [
+     "bi-encoder"
+    ],
+    [
+     "cross-encoder"
+    ]
+   ]
+  },
+  {
+   "id": "n34-stages",
+   "paper": "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf",
+   "section_type": "abstract",
+   "question": "Which two stages of the information retrieval processing chain does this survey cover?",
+   "key_facts": [
+    [
+     "retrieval"
+    ],
+    [
+     "ranking"
+    ]
+   ]
+  },
+  {
+   "id": "n34-period",
+   "paper": "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf",
+   "section_type": "methodology",
+   "question": "Over what period were the surveyed papers published?",
+   "key_facts": [
+    [
+     "2013"
     ],
     [
      "2022"
-    ],
-    [
-     "march",
-     "june",
-     "three month"
     ]
    ]
   },
   {
-   "id": "p08-agreement",
-   "paper": "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
-   "question": "What inter-annotator agreement was reported for the Arabic cyberbullying annotation?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "ANNOTATION CONSENSUS AND EXPERT GUIDANCE"
-   ],
-   "key_facts": [
-    [
-     "0.86"
-    ],
-    [
-     "kappa"
-    ]
-   ]
-  },
-  {
-   "id": "p08-benchmarks",
-   "paper": "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
-   "question": "How many benchmark Arabic datasets were used and how many records did they contain in total?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "DATA ACQUISITION",
-    "ENRICHING THE DATASET"
-   ],
-   "key_facts": [
-    [
-     "six",
-     " 6 "
-    ],
-    [
-     "243849"
-    ]
-   ]
-  },
-  {
-   "id": "p09-dataset",
+   "id": "n35-rates",
    "paper": "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
-   "question": "Which dataset was used to test adversarial attacks on Arabic offensive language classifiers?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "EXPERIMENTAL SETUP"
-   ],
+   "section_type": "results",
+   "question": "What attack success rates were achieved against the two victim models?",
    "key_facts": [
     [
-     "osact5",
-     "osact 5"
+     "29.6"
+    ],
+    [
+     "27.5"
     ]
    ]
   },
   {
-   "id": "p09-victims",
+   "id": "n35-victims",
    "paper": "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
-   "question": "Which two victim transformer models were fine-tuned, and what F1 scores did they reach before the attack?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "EXPERIMENTAL SETUP"
-   ],
+   "section_type": "methodology",
+   "question": "Which two Arabic transformer models were attacked?",
    "key_facts": [
     [
      "arabert"
     ],
     [
      "qarib"
-    ],
-    [
-     "85"
-    ],
-    [
-     "84"
     ]
    ]
   },
   {
-   "id": "p09-success-rate",
-   "paper": "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
-   "question": "What attack success rate was achieved against the Arabic offensive language classifiers by substituting a single word?",
-   "section_type": "results",
-   "expected_sections": [
-    "RESULTS AND DISCUSSION"
-   ],
+   "id": "n36-idea",
+   "paper": "MarkedBERT_ Integrating Traditional IR Cues in Pre-trained Language Models for Passage Retrieval.pdf",
+   "section_type": "abstract",
+   "question": "What traditional IR cue does MarkedBERT inject into BERT, and how?",
    "key_facts": [
     [
-     "29.6",
-     "30"
+     "exact match",
+     "exact term"
     ],
     [
-     "unigram",
-     "one word",
-     "single word"
+     "marker",
+     "mark"
     ]
    ]
   },
   {
-   "id": "p09-method",
-   "paper": "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
-   "question": "Which explainability method and which embeddings guided the adversarial word replacement?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "EXPERIMENTAL SETUP",
-    "APPROACH"
-   ],
-   "key_facts": [
-    [
-     "lime"
-    ],
-    [
-     "fasttext",
-     "fast text"
-    ]
-   ]
-  },
-  {
-   "id": "p10-videos",
-   "paper": "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
-   "question": "How many videos were collected for the multi-modal hate speech study and how were they split for training?",
+   "id": "n36-corpus",
+   "paper": "MarkedBERT_ Integrating Traditional IR Cues in Pre-trained Language Models for Passage Retrieval.pdf",
    "section_type": "dataset",
-   "expected_sections": [
-    "METHODOLOGY"
-   ],
+   "question": "How many passages does the passage ranking dataset contain?",
+   "key_facts": [
+    [
+     "8.8"
+    ]
+   ]
+  },
+  {
+   "id": "n37-network",
+   "paper": "Multi-Label_Zero-Shot_Learning_for_Industrial_Fault_Diagnosis.pdf",
+   "section_type": "methodology",
+   "question": "Which two components make up the multi-scale feature extraction network?",
+   "key_facts": [
+    [
+     "1d-cnn",
+     "1d cnn",
+     "one-dimensional convolutional"
+    ],
+    [
+     "cbam",
+     "convolutional block attention"
+    ]
+   ]
+  },
+  {
+   "id": "n37-setting",
+   "paper": "Multi-Label_Zero-Shot_Learning_for_Industrial_Fault_Diagnosis.pdf",
+   "section_type": "abstract",
+   "question": "What learning setting does this paper propose for industrial fault diagnosis, and why is it needed?",
+   "key_facts": [
+    [
+     "zero-shot",
+     "zero shot"
+    ],
+    [
+     "multi-label",
+     "multi label"
+    ],
+    [
+     "scarcity",
+     "labeled fault samples"
+    ]
+   ]
+  },
+  {
+   "id": "n38-videos",
+   "paper": "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+   "section_type": "dataset",
+   "question": "How many videos were collected, and how were they split into training and test sets?",
    "key_facts": [
     [
      "1051"
@@ -756,51 +1116,10 @@
    ]
   },
   {
-   "id": "p10-best",
+   "id": "n38-fusion",
    "paper": "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
-   "question": "Which classifier gave the best accuracy in the multi-modal hate speech approach?",
-   "section_type": "results",
-   "expected_sections": [
-    "EVALUATION AND RESULTS",
-    "CONCLUSION"
-   ],
-   "key_facts": [
-    [
-     "adaboost"
-    ],
-    [
-     "87"
-    ]
-   ]
-  },
-  {
-   "id": "p10-fusion",
-   "paper": "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
-   "question": "How are the predictions from the separate modalities combined into a final decision?",
    "section_type": "methodology",
-   "expected_sections": [
-    "METHODOLOGY",
-    "EVALUATION AND RESULTS"
-   ],
-   "key_facts": [
-    [
-     "majority voting",
-     "hard voting"
-    ],
-    [
-     "two or more",
-     "two"
-    ]
-   ]
-  },
-  {
-   "id": "p10-modalities",
-   "paper": "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
-   "question": "Which modalities are extracted from the video data for hate speech detection?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "METHODOLOGY"
-   ],
+   "question": "Which modalities are used, and how are their predictions combined?",
    "key_facts": [
     [
      "image"
@@ -810,58 +1129,61 @@
     ],
     [
      "text"
+    ],
+    [
+     "majority voting"
     ]
    ]
   },
   {
-   "id": "p11-corpus",
-   "paper": "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
-   "question": "What corpus was used for Arabic offensive language detection with evolutionary classifiers?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "THE METHODOLOGY"
-   ],
+   "id": "n39-signals",
+   "paper": "Multitask_Fine-Tuning_for_Passage_Re-Ranking_Using_BM25_and_Pseudo_Relevance_Feedback.pdf",
+   "section_type": "methodology",
+   "question": "Which two statistical retrieval models are used to compute term importance scores?",
    "key_facts": [
     [
-     "arcybc"
+     "bm25"
     ],
     [
-     "arabic"
+     "pseudo relevance feedback",
+     "pseudo-relevance"
     ]
    ]
   },
   {
-   "id": "p11-domains",
-   "paper": "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
-   "question": "From which four Twitter domains were the ArCybC tweets collected?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "THE METHODOLOGY"
-   ],
+   "id": "n39-multitask",
+   "paper": "Multitask_Fine-Tuning_for_Passage_Re-Ranking_Using_BM25_and_Pseudo_Relevance_Feedback.pdf",
+   "section_type": "methodology",
+   "question": "Which two tasks does the multitask fine-tuning method train jointly?",
    "key_facts": [
     [
-     "gaming"
+     "masked language model",
+     "mlm"
     ],
     [
-     "sport"
-    ],
-    [
-     "news"
-    ],
-    [
-     "celebrit"
+     "relevance prediction"
     ]
    ]
   },
   {
-   "id": "p11-best",
+   "id": "n40-data",
    "paper": "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
-   "question": "Which combination achieved the best accuracy for Arabic offensive language detection with evolutionary classifiers?",
+   "section_type": "dataset",
+   "question": "How many tweets are in the training set and how many in the test set?",
+   "key_facts": [
+    [
+     "3604"
+    ],
+    [
+     "901"
+    ]
+   ]
+  },
+  {
+   "id": "n40-best",
+   "paper": "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
    "section_type": "results",
-   "expected_sections": [
-    "EXPERIMENT AND RESULTS",
-    "INTRODUCTION"
-   ],
+   "question": "Which classifier and embedding achieved the highest accuracy, and what was it?",
    "key_facts": [
     [
      "svm"
@@ -870,428 +1192,485 @@
      "aravec"
     ],
     [
-     "88.2"
+     "86.5"
     ]
    ]
   },
   {
-   "id": "p11-optimization",
-   "paper": "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
-   "question": "Which two classifiers were hybridised with a genetic algorithm in the two-stage optimisation approach?",
+   "id": "n41-corpus",
+   "paper": "Old IR Methods Meet RAG.pdf",
    "section_type": "methodology",
-   "expected_sections": [
-    "THE METHODOLOGY"
-   ],
+   "question": "Which external corpus is used, and how are its articles split into passages?",
    "key_facts": [
     [
-     "xgboost"
+     "wikipedia"
     ],
     [
-     "svm"
-    ],
-    [
-     "genetic",
-     " ga "
+     "100-word",
+     "100 word"
     ]
    ]
   },
   {
-   "id": "a01-datasets",
-   "paper": "arxiv_1909.04251.pdf",
-   "question": "Which two platforms were the hate speech intervention datasets collected from?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "Abstract"
-   ],
+   "id": "n41-metric",
+   "paper": "Old IR Methods Meet RAG.pdf",
+   "section_type": "abstract",
+   "question": "Which metric is used to compare retrieval methods for text completion, and which sparse method outperforms dense retrieval?",
    "key_facts": [
     [
-     "gab"
+     "perplexity"
     ],
     [
-     "reddit"
+     "bm25"
     ]
    ]
   },
   {
-   "id": "a01-sizes",
-   "paper": "arxiv_1909.04251.pdf",
-   "question": "How many conversations and comments were collected from Reddit and from Gab?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "Statistics"
-   ],
+   "id": "n42-name",
+   "paper": "Prompt-Based_Label-Aware_Framework_for_Few-Shot_Multi-Label_Text_Classification.pdf",
+   "section_type": "abstract",
+   "question": "What is the name of the proposed framework for few-shot multi-label text classification?",
    "key_facts": [
     [
-     "5020"
-    ],
-    [
-     "22324"
-    ],
-    [
-     "11825"
-    ],
-    [
-     "33776"
+     "plaml"
     ]
    ]
   },
   {
-   "id": "a01-annotators",
-   "paper": "arxiv_1909.04251.pdf",
-   "question": "Who wrote the intervention responses in the dataset?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "Abstract"
-   ],
-   "key_facts": [
-    [
-     "mechanical turk",
-     "mturk"
-    ]
-   ]
-  },
-  {
-   "id": "a01-task",
-   "paper": "arxiv_1909.04251.pdf",
-   "question": "What novel task does this paper propose for countering online hate speech?",
-   "section_type": "introduction",
-   "expected_sections": [
-    "Abstract",
-    "Introduction"
-   ],
-   "key_facts": [
-    [
-     "intervention"
-    ],
-    [
-     "generat"
-    ]
-   ]
-  },
-  {
-   "id": "a02-model",
-   "paper": "arxiv_2408.03849.pdf",
-   "question": "Which deep learning model is used for Amharic hate speech detection?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "Abstract"
-   ],
-   "key_facts": [
-    [
-     "sbi-lstm",
-     "sbilstm",
-     "bi-lstm"
-    ]
-   ]
-  },
-  {
-   "id": "a02-categories",
-   "paper": "arxiv_2408.03849.pdf",
-   "question": "What four categories does the Amharic hate speech classifier use?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "Abstract"
-   ],
-   "key_facts": [
-    [
-     "racial",
-     "race"
-    ],
-    [
-     "religious",
-     "religion"
-    ],
-    [
-     "gender"
-    ],
-    [
-     "non-hate",
-     "not hate",
-     "non hate"
-    ]
-   ]
-  },
-  {
-   "id": "a02-annotation",
-   "paper": "arxiv_2408.03849.pdf",
-   "question": "How much Amharic data was annotated, and by how many annotators?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "Abstract"
-   ],
-   "key_facts": [
-    [
-     "5k",
-     "5000"
-    ],
-    [
-     "100"
-    ]
-   ]
-  },
-  {
-   "id": "a02-score",
-   "paper": "arxiv_2408.03849.pdf",
-   "question": "What F1-score did the Amharic hate speech model achieve?",
+   "id": "n42-gain",
+   "paper": "Prompt-Based_Label-Aware_Framework_for_Few-Shot_Multi-Label_Text_Classification.pdf",
    "section_type": "results",
-   "expected_sections": [
-    "Abstract"
-   ],
+   "question": "By how much does the model improve Macro-F1 on average, and what was the largest gain on any dataset?",
    "key_facts": [
     [
-     "94.8"
+     "1.68"
+    ],
+    [
+     "2.39"
     ]
    ]
   },
   {
-   "id": "a03-languages",
-   "paper": "arxiv_2304.00913.pdf",
-   "question": "Which six languages does the LAHM multilingual hate speech dataset cover?",
+   "id": "n43-model",
+   "paper": "Prompt_Tuning_on_Graph-Augmented_Low-Resource_Text_Classification.pdf",
+   "section_type": "abstract",
+   "question": "What model is proposed for low-resource text classification on graph-grounded text?",
+   "key_facts": [
+    [
+     "g2p2",
+     "graph-grounded pre-training"
+    ]
+   ]
+  },
+  {
+   "id": "n43-interactions",
+   "paper": "Prompt_Tuning_on_Graph-Augmented_Low-Resource_Text_Classification.pdf",
+   "section_type": "methodology",
+   "question": "Which three types of graph interaction are used in contrastive pre-training?",
+   "key_facts": [
+    [
+     "text-node"
+    ],
+    [
+     "text-summary"
+    ],
+    [
+     "node-summary"
+    ]
+   ]
+  },
+  {
+   "id": "n44-idea",
+   "paper": "Proximity-Aware_Clinical_Passage_Retrieval_Framework_by_Exploiting_Knowledge_Structure.pdf",
+   "section_type": "methodology",
+   "question": "What does the proposed framework expand, and what does it analyse to do so?",
+   "key_facts": [
+    [
+     "query"
+    ],
+    [
+     "knowledge structure"
+    ]
+   ]
+  },
+  {
+   "id": "n44-domain",
+   "paper": "Proximity-Aware_Clinical_Passage_Retrieval_Framework_by_Exploiting_Knowledge_Structure.pdf",
+   "section_type": "abstract",
+   "question": "Which kind of search is this passage retrieval framework built to support?",
+   "key_facts": [
+    [
+     "clinical decision support",
+     "cds"
+    ]
+   ]
+  },
+  {
+   "id": "n45-models",
+   "paper": "Research_on_Medical_Text_Classification_based_on_BioBERT-GRU-Attention.pdf",
+   "section_type": "methodology",
+   "question": "Which two models does this paper propose?",
+   "key_facts": [
+    [
+     "bga"
+    ],
+    [
+     "b2ga"
+    ]
+   ]
+  },
+  {
+   "id": "n45-parts",
+   "paper": "Research_on_Medical_Text_Classification_based_on_BioBERT-GRU-Attention.pdf",
+   "section_type": "methodology",
+   "question": "Which components are combined in the proposed medical text classification model?",
+   "key_facts": [
+    [
+     "biobert"
+    ],
+    [
+     "gru"
+    ],
+    [
+     "attention"
+    ]
+   ]
+  },
+  {
+   "id": "n46-structure",
+   "paper": "Retrieval-Augmented Generation with Knowledge Graphs for.pdf",
+   "section_type": "methodology",
+   "question": "What dual-level graph structure is used to represent historical issue tickets?",
+   "key_facts": [
+    [
+     "intra-issue"
+    ],
+    [
+     "inter-issue"
+    ]
+   ]
+  },
+  {
+   "id": "n46-implicit",
+   "paper": "Retrieval-Augmented Generation with Knowledge Graphs for.pdf",
+   "section_type": "methodology",
+   "question": "How are implicit connections between tickets derived?",
+   "key_facts": [
+    [
+     "cosine similarity"
+    ],
+    [
+     "embedding"
+    ]
+   ]
+  },
+  {
+   "id": "n47-masking",
+   "paper": "Self-supervised Fine-tuning for Efficient Passage Re-ranking.pdf",
+   "section_type": "methodology",
+   "question": "How does the proposed weighted-masking method differ from uniform masking?",
+   "key_facts": [
+    [
+     "less-important",
+     "less important"
+    ],
+    [
+     "importance"
+    ]
+   ]
+  },
+  {
+   "id": "n47-loss",
+   "paper": "Self-supervised Fine-tuning for Efficient Passage Re-ranking.pdf",
+   "section_type": "methodology",
+   "question": "Which category of ranking loss does the model use?",
+   "key_facts": [
+    [
+     "listwise"
+    ]
+   ]
+  },
+  {
+   "id": "n48-method",
+   "paper": "Semantic_Textual_Similarity_Analysis_of_Clinical_Text_in_the_Era_of_LLM.pdf",
+   "section_type": "abstract",
+   "question": "What feature fusion approach is proposed, and what does it leverage?",
+   "key_facts": [
+    [
+     "mlte"
+    ],
+    [
+     "multi-layer",
+     "multi layer"
+    ]
+   ]
+  },
+  {
+   "id": "n48-sbert",
+   "paper": "Semantic_Textual_Similarity_Analysis_of_Clinical_Text_in_the_Era_of_LLM.pdf",
+   "section_type": "related_work",
+   "question": "By how much did SBERT reduce the time to find the most similar pair among 10,000 sentences?",
+   "key_facts": [
+    [
+     "65 hours"
+    ],
+    [
+     "5 seconds"
+    ]
+   ]
+  },
+  {
+   "id": "n49-purpose",
+   "paper": "SiJesi_Large_Language_Model_Chatbot_with_Augmented_Retrieval_Approach_Generation_and_Prompt_Engineering.pdf",
+   "section_type": "abstract",
+   "question": "What is the SiJesi chatbot built to advise on, and for which organisation?",
+   "key_facts": [
+    [
+     "cyber incident"
+    ],
+    [
+     "csirt"
+    ]
+   ]
+  },
+  {
+   "id": "n49-security",
+   "paper": "SiJesi_Large_Language_Model_Chatbot_with_Augmented_Retrieval_Approach_Generation_and_Prompt_Engineering.pdf",
+   "section_type": "methodology",
+   "question": "Which attack does the design guard against, and by what method?",
+   "key_facts": [
+    [
+     "prompt injection"
+    ],
+    [
+     "isolation"
+    ]
+   ]
+  },
+  {
+   "id": "n50-data",
+   "paper": "Small_Sample_Classification_Based_on_Prompt_Learning.pdf",
    "section_type": "dataset",
-   "expected_sections": [
-    "Abstract"
-   ],
+   "question": "What data is used in the experiment, and how is it split?",
    "key_facts": [
     [
-     "english"
+     "e-commerce",
+     "commerce"
     ],
     [
-     "hindi"
+     "10 categories"
     ],
     [
-     "arabic"
-    ],
-    [
-     "french"
-    ],
-    [
-     "german"
-    ],
-    [
-     "spanish"
+     "8:1:1"
     ]
    ]
   },
   {
-   "id": "a03-domains",
-   "paper": "arxiv_2304.00913.pdf",
-   "question": "What five hate speech domains does LAHM annotate?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "Abstract"
-   ],
+   "id": "n50-bert",
+   "paper": "Small_Sample_Classification_Based_on_Prompt_Learning.pdf",
+   "section_type": "methodology",
+   "question": "Which BERT pre-training task is removed in this work, and which is kept?",
    "key_facts": [
     [
-     "abuse"
+     "nsp",
+     "next sentence"
     ],
     [
-     "racism"
-    ],
-    [
-     "sexism"
-    ],
-    [
-     "religious"
-    ],
-    [
-     "extremism"
+     "mlm"
     ]
    ]
   },
   {
-   "id": "a03-size",
-   "paper": "arxiv_2304.00913.pdf",
-   "question": "How many tweets were collected in total for LAHM?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "Abstract"
-   ],
-   "key_facts": [
-    [
-     "497660"
-    ]
-   ]
-  },
-  {
-   "id": "a04-technique",
-   "paper": "arxiv_2004.07833.pdf",
-   "question": "What technique is used to obtain a closed-form solution of the SIR epidemic model?",
+   "id": "n51-categories",
+   "paper": "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
    "section_type": "theory",
-   "expected_sections": [
-    "Abstract"
-   ],
+   "question": "Which three architectural categories of large language models does this survey describe?",
    "key_facts": [
     [
-     "asymptotic approximant"
+     "encoder-only",
+     "auto-encoding"
+    ],
+    [
+     "decoder-only",
+     "auto-regressive"
+    ],
+    [
+     "encoder-decoder"
     ]
    ]
   },
   {
-   "id": "a04-application",
-   "paper": "arxiv_2004.07833.pdf",
-   "question": "What real-world epidemic is the closed-form SIR solution applied to?",
+   "id": "n51-transformer",
+   "paper": "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
+   "section_type": "theory",
+   "question": "What is the key innovation of the Transformer compared with LSTMs and RNNs?",
+   "key_facts": [
+    [
+     "parallel"
+    ]
+   ]
+  },
+  {
+   "id": "n52-types",
+   "paper": "The Power of Noise Redefining Retrieval for RAG Systems.pdf",
+   "section_type": "methodology",
+   "question": "Which three types of retrieved document does this study distinguish?",
+   "key_facts": [
+    [
+     "relevant"
+    ],
+    [
+     "distracting"
+    ],
+    [
+     "random"
+    ]
+   ]
+  },
+  {
+   "id": "n52-arch",
+   "paper": "The Power of Noise Redefining Retrieval for RAG Systems.pdf",
+   "section_type": "methodology",
+   "question": "Which two components make up the typical two-step RAG architecture?",
+   "key_facts": [
+    [
+     "retriever"
+    ],
+    [
+     "reasoner",
+     "generator"
+    ]
+   ]
+  },
+  {
+   "id": "n53-strategies",
+   "paper": "To_Enhance_Graph-Based_Retrieval-Augmented_Generation_RAG_with_Robust_Retrieval_Techniques.pdf",
+   "section_type": "methodology",
+   "question": "Which three retrieval strategies does the proposed Graph RAG framework integrate?",
+   "key_facts": [
+    [
+     "keyword"
+    ],
+    [
+     "vector"
+    ],
+    [
+     "graph"
+    ]
+   ]
+  },
+  {
+   "id": "n53-rouge",
+   "paper": "To_Enhance_Graph-Based_Retrieval-Augmented_Generation_RAG_with_Robust_Retrieval_Techniques.pdf",
    "section_type": "results",
-   "expected_sections": [
-    "Abstract"
-   ],
+   "question": "What ROUGE-1 and ROUGE-L scores are reported for 100 entries?",
    "key_facts": [
     [
-     "covid"
-    ]
-   ]
-  },
-  {
-   "id": "a04-problem",
-   "paper": "arxiv_2004.07833.pdf",
-   "question": "What limitation of the power series solution does the approximant overcome?",
-   "section_type": "theory",
-   "expected_sections": [
-    "Abstract"
-   ],
-   "key_facts": [
-    [
-     "diverg"
-    ]
-   ]
-  },
-  {
-   "id": "a05-trial",
-   "paper": "arxiv_1906.09304.pdf",
-   "question": "What is the name of the trial, and which population does it target?",
-   "section_type": "dataset",
-   "expected_sections": [
-    "Abstract",
-    "Introduction"
-   ],
-   "key_facts": [
-    [
-     "techstep"
+     "82.19"
     ],
     [
-     "transgender"
+     "71.34"
     ]
    ]
   },
   {
-   "id": "a05-interventions",
-   "paper": "arxiv_1906.09304.pdf",
-   "question": "Which three interventions are compared in the TechStep trial?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "Abstract"
-   ],
+   "id": "n54-themes",
+   "paper": "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf",
+   "section_type": "abstract",
+   "question": "Which two directions of integration does this survey organise itself around?",
    "key_facts": [
     [
-     "short message",
-     "sms",
-     "text message"
+     "search4llm"
     ],
     [
-     "web application",
-     "web app"
-    ],
-    [
-     "counseling",
-     "counselling"
+     "llm4search"
     ]
    ]
   },
   {
-   "id": "a05-design",
-   "paper": "arxiv_1906.09304.pdf",
-   "question": "What randomisation design does the TechStep trial use?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "Abstract"
-   ],
-   "key_facts": [
-    [
-     "sequentially randomized",
-     "sequentially randomised",
-     "sequential"
-    ]
-   ]
-  },
-  {
-   "id": "a05-outcomes",
-   "paper": "arxiv_1906.09304.pdf",
-   "question": "What are the primary outcomes of the TechStep trial?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "Abstract"
-   ],
-   "key_facts": [
-    [
-     "sexual risk"
-    ],
-    [
-     "hiv"
-    ]
-   ]
-  },
-  {
-   "id": "a05-estimator",
-   "paper": "arxiv_1906.09304.pdf",
-   "question": "Which estimators are described for analysing the TechStep trial?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "Abstract"
-   ],
-   "key_facts": [
-    [
-     "targeted minimum loss",
-     "tmle"
-    ]
-   ]
-  },
-  {
-   "id": "a06-method",
-   "paper": "arxiv_2409.20199.pdf",
-   "question": "Which causal inference method does this paper adapt, and to what kind of data?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "Abstract"
-   ],
-   "key_facts": [
-    [
-     "synthetic difference",
-     "sdid",
-     "synthetic diff"
-    ],
-    [
-     "repeated cross"
-    ]
-   ]
-  },
-  {
-   "id": "a06-limitation",
-   "paper": "arxiv_2409.20199.pdf",
-   "question": "What data requirement of the original synthetic difference-in-differences method does this paper relax?",
+   "id": "n54-bing",
+   "paper": "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf",
    "section_type": "introduction",
-   "expected_sections": [
-    "Abstract",
-    "Introduction"
-   ],
+   "question": "Which search engine integrated ChatGPT, and in which year?",
    "key_facts": [
     [
-     "panel"
+     "bing"
+    ],
+    [
+     "2023"
     ]
    ]
   },
   {
-   "id": "a06-contribution",
-   "paper": "arxiv_2409.20199.pdf",
-   "question": "What third type of weight does the author develop, and what does it account for?",
-   "section_type": "methodology",
-   "expected_sections": [
-    "Abstract"
+   "id": "syn-graph-rag",
+   "mode": "synthesis",
+   "section_type": null,
+   "question": "Which papers combine knowledge graphs with retrieval-augmented generation, and what do they call their approaches?",
+   "expected_papers": [
+    "Advanced_RAG_Models_with_Graph_Structures_Optimizing_Complex_Knowledge_Reasoning_and_Text_Generation.pdf",
+    "Graph_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey (1).pdf",
+    "HybridRAG - Integrating Knowledge Graphs and Vector Retrieval Augmented Generation for Efficient Information Extraction.pdf",
+    "To_Enhance_Graph-Based_Retrieval-Augmented_Generation_RAG_with_Robust_Retrieval_Techniques.pdf",
+    "Enhancing_Vector_based_Retrieval_Augmented_Generation_with_Contextual_Knowledge_Graph_Construction.pdf"
    ],
    "key_facts": [
     [
-     "third"
+     "hybridrag"
     ],
     [
-     "observations"
+     "ckgc",
+     "contextual knowledge graph"
+    ],
+    [
+     "graph neural network",
+     "gnn"
+    ]
+   ]
+  },
+  {
+   "id": "syn-rerankers",
+   "mode": "synthesis",
+   "section_type": null,
+   "question": "What re-ranking methods are used across these papers?",
+   "expected_papers": [
+    "Comparative_Analysis_of_Listwise_Reranking_with_Large_Language_Models_in_Limited-Resource_Language_Contexts.pdf",
+    "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
+    "Self-supervised Fine-tuning for Efficient Passage Re-ranking.pdf",
+    "Improving Neural Models for the Retrieval of Relevant Passages to Geographical Queries.pdf"
+   ],
+   "key_facts": [
+    [
+     "listwise"
+    ],
+    [
+     "cross-encoder"
+    ],
+    [
+     "mt5"
+    ]
+   ]
+  },
+  {
+   "id": "syn-ir-benchmarks",
+   "mode": "synthesis",
+   "section_type": null,
+   "question": "Which information retrieval benchmark collections are used across these papers?",
+   "expected_papers": [
+    "Improving Neural Models for the Retrieval of Relevant Passages to Geographical Queries.pdf",
+    "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
+    "Comparative_Analysis_of_Listwise_Reranking_with_Large_Language_Models_in_Limited-Resource_Language_Contexts.pdf",
+    "MarkedBERT_ Integrating Traditional IR Cues in Pre-trained Language Models for Passage Retrieval.pdf"
+   ],
+   "key_facts": [
+    [
+     "ms-marco",
+     "ms marco"
+    ],
+    [
+     "poleval"
+    ],
+    [
+     "ciral"
     ]
    ]
   },
@@ -1299,294 +1678,156 @@
    "id": "syn-languages",
    "mode": "synthesis",
    "section_type": null,
-   "question": "Which languages besides English have been studied for hate speech detection across these papers?",
+   "question": "Which non-English languages are studied across these papers?",
    "expected_papers": [
-    "arxiv_2304.00913.pdf",
-    "arxiv_2408.03849.pdf",
-    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+    "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+    "Comparative_Analysis_of_Transformer_Based_Vector_Models_for_Hate_Speech_in_Turkish_Tweets.pdf",
     "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
+    "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
     "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf"
    ],
    "key_facts": [
     [
-     "arabic"
-    ],
-    [
-     "urdu"
+     "turkish"
     ],
     [
      "indonesian"
     ],
     [
-     "amharic"
+     "arabic"
     ],
     [
-     "hindi"
+     "polish"
+    ],
+    [
+     "urdu",
+     "sindhi"
     ]
    ]
   },
   {
-   "id": "syn-preprocessing",
+   "id": "syn-clinical",
    "mode": "synthesis",
    "section_type": null,
-   "question": "What preprocessing steps are commonly applied to social media text before hate speech classification?",
+   "question": "Which papers work with clinical or medical text, and what do they build?",
    "expected_papers": [
-    "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
-    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
-    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf"
+    "Evaluation_of_Healthprompt_for_Zero-shot_Clinical_Text_Classification.pdf",
+    "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf",
+    "Proximity-Aware_Clinical_Passage_Retrieval_Framework_by_Exploiting_Knowledge_Structure.pdf",
+    "Research_on_Medical_Text_Classification_based_on_BioBERT-GRU-Attention.pdf",
+    "Semantic_Textual_Similarity_Analysis_of_Clinical_Text_in_the_Era_of_LLM.pdf"
    ],
    "key_facts": [
     [
-     "lowercase",
-     "case folding"
+     "healthprompt"
     ],
     [
-     "punctuation"
+     "biobert"
     ],
     [
-     "stopword",
-     "stop word"
-    ],
-    [
-     "token"
+     "clinical decision support",
+     "cds"
     ]
    ]
   },
   {
-   "id": "syn-transformers",
+   "id": "syn-fewshot",
    "mode": "synthesis",
    "section_type": null,
-   "question": "Which BERT-family transformer models have been fine-tuned for hate speech and offensive language detection?",
+   "question": "Which few-shot or zero-shot text classification methods are proposed across these papers?",
    "expected_papers": [
-    "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
-    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
-    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf"
+    "A_Data-Efficient_Method_for_One-Shot_Text_Classification.pdf",
+    "Prompt-Based_Label-Aware_Framework_for_Few-Shot_Multi-Label_Text_Classification.pdf",
+    "Exploring_Soft_Prompt_Initialization_Strategy_for_Few-Shot_Continual_Text_Classification.pdf",
+    "Few-Shot_Text_Classification_Method_Based_on_Feature_Optimization.pdf",
+    "Prompt_Tuning_on_Graph-Augmented_Low-Resource_Text_Classification.pdf"
    ],
    "key_facts": [
     [
-     "arabert"
+     "plaml"
     ],
     [
-     "qarib",
-     "marbert"
+     "g2p2"
     ],
     [
-     "indobertweet"
+     "bigbert"
     ],
     [
-     "roberta",
-     "xlm-r",
-     "xlm roberta"
+     "prototypical",
+     "wdab"
     ]
    ]
   },
   {
-   "id": "syn-annotation",
+   "id": "syn-bm25",
    "mode": "synthesis",
    "section_type": null,
-   "question": "How many annotators labelled each dataset, and what inter-annotator agreement was reported?",
+   "question": "Which papers use BM25, and in what role within their pipelines?",
    "expected_papers": [
-    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
-    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
-    "arxiv_2408.03849.pdf",
-    "arxiv_1909.04251.pdf"
+    "Hybrid_Retrievers_with_Generative_Re-Rankers.pdf",
+    "Multitask_Fine-Tuning_for_Passage_Re-Ranking_Using_BM25_and_Pseudo_Relevance_Feedback.pdf",
+    "Old IR Methods Meet RAG.pdf",
+    "MarkedBERT_ Integrating Traditional IR Cues in Pre-trained Language Models for Passage Retrieval.pdf"
    ],
    "key_facts": [
     [
-     "0.86"
+     "bm25"
     ],
     [
-     "kappa"
+     "sparse",
+     "lexical"
     ],
     [
-     "100"
-    ],
-    [
-     "mechanical turk",
-     "mturk"
+     "candidate",
+     "first stage",
+     "first-stage",
+     "re-rank"
     ]
    ]
   },
   {
-   "id": "syn-causal",
+   "id": "syn-rag-eval",
    "mode": "synthesis",
    "section_type": null,
-   "question": "What causal inference methods are used in this collection?",
+   "question": "How is retrieval or generation quality measured across the RAG papers?",
    "expected_papers": [
-    "arxiv_2409.20199.pdf",
-    "arxiv_1906.09304.pdf"
+    "Evaluating Retrieval Quality in Retrieval-Augmented Generation.pdf",
+    "To_Enhance_Graph-Based_Retrieval-Augmented_Generation_RAG_with_Robust_Retrieval_Techniques.pdf",
+    "Old IR Methods Meet RAG.pdf",
+    "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf"
    ],
    "key_facts": [
     [
-     "difference-in-differences",
-     "difference in differences"
+     "erag"
     ],
     [
-     "synthetic control",
-     "synthetic difference"
+     "perplexity"
     ],
     [
-     "randomized",
-     "randomised"
+     "rouge"
     ],
     [
-     "targeted minimum loss",
-     "tmle"
+     "kendall"
     ]
    ]
   },
   {
-   "id": "syn-non-nlp",
+   "id": "syn-hallucination",
    "mode": "synthesis",
    "section_type": null,
-   "question": "Which studies in this collection are not about text classification, and what do they study instead?",
+   "question": "Which papers give reducing hallucination as a motivation for retrieval augmentation?",
    "expected_papers": [
-    "arxiv_2004.07833.pdf",
-    "arxiv_1906.09304.pdf",
-    "arxiv_2409.20199.pdf"
+    "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+    "To_Enhance_Graph-Based_Retrieval-Augmented_Generation_RAG_with_Robust_Retrieval_Techniques.pdf",
+    "Graph_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey (1).pdf"
    ],
    "key_facts": [
     [
-     "sir",
-     "epidemic"
+     "hallucination"
     ],
     [
-     "hiv",
-     "transgender"
-    ],
-    [
-     "difference-in-differences",
-     "difference in differences",
-     "cross-section"
-    ]
-   ]
-  },
-  {
-   "id": "syn-arabic-corpora",
-   "mode": "synthesis",
-   "section_type": null,
-   "question": "Which named Arabic corpora or datasets are used across these papers?",
-   "expected_papers": [
-    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
-    "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
-    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf"
-   ],
-   "key_facts": [
-    [
-     "arcybc"
-    ],
-    [
-     "osact"
-    ],
-    [
-     "levantine",
-     "arabic sentiment twitter corpus"
-    ]
-   ]
-  },
-  {
-   "id": "syn-headline-accuracy",
-   "mode": "synthesis",
-   "section_type": null,
-   "question": "What headline accuracy or F1 scores are reported by the hate speech detection models?",
-   "expected_papers": [
-    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
-    "arxiv_2408.03849.pdf",
-    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
-    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf"
-   ],
-   "key_facts": [
-    [
-     "98.83",
-     "98.81"
-    ],
-    [
-     "94.8"
-    ],
-    [
-     "88.2"
-    ],
-    [
-     "85.45",
-     "85.06"
-    ]
-   ]
-  },
-  {
-   "id": "syn-xai",
-   "mode": "synthesis",
-   "section_type": null,
-   "question": "Which explainability techniques are applied to hate speech models, and in which studies?",
-   "expected_papers": [
-    "Fine-Grained_Multilingual_Hate_Speech_Detection_Using_Explainable_AI_and_Transformers.pdf",
-    "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf"
-   ],
-   "key_facts": [
-    [
-     "lime",
-     "local interpretable"
-    ],
-    [
-     "adversarial"
-    ],
-    [
-     "multilingual",
-     "fine-grained"
-    ]
-   ]
-  },
-  {
-   "id": "syn-platforms",
-   "mode": "synthesis",
-   "section_type": null,
-   "question": "Which social media platforms was the training data collected from across these studies?",
-   "expected_papers": [
-    "arxiv_1909.04251.pdf",
-    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
-    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
-    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf"
-   ],
-   "key_facts": [
-    [
-     "twitter",
-     " x "
-    ],
-    [
-     "gab"
-    ],
-    [
-     "reddit"
-    ],
-    [
-     "facebook",
-     "instagram"
-    ]
-   ]
-  },
-  {
-   "id": "syn-embeddings",
-   "mode": "synthesis",
-   "section_type": null,
-   "question": "Which word embedding models are used for text representation across these papers?",
-   "expected_papers": [
-    "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
-    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
-    "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
-    "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf"
-   ],
-   "key_facts": [
-    [
-     "aravec"
-    ],
-    [
-     "fasttext",
-     "fast text"
-    ],
-    [
-     "glove"
-    ],
-    [
-     "word2vec"
+     "external"
     ]
    ]
   },
@@ -1594,135 +1835,64 @@
    "id": "syn-architectures",
    "mode": "synthesis",
    "section_type": null,
-   "question": "Which neural network architectures other than transformers are used for classification?",
+   "question": "Which transformer architecture families and named model variants are surveyed across these papers?",
    "expected_papers": [
-    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
-    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
-    "arxiv_2408.03849.pdf"
+    "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
+    "Exploring_Language_Models_A_Comprehensive_Survey_and_Analysis.pdf",
+    "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf"
    ],
    "key_facts": [
     [
-     "cnn",
-     "convolutional"
+     "encoder-decoder"
     ],
     [
-     "bilstm",
-     "bi-lstm"
+     "albert",
+     "roberta"
     ],
     [
-     "gru"
+     "175 billion",
+     "175b"
     ]
    ]
   },
   {
-   "id": "syn-ensembles",
-   "mode": "synthesis",
-   "section_type": null,
-   "question": "Which studies combine several models into one prediction, and how are the predictions combined?",
-   "expected_papers": [
-    "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
-    "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
-    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf"
-   ],
-   "key_facts": [
-    [
-     "voting"
-    ],
-    [
-     "hybrid",
-     "combin",
-     "ensemble"
-    ],
-    [
-     "cnn-bilstm-gru",
-     "indobertweet"
-    ]
-   ]
-  },
-  {
-   "id": "syn-llm-weaknesses",
-   "mode": "synthesis",
-   "section_type": null,
-   "question": "What weaknesses of large language models are reported in this collection?",
-   "expected_papers": [
-    "2408.08921v2.pdf",
-    "Designing_a_Haptic_Boot_for_Space_With_Prompt_Engineering_Process_Insights_and_Implications.pdf"
-   ],
-   "key_facts": [
-    [
-     "hallucinat"
-    ],
-    [
-     "traceability",
-     "outdated",
-     "domain-specific"
-    ]
-   ]
-  },
-  {
-   "id": "syn-class-imbalance",
-   "mode": "synthesis",
-   "section_type": null,
-   "question": "Which datasets are class-imbalanced, and what is the split between hateful and non-hateful items?",
-   "expected_papers": [
-    "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
-    "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
-    "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf"
-   ],
-   "key_facts": [
-    [
-     "7821",
-     "12179",
-     "39.1"
-    ],
-    [
-     "7608",
-     "5561"
-    ],
-    [
-     "60",
-     "40"
-    ]
-   ]
-  },
-  {
-   "id": "neg-japanese",
+   "id": "neg-quantum",
    "mode": "negative",
    "section_type": null,
-   "question": "What accuracy did the Japanese hate speech detection models achieve in these papers?",
-   "why": "No paper in the corpus studies Japanese.",
+   "question": "Which papers use quantum computing to speed up retrieval, and what speedups do they report?",
+   "why": "The word quantum does not appear in any chunk in the corpus.",
    "key_facts": []
   },
   {
-   "id": "neg-rlhf",
+   "id": "neg-dp",
    "mode": "negative",
    "section_type": null,
-   "question": "Which of these papers use reinforcement learning from human feedback to train their classifiers?",
-   "why": "RLHF is not used anywhere in the corpus.",
+   "question": "Which papers apply differential privacy when training on user data, and what privacy budget do they use?",
+   "why": "No chunk mentions differential privacy; privacy appears only as a general concern.",
    "key_facts": []
   },
   {
-   "id": "neg-carbon",
+   "id": "neg-blockchain",
    "mode": "negative",
    "section_type": null,
-   "question": "What carbon footprint or energy consumption is reported for training the models in these papers?",
-   "why": "No paper reports energy or carbon cost.",
+   "question": "How do these papers use blockchain to verify document provenance?",
+   "why": "No chunk mentions blockchain. The premise is false.",
    "key_facts": []
   },
   {
-   "id": "neg-federated",
+   "id": "neg-driving",
    "mode": "negative",
    "section_type": null,
-   "question": "What were the results of the federated learning experiments across these hate speech datasets?",
-   "why": "No paper runs federated learning; the premise is false.",
+   "question": "Which papers evaluate their retrieval systems on autonomous driving data?",
+   "why": "No chunk mentions autonomous driving.",
    "key_facts": []
   },
   {
-   "id": "neg-clinical-nlp",
+   "id": "neg-eyetracking",
    "mode": "negative",
    "section_type": null,
-   "question": "Which papers apply hate speech detection to clinical notes from electronic health records?",
-   "why": "The clinical paper is an HIV prevention trial, unrelated to hate speech.",
+   "question": "What did the eye-tracking studies in these papers reveal about how users scan search results?",
+   "why": "No chunk mentions eye tracking; no paper runs a user study of this kind.",
    "key_facts": []
   }
  ]

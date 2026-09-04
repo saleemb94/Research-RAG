@@ -556,6 +556,19 @@ def _summarise_sections(
 # Main ingestion
 # ---------------------------------------------------------------------------
 
+# Layout parsing sometimes puts spaces around a decimal point, so "29.6%"
+# is extracted as "29 . 6%". It is rare - 0.4% of chunks in a 54-paper
+# corpus - but it lands squarely on the figures people ask about: accuracies,
+# perplexities, F1 scores. An exact-match search for the real number then
+# misses, and any answer quoting it looks broken.
+_SPLIT_DECIMAL = re.compile(r"(?<=\d)\s+\.\s+(?=\d)")
+
+
+def _repair_numbers(text: str) -> str:
+    """Rejoin decimals that layout parsing split apart."""
+    return _SPLIT_DECIMAL.sub(".", text or "")
+
+
 class _Clock:
     """
     Optional stage timer.
@@ -704,7 +717,7 @@ def ingest_pdf(
 
         chunks_data.append({
             "properties": {
-                "text": chunk.text,
+                "text": _repair_numbers(chunk.text),
                 "source_file": pdf_path.name,
                 "source_path": str(pdf_path.resolve()),
                 "chunk_index": i,

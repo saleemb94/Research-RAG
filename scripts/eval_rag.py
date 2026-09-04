@@ -40,9 +40,13 @@ GOLDEN = ROOT / "tests" / "golden_qa.json"
 
 
 def norm(text: str) -> str:
-    """Lowercase, strip thousands separators, collapse whitespace, pad the ends."""
+    """Lowercase, repair numbers, collapse whitespace, pad the ends."""
     t = (text or "").lower()
-    t = re.sub(r"(?<=\d),(?=\d{3})", "", t)   # 1,054 -> 1054
+    t = re.sub(r"(?<=\d),(?=\d{3})", "", t)     # 1,054 -> 1054
+    # Layout parsing sometimes splits a decimal point: "29 . 6%". Scoring a
+    # fact as absent for that reason measures the PDF extractor, not the
+    # system, so both sides are normalised before comparison.
+    t = re.sub(r"(?<=\d)\s+\.\s+(?=\d)", ".", t)
     t = re.sub(r"\s+", " ", t)
     return f" {t} "
 
