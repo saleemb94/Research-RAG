@@ -386,12 +386,27 @@ The split underneath the average is the finding:
 | One gold passage | 17 | **0.941** | 0.835 |
 | Two or more gold passages | 21 | **0.442** | 0.491 |
 
-Retrieval reliably finds *an* answering passage and then stops. It rarely gathers the
-complementary ones. `n15-parts` asks for three reported accuracies that live in two
-different chunks, and returning one of them caps the answer at two thirds no matter how
-good generation is. This is the mechanism behind the 69% of facts stated: the generator
-cannot state what it was never shown. It also shows up as volume, since the system
-returns 6.9 passages on average and fewer than the requested 10 on 37 of 38 questions.
+That gap is mostly not a retrieval failure. The synthesis path caps sources at
+`PER_PAPER_SOURCES = 2`, deliberately, so that one densely-worded paper cannot take
+every slot in a corpus-wide answer. A question whose evidence is spread over five
+passages of a single paper therefore *cannot* score above 2, whatever the retriever
+does. Measured against that ceiling instead of against the raw gold count, recall is
+0.712, and 5 of the 11 questions needing three or more passages hit their ceiling
+exactly. The same cap explains the volume: 6.9 passages come back on average, and fewer
+than the requested 10 on 37 of 38 questions.
+
+So the finding is not that retrieval stops early. It is that **one cap serves two
+question types that want opposite things.** For a corpus-wide question the cap is
+exactly right, and it was added because the eight best chunks for "which datasets are
+used" really do come from the two papers that discuss datasets most densely. For a
+focused question like "what accuracy did BiLSTM, CNN and GRU each reach", every piece of
+the answer is in one paper, and capping at two truncates it. The cap is currently applied
+whenever the question is not explicitly scoped to a paper, which does not distinguish
+the two cases.
+
+This is worth stating plainly because the first reading of these numbers was wrong. The
+split looked like a retrieval defect and was reported as one; it took reading the
+retrieval code to find the cap. A metric shows where to look, not what is true.
 
 Two caveats, both of which make these numbers floors rather than estimates. Labeling is
 **known to be incomplete**: only chunks carrying a golden fact were reviewed, so a
