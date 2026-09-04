@@ -13,6 +13,10 @@ hides which one broke. This script measures them separately:
   generation  Given the right paper, does the answer actually state the fact?
               Scored against the paper the fact really lives in, so a low score
               is the LLM's summary omitting or contradicting retrieved content.
+  passages    Retrieval scored at passage granularity against hand-labeled gold
+              passages: Recall@k, MRR@k, MAP@k and nDCG@k. The paper-level
+              numbers cannot separate returning the paragraph that states the
+              result from returning the same paper's related work.
   thematic    A discussion question over a topic rather than a paper, which is
               what a reader with a reading pile actually asks. Scored on facts,
               on how many of the topic's papers the answer draws on, and on
@@ -22,6 +26,7 @@ Usage:
     python scripts/eval_rag.py --coverage             # no LLM, instant
     python scripts/eval_rag.py --generation
     python scripts/eval_rag.py --retrieval
+    python scripts/eval_rag.py --passages        # Recall/MRR/MAP/nDCG @k
     python scripts/eval_rag.py --thematic -v
     python scripts/eval_rag.py --all -v
     python scripts/eval_rag.py --all --limit 8        # quick smoke run
@@ -404,6 +409,143 @@ def run_thematic(items, verbose, client=None):
     return rows
 
 
+# ── passage-level retrieval: which passages came back, and in what order ───
+
+GOLD_PASSAGES = ROOT / "tests" / "golden_passages.json"
+
+
+def load_passage_items(limit: int | None = None) -> list[dict]:
+    if not GOLD_PASSAGES.exists():
+        return []
+    data = json.loads(GOLD_PASSAGES.read_text(encoding="utf-8"))
+    items = data["items"]
+    return items[:limit] if limit else items
+
+
+def _dcg(gains: list[float]) -> float:
+    import math
+    return sum(g / math.log2(i + 2) for i, g in enumerate(gains))
+
+
+def score_ranking(rel: list[int], ideal: list[int], k: int) -> dict:
+    """
+    Rank-aware scores for one question.
+
+    `rel` is the graded relevance of each returned passage in rank order, 0 for
+    a passage that is not gold. `ideal` is every gold grade, best first, which
+    is what a perfect ranking would have produced. Reported apart because they
+    answer different questions: recall asks whether the evidence was found at
+    all, MRR how soon the first correct passage appeared, MAP how well the gold
+    passages are packed toward the top, and nDCG the same weighted by grade,
+    which is the only one that distinguishes a passage that fully answers from
+    one that merely supports.
+    """
+    cut = rel[:k]
+    n_gold = len(ideal)
+    found = sum(1 for r in cut if r > 0)
+
+    rr = 0.0
+    for i, r in enumerate(cut):
+        if r > 0:
+            rr = 1.0 / (i + 1)
+            break
+
+    # Average precision over the cut, divided by the gold available. Dividing
+    # by min(n_gold, k) rather than n_gold keeps it from being unreachable when
+    # a question has more gold passages than the system is allowed to return.
+    hits = 0
+    ap = 0.0
+    for i, r in enumerate(cut):
+        if r > 0:
+            hits += 1
+            ap += hits / (i + 1)
+    ap /= max(1, min(n_gold, k))
+
+    idcg = _dcg([float(g) for g in ideal[:k]])
+    ndcg = _dcg([float(r) for r in cut]) / idcg if idcg else 0.0
+
+    return {"recall": found / n_gold if n_gold else 0.0, "rr": rr,
+            "ap": ap, "ndcg": ndcg, "found": found, "n_gold": n_gold}
+
+
+def run_passages(items, verbose, k=10, client=None):
+    """
+    Score retrieval at passage granularity rather than paper granularity.
+
+    The paper-level numbers cannot tell a run that returned the paragraph
+    stating the result from one that returned the same paper's related-work
+    section. On a corpus where most papers are about retrieval, that is most of
+    the question. Gold passages are pinned by a verbatim anchor rather than a
+    chunk id, so re-chunking the corpus does not silently invalidate the set.
+    """
+    from fastapi.testclient import TestClient
+    import app as appmod
+
+    if client is None:
+        with TestClient(appmod.app) as c:
+            return run_passages(items, verbose, k=k, client=c)
+
+    rows = []
+    for i, it in enumerate(items, 1):
+        print(f"  [{i}/{len(items)}] {it['id']}", flush=True)
+        t0 = time.perf_counter()
+        # /api/ask returns the ranked passages a reader actually sees cited,
+        # which is the unit these metrics are about. /api/chat was tried and is
+        # the wrong shape: it returns k papers carrying one chunk each, so
+        # there is no within-paper ranking to score.
+        r = client.post("/api/ask", json={"query": it["question"], "top_k": k}).json()
+        secs = time.perf_counter() - t0
+
+        # A question the router sends to the paper cards never reaches passage
+        # retrieval, so it has no ranking to score. Counting it as recall 0
+        # would book a routing decision as a retrieval failure and quietly drag
+        # every average down. Reported as its own number instead.
+        carded = (r.get("target_sections") or []) == ["paper-cards"]
+
+        by_anchor = {g["anchor"].lower(): g["grade"] for g in it["gold"]}
+        rel = []
+        for src in (r.get("sources") or [])[:k]:
+            text = " ".join((src.get("text") or "").split()).lower()
+            grade = 0
+            if src.get("source") == it["paper"]:
+                for a, g in by_anchor.items():
+                    if a in text:
+                        grade = max(grade, g)
+            rel.append(grade)
+
+        ideal = sorted((g["grade"] for g in it["gold"]), reverse=True)
+        m = score_ranking(rel, ideal, k)
+        m |= {"id": it["id"], "seconds": secs, "returned": len(rel),
+              "rel": rel, "paper": it["paper"], "carded": carded}
+        rows.append(m)
+
+    carded = [r for r in rows if r["carded"]]
+    rows = [r for r in rows if not r["carded"]]
+    n = len(rows)
+    bar = "=" * 74
+    print(f"\n{bar}\nPASSAGE RETRIEVAL - is the answering passage returned, and where?\n{bar}")
+    print(f"  Recall@{k}  : {statistics.mean(r['recall'] for r in rows):.3f}")
+    print(f"  MRR@{k}     : {statistics.mean(r['rr'] for r in rows):.3f}")
+    print(f"  MAP@{k}     : {statistics.mean(r['ap'] for r in rows):.3f}")
+    print(f"  nDCG@{k}    : {statistics.mean(r['ndcg'] for r in rows):.3f}")
+    hit1 = sum(1 for r in rows if r["rel"] and r["rel"][0] > 0)
+    none = sum(1 for r in rows if r["found"] == 0)
+    print(f"  gold passage ranked first : {hit1}/{n} ({hit1 / n:.0%})")
+    print(f"  no gold passage returned  : {none}/{n} ({none / n:.0%})")
+    print(f"  wall clock                : {sum(r['seconds'] for r in rows):.0f}s")
+    if carded:
+        print(f"  not scored, routed to cards: {len(carded)} "
+              f"({[r['id'] for r in carded]})")
+    if verbose or none:
+        print("\n  per question (rank of gold grades in returned order):")
+        for r in sorted(rows, key=lambda x: x["ndcg"]):
+            print(f"    {r['id']:18s} nDCG {r['ndcg']:.2f}  recall {r['found']}/{r['n_gold']}"
+                  f"  rel={r['rel']}")
+    (ROOT / "eval_passages.json").write_text(
+        json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8")
+    return rows
+
+
 # ── retrieval + generation, through the real API ───────────────────────────
 
 def run_pipeline(items, verbose, do_retrieval, do_generation, deep=False):
@@ -516,6 +658,10 @@ def main():
     ap.add_argument("--generation", action="store_true")
     ap.add_argument("--synthesis", action="store_true",
                     help="Score the corpus-wide cited-answer questions")
+    ap.add_argument("--passages", action="store_true",
+                    help="Passage-level retrieval: Recall@k, MRR, MAP, nDCG")
+    ap.add_argument("--at-k", type=int, default=10,
+                    help="Cutoff k for the passage-level metrics (default 10)")
     ap.add_argument("--thematic", action="store_true",
                     help="Score the topic-wide discussion questions")
     ap.add_argument("--negative", action="store_true",
@@ -536,11 +682,11 @@ def main():
     a = ap.parse_args()
     if a.all:
         a.coverage = a.retrieval = a.generation = True
-        a.synthesis = a.thematic = a.negative = True
+        a.synthesis = a.thematic = a.negative = a.passages = True
     if not (a.coverage or a.retrieval or a.generation or a.synthesis
-            or a.thematic or a.negative):
+            or a.thematic or a.negative or a.passages):
         ap.error("choose at least one of --coverage / --retrieval / "
-                 "--generation / --synthesis / --thematic / --all")
+                 "--generation / --synthesis / --thematic / --passages / --all")
 
     items = load_items(a.limit, "single")
     items, absent, absent_papers = split_by_presence(items)
@@ -605,6 +751,13 @@ def main():
                 vals = [run[i]["g_ok"] for run in runs]
                 flag = "  <-- unstable" if max(vals) != min(vals) else ""
                 print(f"    {it['id']:22s} {vals}  /{runs[0][i]['g_n']}{flag}")
+    if a.passages:
+        pas_items = load_passage_items(a.limit)
+        if not pas_items:
+            print("No tests/golden_passages.json - skipping passage metrics.")
+        else:
+            run_passages(pas_items, a.verbose, k=a.at_k)
+
     if a.thematic and the_items:
         from fastapi.testclient import TestClient
         import app as appmod

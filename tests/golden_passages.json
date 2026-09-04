@@ -1,0 +1,1199 @@
+{
+ "items": [
+  {
+   "id": "n02-growth",
+   "paper": "3637211.pdf",
+   "question": "By how much did submissions to the FAccT conference increase between 2018 and 2021?",
+   "section_type": "introduction",
+   "key_facts": [
+    [
+     "350"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 10,
+     "grade": 2,
+     "section_name": "INTRODUCTION",
+     "anchor": "For example, the number of submissions to the ACM Conference on Fairness, Accountability, and Transparency (FAccT) 1 increased by around 350"
+    }
+   ]
+  },
+  {
+   "id": "n05-dataset",
+   "paper": "A_Multi-Source_Information_Retrieval_System_for_Question_Answering_with_Sentiment_Analysis_and_LLM_Interpretation.pdf",
+   "question": "How many user queries were compiled into the evaluation dataset?",
+   "section_type": "dataset",
+   "key_facts": [
+    [
+     "1000"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 18,
+     "grade": 2,
+     "section_name": "METHODOLOGY",
+     "anchor": "A meticulously curated dataset comprising 1000 user queries with corresponding ground truth answers was meticulously compiled from various s"
+    }
+   ]
+  },
+  {
+   "id": "n22-gain",
+   "paper": "Exploring a learning-to-rank approach to enhance the Retrieval Augmented.pdf",
+   "question": "How did the average F1 score of the LLM answers change when the learning-to-rank approach was applied?",
+   "section_type": "results",
+   "key_facts": [
+    [
+     "0.22"
+    ],
+    [
+     "0.68"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 22,
+     "grade": 2,
+     "section_name": "A B S T R A C T",
+     "anchor": "The evaluation result shows that, without a learning-torank approach, the average F1 score of the answer provided by the LLMs is around 0.22"
+    }
+   ]
+  },
+  {
+   "id": "n23-gpt3",
+   "paper": "Exploring_Language_Models_A_Comprehensive_Survey_and_Analysis.pdf",
+   "question": "What is the largest parameter count of GPT-3, and what context window size does it support?",
+   "section_type": "related_work",
+   "key_facts": [
+    [
+     "175 billion",
+     "175b"
+    ],
+    [
+     "2048"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 14,
+     "grade": 2,
+     "section_name": "I NTRODUCTION",
+     "anchor": "This leads to GPT-3's ability to encompass a context window of 2048 tokens, twice the size of GPT-2's window, aligning more closely with the"
+    }
+   ]
+  },
+  {
+   "id": "n24-gain",
+   "paper": "Exploring_Soft_Prompt_Initialization_Strategy_for_Few-Shot_Continual_Text_Classification.pdf",
+   "question": "By how much does PTCC outperform finetuning-based methods for BERT in the 4-shot setting?",
+   "section_type": "results",
+   "key_facts": [
+    [
+     "18.34"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 38,
+     "grade": 2,
+     "section_name": "EXPERIMENTS",
+     "anchor": "For BERT-based methods, we observe that PTCC consistently outperforms other finetuning-based methods in different few-shot settings by a lar"
+    }
+   ]
+  },
+  {
+   "id": "n26-gain",
+   "paper": "Few-Shot_Text_Classification_Method_Based_on_Feature_Optimization.pdf",
+   "question": "By how much did average accuracy increase compared with the Siamese network and the prototypical network?",
+   "section_type": "results",
+   "key_facts": [
+    [
+     "12.1"
+    ],
+    [
+     "4.18"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 70,
+     "grade": 2,
+     "section_name": "Conclusion",
+     "anchor": "Simulation results show that with the proposed model the average accuracy rate increases by 12.1% and 4.18% respectively, compared with the "
+    }
+   ]
+  },
+  {
+   "id": "n28-parts",
+   "paper": "From_Text_to_Insight_An_Integrated_CNN-BiLSTM-GRU_Model_for_Arabic_Cyberbullying_Detection.pdf",
+   "question": "What accuracy did BiLSTM, CNN and GRU reach individually?",
+   "section_type": "results",
+   "key_facts": [
+    [
+     "93.1"
+    ],
+    [
+     "92.83"
+    ],
+    [
+     "92.79"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 67,
+     "grade": 2,
+     "section_name": "PROPOSED MODEL",
+     "anchor": "It offers high precision (93.12%) and recall (92.06%)."
+    }
+   ]
+  },
+  {
+   "id": "n29-hard",
+   "paper": "Graph_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey (1).pdf",
+   "question": "Why is exhaustive sub-graph identification from large knowledge graphs impractical?",
+   "section_type": "related_work",
+   "key_facts": [
+    [
+     "np-hard",
+     "np hard"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 18,
+     "grade": 2,
+     "section_name": "GRAPH RAG",
+     "anchor": "At the core of Graph RAG research is the problem of relevant sub-graph identification from larger KGs, which is computationally infeasible ("
+    }
+   ]
+  },
+  {
+   "id": "n34-period",
+   "paper": "Information_Retrieval_Recent_Advances_and_Beyond_240628_141600.pdf",
+   "question": "Over what period were the surveyed papers published?",
+   "section_type": "methodology",
+   "key_facts": [
+    [
+     "2013"
+    ],
+    [
+     "2022"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 14,
+     "grade": 2,
+     "section_name": "INTRODUCTION",
+     "anchor": "This survey focuses on papers published in major conferences and journals in the fields of deep learning, natural language processing, and i"
+    }
+   ]
+  },
+  {
+   "id": "n35-rates",
+   "paper": "Investigating_the_Robustness_of_Arabic_Offensive_Language_Transformer-Based_Classifiers_to_Adversarial_Attacks.pdf",
+   "question": "What attack success rates were achieved against the two victim models?",
+   "section_type": "results",
+   "key_facts": [
+    [
+     "29.6"
+    ],
+    [
+     "27.5"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 69,
+     "grade": 2,
+     "section_name": "RESULTS AND DISCUSSION",
+     "anchor": "6% in the case of the AraBERT model."
+    }
+   ]
+  },
+  {
+   "id": "n42-gain",
+   "paper": "Prompt-Based_Label-Aware_Framework_for_Few-Shot_Multi-Label_Text_Classification.pdf",
+   "question": "By how much does the model improve Macro-F1 on average, and what was the largest gain on any dataset?",
+   "section_type": "results",
+   "key_facts": [
+    [
+     "1.68"
+    ],
+    [
+     "2.39"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 91,
+     "grade": 2,
+     "section_name": "RESULTS",
+     "anchor": "The most significant improvement is observed in the Prachathai67k dataset, where our method boosts Macro-F1 scores by 2.39%."
+    }
+   ]
+  },
+  {
+   "id": "n48-sbert",
+   "paper": "Semantic_Textual_Similarity_Analysis_of_Clinical_Text_in_the_Era_of_LLM.pdf",
+   "question": "By how much did SBERT reduce the time to find the most similar pair among 10,000 sentences?",
+   "section_type": "related_work",
+   "key_facts": [
+    [
+     "65 hours"
+    ],
+    [
+     "5 seconds"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 17,
+     "grade": 2,
+     "section_name": "RELATED WORK",
+     "anchor": "SBERT reduced the computing time for finding the most similar pair among 10,000 sentences from 65 hours with cross-encoding BERT to about 5 "
+    }
+   ]
+  },
+  {
+   "id": "n06-gain",
+   "paper": "A_Study_on_Performance_Improvement_of_Prompt_Engineering_for_Generative_AI_with_a_Large_Language_Model.pdf",
+   "question": "What average improvement over the unmodified query did the proposed method achieve?",
+   "section_type": "results",
+   "key_facts": [
+    [
+     "11.46"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 11,
+     "grade": 2,
+     "section_name": "Abstract",
+     "anchor": "The results demonstrate an average improvement of 11.46% when compared to the unmodified query, underscoring the efficacy of the proposed QT"
+    },
+    {
+     "chunk_index": 61,
+     "grade": 2,
+     "section_name": "Conclusion",
+     "anchor": "Our results demonstrate an average enhancement of 11.46% compared to unaltered queries that lack the objectives and intent of the input data"
+    }
+   ]
+  },
+  {
+   "id": "n09-imbalance",
+   "paper": "Analyzing_Cyberbullying_Word_Distribution_Across_Social_Media_to_Develop_Lexicon_Dictionary.pdf",
+   "question": "What share of the posts in the corpus were identified as cyberbullying?",
+   "section_type": "results",
+   "key_facts": [
+    [
+     "39.1"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 24,
+     "grade": 2,
+     "section_name": "METHODOLOGY",
+     "anchor": "As indicated by Table 2, the corpus exhibits an imbalance, with only 39.105% of the posts identified as cyberbullying."
+    },
+    {
+     "chunk_index": 25,
+     "grade": 2,
+     "section_name": "METHODOLOGY",
+     "anchor": "Cyberbullying, Percentage (%) = 39.105."
+    }
+   ]
+  },
+  {
+   "id": "n11-method",
+   "paper": "Cholo_Indio_Mono_Ecuador_and_the_Linguistic_Context_of_Hate_Speech_on_Twitter.pdf",
+   "question": "Which research methodology framework does the study follow to build its artifact?",
+   "section_type": "methodology",
+   "key_facts": [
+    [
+     "design science"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 20,
+     "grade": 2,
+     "section_name": "METHODOLOGY",
+     "anchor": "In light of this, the Design Science Research (DSR) methodology offers a comprehensive conceptual framework for the design and construction "
+    },
+    {
+     "chunk_index": 60,
+     "grade": 2,
+     "section_name": "CONCLUSIONS AND FUTURE WORK",
+     "anchor": "Through a structured methodological approach, guided by Design Science Research (DSR) and the CrossIndustry Standard Process for Data Mining"
+    }
+   ]
+  },
+  {
+   "id": "n15-parts",
+   "paper": "Detection_of_Hate-Speech_Text_on_Indonesian_Twitter_Social_Media_Using_IndoBERTweet-BiLSTM-CNN.pdf",
+   "question": "What accuracy did BiLSTM, CNN and IndoBERTweet each reach on their own?",
+   "section_type": "results",
+   "key_facts": [
+    [
+     "82.02"
+    ],
+    [
+     "79.39"
+    ],
+    [
+     "80.80"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 54,
+     "grade": 2,
+     "section_name": "EXPERIMENTS AND RESULTS",
+     "anchor": "The BiLSTM model independently has quite high accuracy, namely 82.02%."
+    },
+    {
+     "chunk_index": 56,
+     "grade": 2,
+     "section_name": "EXPERIMENTS AND RESULTS",
+     "anchor": "The IndoBERTweet model itself provides better accuracy than CNN but is lower than BiLSTM, with a value of 80.80%."
+    }
+   ]
+  },
+  {
+   "id": "n25-types",
+   "paper": "Feature_Selection_in_Learning_to_Rank_for_Listwise_Approach_using_Multiobjective_Evolutionary_Algorithm.pdf",
+   "question": "What are the three categories of feature selection strategies described?",
+   "section_type": "related_work",
+   "key_facts": [
+    [
+     "wrapper"
+    ],
+    [
+     "filter"
+    ],
+    [
+     "embed"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 10,
+     "grade": 2,
+     "section_name": "INTRODUCTION",
+     "anchor": "Filter methods are not depending on ranking method [6]."
+    },
+    {
+     "chunk_index": 17,
+     "grade": 2,
+     "section_name": "Importance of feature selection",
+     "anchor": "The three types of FS tactics namely are wrapper, embedding, and filter."
+    }
+   ]
+  },
+  {
+   "id": "n36-corpus",
+   "paper": "MarkedBERT_ Integrating Traditional IR Cues in Pre-trained Language Models for Passage Retrieval.pdf",
+   "question": "How many passages does the passage ranking dataset contain?",
+   "section_type": "dataset",
+   "key_facts": [
+    [
+     "8.8"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 24,
+     "grade": 2,
+     "section_name": "EXPERIMENTAL SETUP",
+     "anchor": "The test set is not publicly available."
+    }
+   ]
+  },
+  {
+   "id": "n46-structure",
+   "paper": "Retrieval-Augmented Generation with Knowledge Graphs for.pdf",
+   "question": "What dual-level graph structure is used to represent historical issue tickets?",
+   "section_type": "methodology",
+   "key_facts": [
+    [
+     "intra-issue"
+    ],
+    [
+     "inter-issue"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 2,
+     "grade": 2,
+     "section_name": "ABSTRACT",
+     "anchor": "Our method constructs a KG from historical issues for use in retrieval, retaining the intra-issue structure and interissue relations."
+    },
+    {
+     "chunk_index": 22,
+     "grade": 2,
+     "section_name": "METHODS",
+     "anchor": "In defining the knowledge graph structure for historical issue representation, we employ a dual-level architecture that segregates intra-iss"
+    }
+   ]
+  },
+  {
+   "id": "n07-sources",
+   "paper": "A_Survey_of_Text_Classification_With_Transformers_How_Wide_How_Large_How_Long_How_Accurate_How_Expensive_How_Safe.pdf",
+   "question": "Which two databases were searched for this survey, and how many results did the search return after removing duplicates?",
+   "section_type": "methodology",
+   "key_facts": [
+    [
+     "ieee"
+    ],
+    [
+     "acm"
+    ],
+    [
+     "277"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 22,
+     "grade": 2,
+     "section_name": "METHODOLOGY",
+     "anchor": "Using IEEE Explore and the ACM database, this returned 277 results, after removing duplicates."
+    },
+    {
+     "chunk_index": 24,
+     "grade": 1,
+     "section_name": "METHODOLOGY",
+     "anchor": "or outside the scope of our survey, and we therefore narrowed the search to include only sources from the IEEE and ACM databases."
+    }
+   ]
+  },
+  {
+   "id": "n40-data",
+   "paper": "Offensive_Language_Detection_in_Arabic_Social_Networks_Using_Evolutionary-Based_Classifiers_Learned_From_Fine-Tuned_Embeddings.pdf",
+   "question": "How many tweets are in the training set and how many in the test set?",
+   "section_type": "dataset",
+   "key_facts": [
+    [
+     "3604"
+    ],
+    [
+     "901"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 76,
+     "grade": 2,
+     "section_name": "THE METHODOLOGY",
+     "anchor": "Out of the 3604 tweets in the training dataset, 1519 tweets (42.1%) were labeled as offensive, whereas 1391 (38.6%) were labeled as cyberbul"
+    },
+    {
+     "chunk_index": 127,
+     "grade": 1,
+     "section_name": "EXPERIMENT AND RESULTS",
+     "anchor": "The results showed a slight improvement in the performance and this is because the size of the training dataset that is used to retrain the "
+    }
+   ]
+  },
+  {
+   "id": "n41-corpus",
+   "paper": "Old IR Methods Meet RAG.pdf",
+   "question": "Which external corpus is used, and how are its articles split into passages?",
+   "section_type": "methodology",
+   "key_facts": [
+    [
+     "wikipedia"
+    ],
+    [
+     "100-word",
+     "100 word"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 21,
+     "grade": 2,
+     "section_name": "EXPERIMENTAL SETUP",
+     "anchor": "In this framework, the external source is the English Wikipedia dump from Dec."
+    }
+   ]
+  },
+  {
+   "id": "n50-bert",
+   "paper": "Small_Sample_Classification_Based_on_Prompt_Learning.pdf",
+   "question": "Which BERT pre-training task is removed in this work, and which is kept?",
+   "section_type": "methodology",
+   "key_facts": [
+    [
+     "nsp",
+     "next sentence"
+    ],
+    [
+     "mlm"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 12,
+     "grade": 2,
+     "section_name": "Algorithm optimization",
+     "anchor": "Therefore, in response to the short content and easy to understand characteristics of e-commerce texts, the BERT model in this article only "
+    },
+    {
+     "chunk_index": 13,
+     "grade": 1,
+     "section_name": "Algorithm optimization",
+     "anchor": "The original MLM task was to train language models based on Chinese characters."
+    }
+   ]
+  },
+  {
+   "id": "n54-bing",
+   "paper": "When_Search_Engine_Services_Meet_Large_Language_Models_Visions_and_Challenges.pdf",
+   "question": "Which search engine integrated ChatGPT, and in which year?",
+   "section_type": "introduction",
+   "key_facts": [
+    [
+     "bing"
+    ],
+    [
+     "2023"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 17,
+     "grade": 2,
+     "section_name": "INTRODUCTION",
+     "anchor": "Subsequently, Microsoft integrated ChatGPT into their search engine, forming the new Bing, which offers an advanced chat-based search experi"
+    }
+   ]
+  },
+  {
+   "id": "n47-loss",
+   "paper": "Self-supervised Fine-tuning for Efficient Passage Re-ranking.pdf",
+   "question": "Which category of ranking loss does the model use?",
+   "section_type": "methodology",
+   "key_facts": [
+    [
+     "listwise"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 23,
+     "grade": 2,
+     "section_name": "PROPOSED METHOD",
+     "anchor": "We select the listwise method that optimizes a ranking for several input passages directly."
+    },
+    {
+     "chunk_index": 37,
+     "grade": 1,
+     "section_name": "EXPERIMENTS",
+     "anchor": "We adopted a listwise ranking model without MLM fine-tuning as the baseline."
+    },
+    {
+     "chunk_index": 38,
+     "grade": 1,
+     "section_name": "RESULTS AND ANALYSIS",
+     "anchor": "𝐿𝑅 𝐵𝑎𝑠𝑒𝑙𝑖𝑛𝑒 is the listwise ranking baseline trained by fine-tuning without MLM."
+    }
+   ]
+  },
+  {
+   "id": "n10-journals",
+   "paper": "ChatGPT_Label_Comparing_the_Quality_of_Human-Generated_and_LLM-Generated_Annotations_in_Low-Resource_Language_NLP_Tasks.pdf",
+   "question": "How many academic journal samples does the dataset contain, and how are they distributed across disciplines?",
+   "section_type": "dataset",
+   "key_facts": [
+    [
+     "18000"
+    ],
+    [
+     "6000"
+    ],
+    [
+     "33.3"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 47,
+     "grade": 2,
+     "section_name": "MATERIALS AND METHODS",
+     "anchor": "Alongside, the dataset incorporates 18,000 samples from academic journals, distributed equally among humanities, social sciences, and natura"
+    }
+   ]
+  },
+  {
+   "id": "n21-adds",
+   "paper": "Evaluation_of_Healthprompt_for_Zero-shot_Clinical_Text_Classification.pdf",
+   "question": "What two analyses does this paper add that the original Healthprompt paper omitted?",
+   "section_type": "abstract",
+   "key_facts": [
+    [
+     "error analysis"
+    ],
+    [
+     "ablation"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 2,
+     "grade": 2,
+     "section_name": "Abstract",
+     "anchor": "However, the original Healthprompt paper missed the error analysis and ablation study of the framework."
+    },
+    {
+     "chunk_index": 5,
+     "grade": 1,
+     "section_name": "INTRODUCTION",
+     "anchor": "However, while Healthprompt has shown promise in initial evaluations, more error analysis is needed to fully understand its capabilities for"
+    },
+    {
+     "chunk_index": 6,
+     "grade": 1,
+     "section_name": "INTRODUCTION",
+     "anchor": "In this paper, we evaluate Healthprompt's performance and conduct an error analysis to understand its capabilities for clinical text classif"
+    }
+   ]
+  },
+  {
+   "id": "n38-videos",
+   "paper": "Multi-modal_Hate_Speech_Detection_using_Machine_Learning.pdf",
+   "question": "How many videos were collected, and how were they split into training and test sets?",
+   "section_type": "dataset",
+   "key_facts": [
+    [
+     "1051"
+    ],
+    [
+     "80"
+    ],
+    [
+     "20"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 13,
+     "grade": 2,
+     "section_name": "LITERATURE REVIEW",
+     "anchor": "In consequence, we have prepared a total of 1051 video data for our work."
+    }
+   ]
+  },
+  {
+   "id": "n04-design",
+   "paper": "A_Data-Efficient_Method_for_One-Shot_Text_Classification.pdf",
+   "question": "Which classification idea is the extensible output layer designed around, and on how many datasets was it evaluated?",
+   "section_type": "methodology",
+   "key_facts": [
+    [
+     "one-vs-rest",
+     "one vs rest"
+    ],
+    [
+     "four"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 1,
+     "grade": 2,
+     "section_name": "Abstract",
+     "anchor": "With the idea of One-vs-Rest method, we designed an extensible output layer for BERT, which can increase the usability of the training data."
+    },
+    {
+     "chunk_index": 9,
+     "grade": 1,
+     "section_name": "INTRODUCTION",
+     "anchor": "To handle this issue, we propose BiGBERT (Binary Grouping BERT), with the idea of One-vs-Rest method, we design an extensible output layer f"
+    },
+    {
+     "chunk_index": 29,
+     "grade": 1,
+     "section_name": "PROPOSED METHOD",
+     "anchor": "With the idea of One-vs-Rest method, we convert the objective from ' distinguish the class of a sample ' into ' determine the sample is rela"
+    },
+    {
+     "chunk_index": 34,
+     "grade": 1,
+     "section_name": "EXPERIMENTAL SETUP",
+     "anchor": "We conducted extensive experiments on four English benchmark text classification datasets, and reform these datasets into one-shot training "
+    },
+    {
+     "chunk_index": 35,
+     "grade": 1,
+     "section_name": "EXPERIMENTAL SETUP",
+     "anchor": "The statistics of the four datasets are shown in Table I."
+    }
+   ]
+  },
+  {
+   "id": "n37-network",
+   "paper": "Multi-Label_Zero-Shot_Learning_for_Industrial_Fault_Diagnosis.pdf",
+   "question": "Which two components make up the multi-scale feature extraction network?",
+   "section_type": "methodology",
+   "key_facts": [
+    [
+     "1d-cnn",
+     "1d cnn",
+     "one-dimensional convolutional"
+    ],
+    [
+     "cbam",
+     "convolutional block attention"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 2,
+     "grade": 2,
+     "section_name": "Abstract",
+     "anchor": "Firstly, a multi-scale features extraction network based on one-dimensional convolutional neural network (1D-CNN) and convolutional block at"
+    },
+    {
+     "chunk_index": 12,
+     "grade": 2,
+     "section_name": "Dong Tang*",
+     "anchor": "1) A multi-scale feature extraction network is proposed based on one-dimensional convolutional neural network (1DCNN) and convolutional bloc"
+    },
+    {
+     "chunk_index": 66,
+     "grade": 2,
+     "section_name": "CONCLUSION",
+     "anchor": "Specifically, to extract more useful information from raw fault samples, a multi-scale feature extraction network based on 1D-CNN and CBAM i"
+    },
+    {
+     "chunk_index": 20,
+     "grade": 1,
+     "section_name": "METHODOLOGY",
+     "anchor": "Therefore, to extract the feature of faults with different scales, we design a multi-scale feature extraction algorithm based on 1D-CNN and "
+    },
+    {
+     "chunk_index": 29,
+     "grade": 1,
+     "section_name": "METHODOLOGY",
+     "anchor": "The latter type is the CBAM block [26], which primarily consists of a channel attention module (CAM) and a spatial attention module (SAM)."
+    }
+   ]
+  },
+  {
+   "id": "n03-limits",
+   "paper": "A Survey on RAG Meeting LLMs_ Towards Retrieval-Augmented Large Language Models.pdf",
+   "question": "Which intrinsic limitations of large language models does this survey say RAG helps address?",
+   "section_type": "introduction",
+   "key_facts": [
+    [
+     "hallucination"
+    ],
+    [
+     "domain-specific"
+    ],
+    [
+     "computational resources",
+     "computational"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 22,
+     "grade": 2,
+     "section_name": "ABSTRACT",
+     "anchor": "These problems are particularly notable in domain-specific fields like medicine and law."
+    },
+    {
+     "chunk_index": 12,
+     "grade": 1,
+     "section_name": "ABSTRACT",
+     "anchor": "Recently, Large Language Models (LLMs) have demonstrated revolutionary abilities in language understanding and generation, while still facin"
+    },
+    {
+     "chunk_index": 23,
+     "grade": 1,
+     "section_name": "ABSTRACT",
+     "anchor": "It is also been demonstrated that RAG can effectively reduce hallucinations in conversational tasks [116, 139]."
+    }
+   ]
+  },
+  {
+   "id": "n12-models",
+   "paper": "Comparative_Analysis_of_Listwise_Reranking_with_Large_Language_Models_in_Limited-Resource_Language_Contexts.pdf",
+   "question": "Which proprietary reranking models are compared in this study?",
+   "section_type": "abstract",
+   "key_facts": [
+    [
+     "rankgpt"
+    ],
+    [
+     "o1-mini",
+     "4o-mini"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 4,
+     "grade": 2,
+     "section_name": "Abstract",
+     "anchor": "We compare proprietary models RankGPT3.5, Rank4o-mini, RankGPTo1-mini and RankClaudesonnet in cross-lingual contexts."
+    },
+    {
+     "chunk_index": 14,
+     "grade": 2,
+     "section_name": "INTRODUCTION",
+     "anchor": "- How do proprietary LLMs such as RankGPT3.5, Rank4omini, RankGPTo1-mini, and RankClaude-sonnet compare to traditional ranking methods like "
+    },
+    {
+     "chunk_index": 17,
+     "grade": 2,
+     "section_name": "INTRODUCTION",
+     "anchor": "This study seeks to address these questions by evaluating the performance of RankGPT3.5, RankGPT4o-mini, RankGPTo1-mini and RankClaude-sonne"
+    },
+    {
+     "chunk_index": 19,
+     "grade": 2,
+     "section_name": "INTRODUCTION",
+     "anchor": "RankGPT3.5, RankGPT4o-mini and RankClaude-sonne also perform well, achieving significant improvements in reranking tasks."
+    },
+    {
+     "chunk_index": 42,
+     "grade": 2,
+     "section_name": "METHOD",
+     "anchor": "These include proprietary reranking LLMs such as RankGPT3.5, which utilizes the gpt-3.5-turbo model; RankGPT4o-mini, which employs the gpt 4"
+    },
+    {
+     "chunk_index": 48,
+     "grade": 2,
+     "section_name": "EXPERIMENTAL SETUP",
+     "anchor": "Notably, RankGPTo1-mini achieves the highest scores across multiple languages, indicating its strong cross-lingual capabilities."
+    },
+    {
+     "chunk_index": 45,
+     "grade": 1,
+     "section_name": "METHOD",
+     "anchor": "For context size, RankGPT3.5 has a context size of 4096 tokens, RankGPT-4o-mini utilizes 16384 tokens, O1 mini uses 65536 tokens, while Rank"
+    }
+   ]
+  },
+  {
+   "id": "n19-data",
+   "paper": "Enhancing_Vector_based_Retrieval_Augmented_Generation_with_Contextual_Knowledge_Graph_Construction.pdf",
+   "question": "How many documents were collected for evaluation, of what type, and from which source?",
+   "section_type": "dataset",
+   "key_facts": [
+    [
+     "2000"
+    ],
+    [
+     "lease"
+    ],
+    [
+     "sec"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 17,
+     "grade": 2,
+     "section_name": "RELATED WORK",
+     "anchor": "A sample of 2,000 lease agreement documents was obtained from SEC.gov."
+    },
+    {
+     "chunk_index": 3,
+     "grade": 1,
+     "section_name": "Abstract",
+     "anchor": "Experiments on 2,000 lease agreements demonstrate that CKGC significantly improves vector-based RAG in information retrieval and question an"
+    },
+    {
+     "chunk_index": 41,
+     "grade": 1,
+     "section_name": "RESULTS AND DISCUSSION",
+     "anchor": "Our evaluation utilized a dataset of 2,000 lease agreement documents and a set of 500 test queries specifically designed to assess various a"
+    }
+   ]
+  },
+  {
+   "id": "n18-count",
+   "paper": "Enhancing_the_Precision_and_Interpretability_of_Retrieval-Augmented_Generation_RAG_in_Legal_Technology_A_Survey.pdf",
+   "question": "How many legal RAG pipelines were implemented in 2024 according to this survey?",
+   "section_type": "related_work",
+   "key_facts": [
+    [
+     "20"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 14,
+     "grade": 2,
+     "section_name": "INTRODUCTION",
+     "anchor": "In 2024, more than 20 legal RAG pipelines were implemented using various embedding, retrieval, enhancement, and generation methods."
+    }
+   ]
+  },
+  {
+   "id": "n20-method",
+   "paper": "Evaluating Retrieval Quality in Retrieval-Augmented Generation.pdf",
+   "question": "What evaluation approach does this paper propose for retrieval models inside RAG systems?",
+   "section_type": "abstract",
+   "key_facts": [
+    [
+     "erag"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 1,
+     "grade": 2,
+     "section_name": "ABSTRACT",
+     "anchor": "Additionally, eRAG offers significant computational advantages, improving runtime and consuming up to 50 times less GPU memory than end-to-e"
+    },
+    {
+     "chunk_index": 13,
+     "grade": 2,
+     "section_name": "Hamed Zamani",
+     "anchor": "In this paper, we propose eRAG, a new approach for evaluating retrievers in RAG systems, where we apply the LLM in RAG system on each docume"
+    },
+    {
+     "chunk_index": 18,
+     "grade": 2,
+     "section_name": "EVALUATING RETRIEVERS IN RAG",
+     "anchor": "To mitigate these problems, we propose eRAG, a novel approach that involves utilizing the LLM in RAG system itself as the arbiter for genera"
+    },
+    {
+     "chunk_index": 14,
+     "grade": 1,
+     "section_name": "Hamed Zamani",
+     "anchor": "To facilitate research in this domain, we make eRAG's implementation publicly available at: https://github.com/alirezasalemi7/eRAG."
+    }
+   ]
+  },
+  {
+   "id": "n30-methods",
+   "paper": "Hybrid_Retrieval-Augmented_Generation_Approach_for_LLMs_Query_Response_Enhancement.pdf",
+   "question": "Which two RAG methodologies does the proposed hybrid framework combine?",
+   "section_type": "abstract",
+   "key_facts": [
+    [
+     "sentence-window",
+     "sentence window"
+    ],
+    [
+     "parent-child",
+     "parent child"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 10,
+     "grade": 2,
+     "section_name": "INTRODUCTION",
+     "anchor": "Leveraging the success of advanced RAG techniques, such as the sentence-window and parent-child methods, this paper introduces a novel hybri"
+    },
+    {
+     "chunk_index": 11,
+     "grade": 2,
+     "section_name": "INTRODUCTION",
+     "anchor": "- Proposing a hybrid RAG that incorporates both sentence window and parent-child RAGs."
+    },
+    {
+     "chunk_index": 13,
+     "grade": 2,
+     "section_name": "METHODS",
+     "anchor": "This section, first introduces Naive RAG and advanced RAG techniques (Sentence-Window and Parent-Child)."
+    },
+    {
+     "chunk_index": 17,
+     "grade": 2,
+     "section_name": "METHODS",
+     "anchor": "At the same time, the parent-child retrieval method works on a broader level, pinpointing the top-K matches from child chunks and their resp"
+    },
+    {
+     "chunk_index": 4,
+     "grade": 1,
+     "section_name": "Abstract",
+     "anchor": "This paper introduces a novel hybrid RAG framework that synergizes the SentenceWindow and Parent-Child methodologies with an innovative rera"
+    }
+   ]
+  },
+  {
+   "id": "n49-purpose",
+   "paper": "SiJesi_Large_Language_Model_Chatbot_with_Augmented_Retrieval_Approach_Generation_and_Prompt_Engineering.pdf",
+   "question": "What is the SiJesi chatbot built to advise on, and for which organization?",
+   "section_type": "abstract",
+   "key_facts": [
+    [
+     "cyber incident"
+    ],
+    [
+     "csirt"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 12,
+     "grade": 2,
+     "section_name": "INTRODUCTION ( HEADING 1 )",
+     "anchor": "The website can be accessed at [csirt.jakarta.go.id](https://csirt.jakarta.go.id/)."
+    },
+    {
+     "chunk_index": 4,
+     "grade": 1,
+     "section_name": "Abstract",
+     "anchor": "Abstract -This research designs a chatbot based on Large Language Models (LLM) for cyber incident consultation, utilizing the Retrieval Augm"
+    },
+    {
+     "chunk_index": 6,
+     "grade": 1,
+     "section_name": "INTRODUCTION ( HEADING 1 )",
+     "anchor": "One provincial government established a CSIRT to ensure a secure information security system within its jurisdiction [4]."
+    },
+    {
+     "chunk_index": 7,
+     "grade": 1,
+     "section_name": "INTRODUCTION ( HEADING 1 )",
+     "anchor": "According to interviews in Appendix 1, the local CSIRT currently offers a consultation service via a call center connected to WhatsApp, mana"
+    },
+    {
+     "chunk_index": 9,
+     "grade": 1,
+     "section_name": "INTRODUCTION ( HEADING 1 )",
+     "anchor": "This research focuses on cyber incident consultation-events that disrupt or threaten electronic systems [8]."
+    },
+    {
+     "chunk_index": 13,
+     "grade": 1,
+     "section_name": "LITERATURE REVIEW",
+     "anchor": "18 of 2020, CSIRT focuses on proactive measures, coordinating responses, and implementing strategies to mitigate cybersecurity threats."
+    }
+   ]
+  },
+  {
+   "id": "n51-transformer",
+   "paper": "Survey_of_Different_Large_Language_Model_Architectures_Trends_Benchmarks_and_Challenges.pdf",
+   "question": "What is the key innovation of the Transformer compared with LSTMs and RNNs?",
+   "section_type": "theory",
+   "key_facts": [
+    [
+     "parallel"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 25,
+     "grade": 2,
+     "section_name": "BACKGROUND",
+     "anchor": "Unlike traditional models that process data sequentially, Transformers enable significantly faster and more efficient parallel processing by"
+    },
+    {
+     "chunk_index": 21,
+     "grade": 1,
+     "section_name": "BACKGROUND",
+     "anchor": "The Transformer achieves this through its multi-head self-attention mechanism, which allows for the parallelized training of models [1]."
+    }
+   ]
+  },
+  {
+   "id": "n16-task",
+   "paper": "Drop your Decoder_ Pre-training with Bag-of-Word Prediction for Dense Passage Retrieval..pdf",
+   "question": "Which pre-training task does this paper propose for dense passage retrieval?",
+   "section_type": "abstract",
+   "key_facts": [
+    [
+     "bag-of-word",
+     "bag of word"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 15,
+     "grade": 2,
+     "section_name": "CCS CONCEPTS",
+     "anchor": "There are several benefits to utilizing a Bag-of-Word prediction task, instead of previous MAEstyle pre-training."
+    },
+    {
+     "chunk_index": 20,
+     "grade": 2,
+     "section_name": "CCS CONCEPTS",
+     "anchor": "- Building upon this observation, we propose a direct Bag-of-Word prediction task for compressing the information of input lexicon terms int"
+    },
+    {
+     "chunk_index": 29,
+     "grade": 2,
+     "section_name": "METHOD",
+     "anchor": "Next, we introduce a new Bag-of-Word pre-training schema for efficient dense retrieval pre-training."
+    },
+    {
+     "chunk_index": 8,
+     "grade": 1,
+     "section_name": "ABSTRACT",
+     "anchor": "Building upon this observation, we propose a modification to the traditional MAE by replacing the decoder of a masked auto-encoder with a co"
+    },
+    {
+     "chunk_index": 37,
+     "grade": 1,
+     "section_name": "METHOD",
+     "anchor": "Output: Bag-of-word Prediction Loss L 𝐷𝑒𝑐, 1 ="
+    }
+   ]
+  },
+  {
+   "id": "n44-domain",
+   "paper": "Proximity-Aware_Clinical_Passage_Retrieval_Framework_by_Exploiting_Knowledge_Structure.pdf",
+   "question": "Which kind of search is this passage retrieval framework built to support?",
+   "section_type": "abstract",
+   "key_facts": [
+    [
+     "clinical decision support",
+     "cds"
+    ]
+   ],
+   "gold": [
+    {
+     "chunk_index": 6,
+     "grade": 2,
+     "section_name": "KEEJUN HAN 1 AND JUNGEUN KIM 2",
+     "anchor": "We present a novel CDS search framework designed for passage retrieval in order to support clinical decision-making using laboratory test re"
+    },
+    {
+     "chunk_index": 7,
+     "grade": 2,
+     "section_name": "KEEJUN HAN 1 AND JUNGEUN KIM 2",
+     "anchor": "INDEX TERMS CDS search, clinical decision support, knowledge structure, passage retrieval."
+    },
+    {
+     "chunk_index": 9,
+     "grade": 2,
+     "section_name": "INTRODUCTION",
+     "anchor": "To develop a potential passage retrieval strategy for CDS, considering and incorporating the concept of term proximity, which is a distance "
+    },
+    {
+     "chunk_index": 17,
+     "grade": 2,
+     "section_name": "INTRODUCTION",
+     "anchor": "- We show that the proposed approach outperforms other CDS approaches by comparing it with several query expansion techniques and proximity "
+    },
+    {
+     "chunk_index": 8,
+     "grade": 1,
+     "section_name": "INTRODUCTION",
+     "anchor": "However, most existing CDS search studies [3], [4], [5] focus on improving the performance of retrieving full-length relevant documents."
+    },
+    {
+     "chunk_index": 28,
+     "grade": 1,
+     "section_name": "RELATED WORK",
+     "anchor": "In recent years, a significant body of studies has been conducted on CDS search with regard to various resources on the Web since traditiona"
+    }
+   ]
+  }
+ ],
+ "note": "Gold passages were labeled by reading the chunks of each target paper that carry a golden fact, never by running the retriever, so the labels do not depend on what the system returns. Labeling is known to be incomplete: only fact-bearing candidates were reviewed, so a passage that answers in paraphrase may be unlabeled. Treat recall and nDCG as floors."
+}

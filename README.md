@@ -352,6 +352,54 @@ reaches the single paper that actually runs adversarial attacks. Part system, pa
 question: it draws on four papers where each fact is carried by only one, which makes it
 the thinnest item in the set.
 
+**Passage-level retrieval** is the fourth set, in `tests/golden_passages.json`: 40
+questions with 93 hand-labeled gold passages, graded 2 where the passage fully answers
+and 1 where it supports. Until this existed, retrieval was only ever scored at paper
+granularity, which cannot tell returning the paragraph that states the result from
+returning the same paper's related work. On a corpus where most papers are about
+retrieval, that is most of the question.
+
+```bash
+python scripts/eval_rag.py --passages --at-k 10
+```
+
+| | |
+| --- | --- |
+| Recall@10 | 0.665 |
+| MRR@10 | 0.771 |
+| MAP@10 | 0.567 |
+| nDCG@10 | 0.645 |
+| Gold passage ranked first | 27/38 (71%) |
+| No gold passage returned | 4/38 (11%) |
+
+Two design decisions carry the weight. Gold passages are pinned by a **verbatim text
+anchor** rather than a chunk id, and every anchor is verified to resolve to exactly one
+chunk in its paper: chunk ids break the moment chunking changes, and it has changed here,
+where a parsing repair removed 678 chunks. And the labels were made by **reading the
+paper's chunks, never by running the retriever**. Labeling gold as whatever the system
+returns measures the retriever against itself and can only score high.
+
+The split underneath the average is the finding:
+
+| | questions | recall | nDCG |
+| --- | --- | --- | --- |
+| One gold passage | 17 | **0.941** | 0.835 |
+| Two or more gold passages | 21 | **0.442** | 0.491 |
+
+Retrieval reliably finds *an* answering passage and then stops. It rarely gathers the
+complementary ones. `n15-parts` asks for three reported accuracies that live in two
+different chunks, and returning one of them caps the answer at two thirds no matter how
+good generation is. This is the mechanism behind the 69% of facts stated: the generator
+cannot state what it was never shown. It also shows up as volume, since the system
+returns 6.9 passages on average and fewer than the requested 10 on 37 of 38 questions.
+
+Two caveats, both of which make these numbers floors rather than estimates. Labeling is
+**known to be incomplete**: only chunks carrying a golden fact were reviewed, so a
+passage that answers in paraphrase can be unlabeled and scores as a miss. Two questions
+are **excluded rather than scored zero**, because the router sends them to the paper
+cards and they never reach passage retrieval at all; booking that as a retrieval failure
+would hide a routing decision inside a retrieval number.
+
 **Negative controls** cover the gap every other metric leaves. All the others measure
 denying content that is present. None measures inventing content that is absent, which
 for a research tool is the worse failure, since retrieval always returns *something* and
@@ -713,7 +761,7 @@ app.py                   FastAPI server and JSON API
 static/index.html        the whole interface: markup, design tokens, behavior
 scripts/
   eval_models.py                   score models on the routing tasks
-  eval_rag.py                      score coverage / retrieval / generation / synthesis / thematic
+  eval_rag.py                      score coverage / retrieval / generation / synthesis / thematic / passages
   eval_chat.py                     score the multi-turn and ad-hoc upload views
   fetch_arxiv.py                   pull open-access papers by pinned arXiv id
   build_paper_cards.py             backfill paper cards without re-parsing PDFs
@@ -733,6 +781,7 @@ tests/
   test_ui.py                       browser tests: citations, source panel, tabs
   golden_conversations.json        26 multi-turn turns for the conversational views
   golden_qa.json                   138 graded questions, 341 fact groups, 53 papers
+  golden_passages.json             40 questions, 93 hand-labeled gold passages
 docker-compose.yml       Weaviate service
 ```
 

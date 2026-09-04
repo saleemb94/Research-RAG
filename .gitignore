@@ -51,3 +51,4 @@ desktop.ini
 
 # Ad-hoc uploads, which are throwaway by design.
 scratch/
+eval_passages.json
