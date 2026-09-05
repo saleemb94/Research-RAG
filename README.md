@@ -425,10 +425,21 @@ Passage-level retrieval, scored against the gold passages at k=10:
 
 | | |
 | --- | --- |
-| Recall@10 | 0.718 |
-| MRR@10 | 0.795 |
-| MAP@10 | 0.615 |
-| nDCG@10 | 0.689 |
+| Recall@10 | 0.694 |
+| MRR@10 | 0.767 |
+| MAP@10 | 0.584 |
+| nDCG@10 | 0.660 |
+
+These are lower than the figures they replaced, and the system did not get worse. The
+scorer skips any question the router sends to the paper cards, because those never reach
+passage retrieval. Fixing the sentinel leak meant two such questions now fall through and
+get answered, so they entered the scored population, and they are hard: one returns no
+gold passage at all. Measured over the same 37 questions as before, recall is still
+0.718. The average fell because the denominator grew, which is what should happen when a
+fix stops a question being quietly excluded.
+
+Worth stating plainly, because the alternative was to report the higher number against a
+population that no longer exists.
 
 Those four are exact rather than averaged, because retrieval is reproducible: repeated
 runs return identical numbers. That is deliberate and was not always true.
