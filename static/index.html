@@ -323,6 +323,27 @@ input[type=checkbox]:indeterminate::after {
      width - it is a list of titles, not prose. */
   max-width: 34em;
 }
+/* The one claim worth checking first.
+ *
+ * Deliberately quiet: a dotted underline and a margin note, not a red banner.
+ * The claim is not known to be wrong, only less well supported by the passage
+ * it cites than the rest of the answer, and styling it as an error would be a
+ * stronger statement than the evidence allows. It also stays readable if the
+ * colour is missed entirely, which matters because this is the one piece of
+ * the interface a reader must not misread. */
+.claim-check {
+  border-bottom: 1px dashed var(--amber-500, #b45309);
+  cursor: help;
+}
+.check-note {
+  margin-top: var(--s-3);
+  padding-left: var(--s-3);
+  border-left: 2px solid var(--amber-500, #b45309);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-500, #57534e);
+}
+.check-note b { font-weight: 600; color: var(--ink-700, #292524); }
 .answer > * + * { margin-top: var(--s-4); }
 .answer ul, .answer ol { padding-left: 1.35em; }
 .answer ul > li { list-style: disc; }
@@ -976,7 +997,7 @@ const RX_NUMBER = /^\s*\d+[.)]\s+/;
 /** Blocks separated by blank lines become paragraphs; runs of bullet or
  *  numbered lines become real lists. Answers are usually one paragraph, but
  *  when the model does structure one it should read as structure. */
-function renderAnswer(answer, sources) {
+function renderAnswer(answer, sources, checkFirst) {
   const wrap = document.createElement('div');
   wrap.className = 'answer';
   const byNum = new Map((sources || []).map(s => [s.number, s]));
@@ -1003,7 +1024,44 @@ function renderAnswer(answer, sources) {
     }
   }
   if (!wrap.childElementCount) appendInline(wrap, answer, byNum);
+  if (checkFirst) markClaim(wrap, checkFirst);
   return wrap;
+}
+
+/**
+ * Underline the claim the server flagged, and say why underneath.
+ *
+ * Matched on text rather than an index because the answer is re-flowed into
+ * paragraphs and lists here, so no offset from the server survives. Walking
+ * text nodes keeps the citation chips inside the claim clickable, which
+ * matters: the flag is only useful if checking it is one click away.
+ */
+function markClaim(wrap, claimText) {
+  const needle = claimText.replace(/\[\d+\]/g, '').replace(/\s+/g, ' ').trim();
+  if (needle.length < 20) return;
+  // The first sentence-worth is enough to locate it and survives the citation
+  // chips having been turned into elements.
+  const probe = needle.slice(0, 60);
+  const walker = document.createTreeWalker(wrap, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    const i = node.nodeValue.indexOf(probe);
+    if (i === -1) continue;
+    const span = document.createElement('span');
+    span.className = 'claim-check';
+    span.title = 'Least supported by the passage it cites. Worth checking first.';
+    const after = node.splitText(i);
+    after.splitText(Math.min(probe.length, after.nodeValue.length));
+    after.parentNode.replaceChild(span, after);
+    span.appendChild(after);
+    const note = document.createElement('p');
+    note.className = 'check-note';
+    note.innerHTML = '<b>Check this first.</b> The underlined claim is the one ' +
+      'least supported by the passage it cites. It is not necessarily wrong; ' +
+      'open its citation to confirm.';
+    wrap.appendChild(note);
+    return;
+  }
 }
 
 // ── evidence ──────────────────────────────────────────────────────────────
@@ -1118,7 +1176,7 @@ function turnBlock(question) {
 }
 
 function fillTurn(art, data, extra, scoped) {
-  art.appendChild(renderAnswer(data.answer, data.sources));
+  art.appendChild(renderAnswer(data.answer, data.sources, data.check_first));
   if (data.dropped_citations && data.dropped_citations.length) {
     const w = document.createElement('div');
     w.className = 'warn';

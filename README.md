@@ -52,6 +52,7 @@ design here is built around exploiting it.
 | References and ethics statements pollute results | Boilerplate sections are dropped at ingest via a blacklist and a title check |
 | Top-k vector hits are often loosely relevant | A cross-encoder reranks 4x the candidates down to the best `k` |
 | Answers are hard to trust | Each answer links to the exact passage, rendered onto its original PDF page |
+| Every claim looks equally confident, including the wrong ones | Each claim is scored against the passage it cites, and the least supported one is marked so a reader knows where to look first |
 | Section vocabulary is field-specific: `corpus`, `cohort`, `specimen` and `primary sources` all mean *the data* | Classification is by section **function**, using vocabulary from nine disciplines, and it refuses to guess on words that flip meaning between fields |
 
 ---
@@ -239,6 +240,45 @@ retrieval: classify the query to a section type, filter, search, rerank, answer.
 
 The single-paper view skips the router. The paper is already chosen, so there is
 nothing to route.
+
+### Which claim to check first
+
+A system that is right 70% of the time and confident every time is harder to use than
+one that is right less often and says which part to doubt. The failure is invisible at
+the point of reading: a wrong claim looks exactly like a right one, carries a citation,
+and the citation opens onto a real passage. So the reader either verifies everything,
+which removes the reason to use the tool, or verifies nothing.
+
+Every claim is scored against the passages it actually cites, and the weakest one is
+underlined with a note saying to check it first. Two signals, both deterministic and
+neither costing an extra model call - a confidence score that doubles answer latency, or
+that consists of a sampled model grading its own homework, is not worth having:
+
+- **figures**, which must appear in the cited passage. `84.76% accuracy [3]` where source
+  3 contains no `84.76` is a provable grounding failure rather than a judgement call.
+  Document pointers are excluded, because "Figure 3" is a signpost and not a claim.
+- **distinctive wording**, present in the cited passage, ignoring stopwords and the
+  vocabulary the whole corpus shares.
+
+What this measures is **grounding, not truth**: how much of a claim is present in the
+passage it points at. A claim can be well grounded and still wrong if the paper is wrong,
+and this will not catch that. What it catches is a claim drifting from its evidence,
+which is the failure that matters for a tool whose selling point is provenance.
+
+It validates: against the passage a claim actually cites it scores 0.60 on average,
+against a random other passage from the same answer 0.15. It also found a failure no
+other metric here can see. One answer stated *"[4] states that BiLSTM reached 82.02%
+accuracy and CNN reached 79.39%"* where those figures are correct but absent from source
+4. Fact groups score that answer right, because the numbers are right. Citation
+validation passes, because source 4 exists. Only grounding catches a correct fact
+attributed to the wrong passage.
+
+Two deliberate restraints. Only one claim is ever marked: colouring everything trains
+people to ignore the colour, and ranking noisy scores implies a precision these signals
+do not have. And a claim asserting an *absence* is never flagged, because "the paper does
+not mention Macro-F1" cannot echo the passage it cites and scores near zero by
+construction - in the first version those correct sentences were the only thing the flag
+ever pointed at. Roughly a third of answers carry a flag; the rest carry none.
 
 ### Retrieval safety rails
 

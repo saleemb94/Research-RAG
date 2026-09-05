@@ -146,6 +146,26 @@ def run(page, base_url):
     injected = page.eval_on_selector_all("#ask-thread script", "s => s.length")
     check("no script injected from model output", injected == 0)
 
+    # -- the claim worth checking first -------------------------------------
+    # Whether a flag appears depends on the answer, so this asserts the two
+    # states are each coherent rather than that one of them happens. A marked
+    # claim without its explanation, or an explanation with nothing marked,
+    # would each be worse than no feature: the first is an unexplained warning
+    # and the second points at nothing.
+    marked = page.eval_on_selector_all("#ask-thread .claim-check", "e => e.length")
+    notes = page.eval_on_selector_all("#ask-thread .check-note", "e => e.length")
+    check("a flagged claim is marked and explained, or neither is",
+          marked == notes and marked <= 1, f"marked={marked} notes={notes}")
+    if marked:
+        inside = page.eval_on_selector(
+            ".claim-check", "e => e.textContent.trim().length")
+        check("the mark covers actual claim text", inside > 15, f"{inside} chars")
+        # The flag is only useful if verifying it is one click away, so the
+        # citation chips inside a marked claim must survive the wrapping.
+        still = page.eval_on_selector_all("#ask-thread .cite", "c => c.length")
+        check("marking a claim does not break its citations", still == n_chips,
+              f"{still} vs {n_chips}")
+
     # -- clicking a citation opens the panel and renders the PDF page --------
     if n_chips:
         page.click("#ask-thread .cite >> nth=0")

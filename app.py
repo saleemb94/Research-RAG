@@ -21,6 +21,7 @@ from research_rag import (
 from research_rag.config import (
     APP_HOST, APP_PORT, OLLAMA_MODEL, TOP_K, WEAVIATE_SCRATCH_COLLECTION,
 )
+from research_rag.confidence import annotate, weakest
 from research_rag.config import PAPERS_DIR as PAPERS_DIR_SETTING
 from research_rag.paper_cards import PaperCardStore, build_card
 from research_rag.pdf_viewer import render_chunk as _render_chunk
@@ -351,7 +352,20 @@ def ask(req: AskRequest):
             cards=None if req.scratch else card_store.all_cards(),
             section_index=None if req.scratch else section_index,
         )
-        return {"ok": True, **result.as_dict()}
+        payload = result.as_dict()
+        # Which claim to check first, if any. Computed here rather than in the
+        # browser because it needs the passage text, and the interface should
+        # not have to re-derive a judgment the server already has the evidence
+        # for. Never fatal: a scoring bug must not cost the reader the answer.
+        try:
+            claims = annotate(payload.get("answer", ""), payload.get("sources", []))
+            flag = weakest(claims)
+            payload["claims"] = claims
+            payload["check_first"] = flag["text"] if flag else None
+        except Exception:
+            payload["claims"] = []
+            payload["check_first"] = None
+        return {"ok": True, **payload}
     except Exception as e:
         import traceback; traceback.print_exc()
         return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})

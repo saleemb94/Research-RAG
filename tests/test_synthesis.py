@@ -233,5 +233,69 @@ def test_nothing_found_is_not_a_truthy_answer():
     assert NOTHING_FOUND, "the sentinel must stay non-empty for this to matter"
 
 
+# ── which claim to check first ─────────────────────────────────────────────
+
+def test_a_figure_absent_from_its_citation_scores_low():
+    """The provable case: the claim states a number the cited passage does not."""
+    from research_rag.confidence import score_claim
+    ok = score_claim("BiLSTM reached 82.02% accuracy",
+                     ["the BiLSTM model reached accuracy 82.02% on the test set"])
+    bad = score_claim("BiLSTM reached 91.5% accuracy",
+                      ["the BiLSTM model reached accuracy 82.02% on the test set"])
+    assert ok["confidence"] > 0.8
+    assert bad["confidence"] < 0.4
+    assert bad["numbers_missing"] == ["91.5%"]
+
+
+def test_document_pointers_are_not_claims_about_data():
+    """"Figure 3" is a pointer, not an assertion, and counting it as an
+    unsupported figure made every answer mentioning one look ungrounded."""
+    from research_rag.confidence import score_claim
+    r = score_claim("These results appear in Figure 3 and Table 2",
+                    ["the results are plotted for the reader"])
+    assert r["numbers"] == [], r["numbers"]
+
+
+def test_claims_are_sentences_not_citation_fragments():
+    """
+    Splitting at citation groups stranded the text after the last marker as its
+    own claim. Those fragments scored near zero and captured the flag, so it
+    pointed at punctuation instead of at anything worth checking.
+    """
+    from research_rag.confidence import split_claims
+    got = split_claims(
+        "BiLSTM reached 82.02% accuracy [1][2]. These results appear in Figure 3 [1].")
+    assert len(got) == 2, got
+    assert got[0]["cites"] == [1, 2]
+    assert all(c["text"][0].isupper() for c in got), got
+
+
+def test_a_claim_of_absence_is_never_flagged():
+    """
+    A claim that a paper does not mention something cannot echo the passage it
+    cites, so its low score carries no information. The first version flagged
+    nothing else.
+    """
+    from research_rag.confidence import weakest
+    claims = [
+        {"text": "The paper does not mention Macro-F1 at all.", "cites": [1],
+         "confidence": 0.0, "numbers_missing": [], "number_support": None},
+        {"text": "The model reached an accuracy of 91.5 percent on the set.",
+         "cites": [2], "confidence": 0.2, "numbers_missing": ["91.5"],
+         "number_support": 0.0},
+    ]
+    w = weakest(claims)
+    assert w is not None and w["cites"] == [2], w
+
+
+def test_a_well_grounded_answer_is_not_flagged():
+    """Flagging the least-good claim in a good answer is noise dressed as insight."""
+    from research_rag.confidence import weakest
+    claims = [{"text": "The model reached an accuracy of 82.02 percent here.",
+               "cites": [1], "confidence": 0.9, "numbers_missing": [],
+               "number_support": 1.0}]
+    assert weakest(claims) is None
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
